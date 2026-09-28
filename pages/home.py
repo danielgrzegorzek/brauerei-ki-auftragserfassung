@@ -33,14 +33,15 @@ def load_overview() -> dict:
         return {
             "customers": customers, "products": products, "orders": orders, "first": first, "last": last,
             "revenue_12m": analytics.kpis(conn, last_12)["revenue"],
-            "checks": run_checks(conn),
+            # als einfache Tupel (Name, bestanden, Detail) – eigene Klassen im Cache brechen nach Code-Updates
+            "checks": [(check.name, check.passed, check.detail) for check in run_checks(conn)],
             "saved_hours": business_case.saved_hours, "saved_eur": business_case.saved_eur,
         }
 
 
 overview = load_overview()
 evaluation = measured_ai_cost(MODEL)
-passed = sum(check.passed for check in overview["checks"])
+passed = sum(ok for _, ok, _ in overview["checks"])
 total = len(overview["checks"])
 
 # ---------- Titelbanner: in einem Satz, worum es geht ----------
@@ -103,9 +104,9 @@ st.caption(
 
 with st.expander(f"Plausibilitäts-Check im Detail ({passed} / {total} bestanden)"):
     st.write("Automatische Prüfungen, ob die simulierten Daten fachlich Sinn ergeben:")
-    for check in overview["checks"]:
-        icon = ":material/check_circle:" if check.passed else ":material/error:"
-        st.markdown(f"{icon} **{check.name}** – {check.detail}")
+    for name, ok, detail in overview["checks"]:
+        icon = ":material/check_circle:" if ok else ":material/error:"
+        st.markdown(f"{icon} **{name}** – {detail}")
 
 st.caption("Alle Firmen, Personen und Zahlen sind frei erfunden. "
            "Oberfläche angelehnt an die SAP-Fiori-Designrichtlinien.")

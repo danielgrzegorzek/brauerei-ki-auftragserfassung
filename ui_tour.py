@@ -16,12 +16,18 @@ from src.tour import TourStep, tour_steps
 
 
 @st.cache_data(show_spinner=False)
-def load_steps() -> list[TourStep]:
-    """Die Schritte mit Zahlen aus den Daten – dieselben wie auf Startseite und Business-Case-Seite."""
+def load_numbers() -> tuple[int, float, float]:
+    """Auftragsmenge und Ersparnis – dieselben Zahlen wie auf Startseite und Business-Case-Seite.
+    Im Cache nur einfache Zahlen: Eigene Klassen lassen sich nach einem Code-Update in der Cloud
+    (Modul neu geladen) nicht mehr zwischenspeichern."""
     with closing(get_connection()) as conn:
         _, result = default_result(conn, MODEL)
         all_orders = sum(orders_last_12_months(conn).values())
-    return tour_steps(all_orders, result.saved_hours, result.saved_eur)
+    return all_orders, result.saved_hours, result.saved_eur
+
+
+def load_steps() -> list[TourStep]:
+    return tour_steps(*load_numbers())
 
 
 def start() -> None:
