@@ -173,7 +173,9 @@ def cost_comparison_chart(bars: list[str], segments: list[tuple[str, list[float]
             text=[f"{format_number(value)} €" for value in values[::-1]],
             textposition="inside", insidetextanchor="middle", textfont=dict(color=label_color(color)),
             textangle=0,  # nie senkrecht – passt die Zahl nicht, wird sie ausgeblendet (Tooltip und Tabelle bleiben)
-            hovertemplate=f"<b>%{{customdata}}</b><br>{name}: %{{x:,.0f}} €<extra></extra>",
+            # Tooltip in Python formatiert – gleiche Rundung wie Beschriftung und Rechenweg
+            hovertext=[f"{name}: {format_number(value)} €" for value in values[::-1]],
+            hovertemplate="<b>%{customdata}</b><br>%{hovertext}<extra></extra>",
         ))
     apply_base_style(fig, colors, height=80 * len(bars) + 60)
     fig.update_layout(barmode="stack", bargap=0.35, barcornerradius=4,

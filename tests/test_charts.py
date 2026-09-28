@@ -13,6 +13,12 @@ def test_cost_comparison_stacks_segments_and_labels_totals():
     assert all(trace.textangle == 0 for trace in fig.data)       # Zahlen nie senkrecht
 
 
+def test_hover_rounds_like_the_labels():
+    """2.512,5 € → überall „2.512 €“ (Python), nicht „2.513 €“ (JavaScript im Tooltip)."""
+    fig = cost_comparison_chart(["Vorher", "Mit KI"], [("Fehlerkosten", [3000.0, 2512.5])], PALETTES["light"])
+    assert fig.data[0].hovertext[0] == "Fehlerkosten: 2.512 €" == f"Fehlerkosten: {fig.data[0].text[0]}"
+
+
 def test_every_mode_has_three_category_colors():
     assert all(len(palette["categories"]) == 3 for palette in PALETTES.values())
 
