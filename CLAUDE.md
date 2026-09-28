@@ -73,19 +73,33 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), `ui.apply_style()`, Navigation (`st.navigation`)
 - `ui.py` – Oberflächen-Bausteine im Fiori-Stil (bewusst außerhalb von `src/`): `page_header`, `tile`,
   `illustration`, `illustrated_message`, `image_uri`; Farbvariablen je Hell/Dunkel in `COLORS`
+  (auch `--chat-*` für den Messenger und `--step-*` für „Auftrag entsteht“)
+- `ui_capture.py` – Bausteine der Auftragserfassung für beide Reiter: `show_proposal` (Formular, Prüfung,
+  Speichern mit `on_saved`-Callback), `order_steps`/`show_steps` („Auftrag entsteht“), `new_capture`,
+  Schlüssel/Client/Kontingent (`api_key`, `claude_client`, `live_calls_left`, `register_live_call`)
+- `ui_chat.py` – Messenger-Ansicht (`chat_view`): Callbacks `use_example`, `send`, `choose`, `order_saved`;
+  `process` (Live-KI, sonst Demo-Rückfall); Chat-HTML immer über `html.escape`
 - `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Illustrationen, Piktogramme
 - `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`
+  (Reiter „Live-Chat“ = `ui_chat.chat_view`, Reiter „Posteingang“ = 7 Beispiele)
 - `src/` – Logik ohne Streamlit:
   - Daten: `database.py` (Schema, `SCHEMA_VERSION`), `master_data.py`, `order_generator.py`,
     `empties_generator.py`, `data_setup.py`, `plausibility.py` (prüft nur `source = 'Historie'`)
   - Auswertung: `analytics.py` (SQL → DataFrame), `charts.py` (Plotly), `formatting.py` (deutsche Formate)
   - Auftragserfassung: `order_models.py` (Zielformat der KI, JSON), `demo_messages.py`
     (7 Beispiele mit vorbereiteten KI-Antworten), `order_capture.py` (Abgleich → Prüfung → Speichern)
-  - KI: `extraction.py` (Vertrag `OrderExtractor`; `DemoExtractor`, `ClaudeExtractor`; `SYSTEM_PROMPT`,
+  - KI: `extraction.py` (`MODELS` mit Preisen/`effort` je Modell, `MODEL` = Modell der App; Vertrag
+    `OrderExtractor`; `DemoExtractor` (auch `CHAT_EXAMPLES`), `ClaudeExtractor`; `SYSTEM_PROMPT`,
     `calendar_hint`, Antwortschema `OrderSchema`), `ai_usage.py` (Kostenschutz: 1.000 Zeichen,
     5 Aufrufe je Besuch, 30 je Tag; Tabelle `ai_usage`)
-- `tools/evaluate_extraction.py` – schickt die 7 Demo-Nachrichten an Claude, vergleicht mit dem Soll,
-  schreibt `docs/EVALUATION.md` (kostet ca. 6 US-Cent je Lauf)
+  - Chat & Sicherheit: `chat.py` (Antwort der Brauerei aus dem Prüfergebnis; immer nur EINE Rückfrage,
+    immer mit Knöpfen – `QuickReply` setzt Artikel, Menge oder Liefertermin; `open_quick_replies`,
+    `PERSONAS`, `now_berlin`), `message_safety.py` (starke/schwache Signale im Text + Hinweis der KI →
+    Warnung); `extraction.RefusalError` = Ablehnung durch die KI (≠ technischer Fehler);
+    `Issue.code` ist die maschinenlesbare Art eines Prüfhinweises (z. B. `sunday`, `hard_limit`)
+- `tools/evaluate_extraction.py` – 7 Demo-Nachrichten + Sicherheitstest (Prompt-Injection) an Claude,
+  Vergleich mit dem Soll; hängt jeden Lauf an `docs/evaluation.json` an und erzeugt daraus
+  `docs/EVALUATION.md` (Modellvergleich). Kosten je Lauf ca. 3–8 US-Cent; `--report-only` kostenlos
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
   Abgleich (`build_draft`) gibt nur Hinweise (Warnung/Info); blockierende Fehler kommen nur aus
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,
@@ -102,6 +116,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   `unsafe_allow_html`); SVGs als `<img>` über `ui.img`, das die Modus-Farben in ein CDATA-`<style>` im SVG schreibt.
 - Läuft auf Port 8501 schon ein manuell gestarteter Server, zum Testen die Konfiguration
   `streamlit-test` (Port 8502) in `.claude/launch.json` nutzen.
+- **Vorsicht Kosten:** `streamlit.testing.v1.AppTest` liest die lokale `secrets.toml` mit – Seitentests
+  laufen dann mit Live-KI. Im Test immer den Schalter `chat_live` ausschalten bzw. „Demo“ wählen und den
+  Zähler in `ai_usage` vorher/nachher vergleichen.
 
 ## Befehle
 
@@ -118,8 +135,10 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 # Tests (einmalig vorher: pip install -r requirements-dev.txt)
 .venv\Scripts\python.exe -m pytest -q
 
-# Live-Evaluation der KI (braucht den Schlüssel in .streamlit/secrets.toml, kostet ca. 6 US-Cent)
+# Live-Evaluation der KI (braucht den Schlüssel in .streamlit/secrets.toml, kostet ca. 3–8 US-Cent)
 .venv\Scripts\python.exe -m tools.evaluate_extraction
+.venv\Scripts\python.exe -m tools.evaluate_extraction --model claude-haiku-4-5
+.venv\Scripts\python.exe -m tools.evaluate_extraction --report-only   # nur Bericht, ohne API
 ```
 
 Der API-Schlüssel steht nur in `.streamlit/secrets.toml` (lokal) bzw. in den Secrets der
@@ -139,6 +158,8 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
   - **Jeder Push auf `main` aktualisiert die Live-App automatisch** → vor dem Push Tests laufen lassen.
 - [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
+- [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,
+  Modellvergleich (Sonnet 5 bleibt) · Teil 2 [ ] Business Case · Teil 3 [ ] geführte Tour, README, Video
 - [ ] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess, Übergabe an SAP S/4HANA (JSON + Feld-Mapping)
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video
