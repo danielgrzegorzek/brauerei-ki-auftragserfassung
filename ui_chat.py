@@ -252,7 +252,8 @@ def chat_view() -> None:
             with closing(get_connection()) as conn:
                 first = check_order(conn, draft.customer_id, draft.delivery_date,
                                     [(line.product_id, line.quantity) for line in draft.lines], capture_ui.today())
-            capture_ui.show_steps(steps, capture_ui.order_steps(draft.customer_id, first), animate=True)
+            capture_ui.show_steps(steps, capture_ui.order_steps(draft.customer_id, first, capture["safety"]),
+                                  animate=True)
             capture["animate"] = False
         customer_id, checked = capture_ui.show_proposal(capture, "chat_", order_saved)
-        capture_ui.show_steps(steps, capture_ui.order_steps(customer_id, checked))
+        capture_ui.show_steps(steps, capture_ui.order_steps(customer_id, checked, capture["safety"]))

@@ -131,11 +131,14 @@ def show_issues(issues: list[Issue]) -> None:
         box(issue.text, icon=ISSUE_ICONS[issue.level])
 
 
-def order_steps(customer_id: str | None, result: CheckResult) -> list[tuple[str, str, str]]:
-    """Die fünf Schritte „Auftrag entsteht“ als (Zustand, Bezeichnung, Wert)."""
+def order_steps(customer_id: str | None, result: CheckResult,
+                extra_issues: list[Issue] = ()) -> list[tuple[str, str, str]]:
+    """Die fünf Schritte „Auftrag entsteht“ als (Zustand, Bezeichnung, Wert).
+    extra_issues: weitere Hinweise außerhalb der Prüfung, z. B. die Sicherheitswarnung."""
     customers, _ = master_data()
-    errors = sum(issue.level == ERROR for issue in result.all_issues())
-    warnings = sum(issue.level == WARNING for issue in result.all_issues())
+    issues = result.all_issues() + list(extra_issues)
+    errors = sum(issue.level == ERROR for issue in issues)
+    warnings = sum(issue.level == WARNING for issue in issues)
     assigned = sum(line.product_id is not None for line in result.lines)
     all_assigned = bool(result.lines) and assigned == len(result.lines)
     return [

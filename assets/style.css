@@ -52,6 +52,16 @@
 .fiori-page-header p { margin: 0.3rem 0 0; color: var(--fiori-label); }
 .fiori-pictogram img { width: 3.25rem; height: 3.25rem; display: block; }
 
+/* ---------- Handy-Breite: schmalere Ränder und kleinerer Seitentitel – mehr Platz für den Inhalt ---------- */
+@media (max-width: 640px) {
+  [data-testid="stMainBlockContainer"] { padding-left: 1rem; padding-right: 1rem; }
+  [class*="st-key-card"] { padding: 0.9rem 0.85rem; }
+  .st-key-page-header { padding: 0.9rem 1rem; }
+  .fiori-page-header { gap: 0.75rem; }
+  .fiori-page-header h1 { font-size: 1.35rem; }
+  .fiori-pictogram img { width: 2.5rem; height: 2.5rem; }
+}
+
 /* ---------- Launchpad-Kacheln ---------- */
 [class*="st-key-tile-"] {
   position: relative;
