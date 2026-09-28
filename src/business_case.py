@@ -43,6 +43,9 @@ ASSUMPTIONS = [
     Assumption("minutes_ai", "Minuten je Auftrag – mit KI", 2.0, "min", 0.0, 10.0, 0.5,
                "Der Mensch prüft jeden Vorschlag und bestätigt – großzügig angesetzt, ein sauberer Fall "
                "dauert unter einer Minute."),
+    Assumption("minutes_ai_phone", "Minuten je Telefonauftrag – mit KI", 4.0, "min", 0.0, 20.0, 0.5,
+               "Beim Anruf schreibt weiterhin jemand mit – nur Suchen und Abtippen entfallen, deshalb spart "
+               "die KI hier nur die Hälfte."),
     Assumption("hourly_rate", "Stundensatz Innendienst", 40.0, "€/h", 20.0, 80.0, 1.0,
                "Vollkosten eines Arbeitsplatzes (Gehalt, Nebenkosten, Arbeitsplatz) je produktiver Stunde – "
                "eher unteres Ende."),
@@ -50,7 +53,7 @@ ASSUMPTIONS = [
                "Anteil der Aufträge mit Tipp- oder Zuordnungsfehler beim Abtippen – vorsichtig niedrig."),
     Assumption("error_rate_ai", "Fehlerquote – mit KI", 1.0, "%", 0.0, 10.0, 0.5,
                "Nur halbiert, obwohl Prüfung und Bestätigung viele Fehler abfangen – auch der Mensch kann "
-               "sich beim Bestätigen irren."),
+               "sich beim Bestätigen irren. Für Telefonaufträge rechnen wir vorsichtig ohne Verbesserung."),
     Assumption("cost_per_error", "Kosten je Fehler", 50.0, "€", 0.0, 300.0, 5.0,
                "Nachlieferung, Gutschrift und Klärungsaufwand – ohne den Ärger beim Kunden."),
     Assumption("operating_cost", "Betrieb & Wartung pro Jahr", 2000.0, "€", 0.0, 20000.0, 250.0,
@@ -62,7 +65,8 @@ DEFAULTS = {assumption.key: assumption.default for assumption in ASSUMPTIONS}
 
 @dataclass(frozen=True)
 class Inputs:
-    """Alles, was die Rechnung braucht. Fehlerquoten als Anteil (0,02 = 2 %)."""
+    """Alles, was die Rechnung braucht. Fehlerquoten als Anteil (0,02 = 2 %).
+    orders_per_year = Aufträge per WhatsApp/E-Mail; phone_orders_per_year = Telefonaufträge (0 = nicht gezählt)."""
     orders_per_year: int
     minutes_manual: float
     minutes_ai: float
@@ -72,17 +76,23 @@ class Inputs:
     cost_per_error: float
     operating_cost: float
     ai_cost_per_order: float   # € je Auftrag – gemessen
+    phone_orders_per_year: int = 0
+    minutes_ai_phone: float = 4.0
 
     def __post_init__(self):
-        if self.orders_per_year < 0:
+        if self.orders_per_year < 0 or self.phone_orders_per_year < 0:
             raise ValueError("Die Auftragsmenge darf nicht negativ sein.")
-        for name in ("minutes_manual", "minutes_ai", "hourly_rate", "cost_per_error", "operating_cost",
-                     "ai_cost_per_order"):
+        for name in ("minutes_manual", "minutes_ai", "minutes_ai_phone", "hourly_rate", "cost_per_error",
+                     "operating_cost", "ai_cost_per_order"):
             if getattr(self, name) < 0:
                 raise ValueError(f"{name} darf nicht negativ sein.")
         for name in ("error_rate_manual", "error_rate_ai"):
             if not 0 <= getattr(self, name) <= 1:
                 raise ValueError(f"{name} muss zwischen 0 und 1 liegen.")
+
+    @property
+    def all_orders(self) -> int:
+        return self.orders_per_year + self.phone_orders_per_year
 
 
 @dataclass(frozen=True)
@@ -110,6 +120,14 @@ class Result:
         return self.before.hours - self.after.hours
 
     @property
+    def saved_labor_cost(self) -> float:
+        return self.before.labor_cost - self.after.labor_cost
+
+    @property
+    def saved_error_cost(self) -> float:
+        return self.before.error_cost - self.after.error_cost
+
+    @property
     def saved_eur(self) -> float:
         return self.before.total - self.after.total
 
@@ -123,21 +141,23 @@ class Result:
 
 
 def calculate(inputs: Inputs) -> Result:
-    """Vorher (manuell) und nachher (KI-gestützt) für ein Jahr."""
-    orders = inputs.orders_per_year
-    hours_before = orders * inputs.minutes_manual / 60
-    hours_after = orders * inputs.minutes_ai / 60
-    errors_before = orders * inputs.error_rate_manual
-    errors_after = orders * inputs.error_rate_ai
+    """Vorher (manuell) und nachher (KI-gestützt) für ein Jahr.
+    Telefonaufträge vorsichtig: eigene (höhere) Minuten mit KI und keine geringere Fehlerquote."""
+    text, phone = inputs.orders_per_year, inputs.phone_orders_per_year
+    hours_before = (text + phone) * inputs.minutes_manual / 60
+    hours_after = (text * inputs.minutes_ai + phone * inputs.minutes_ai_phone) / 60
+    errors_before = (text + phone) * inputs.error_rate_manual
+    errors_after = text * inputs.error_rate_ai + phone * inputs.error_rate_manual
     before = Scenario(hours_before, hours_before * inputs.hourly_rate,
                       errors_before, errors_before * inputs.cost_per_error)
     after = Scenario(hours_after, hours_after * inputs.hourly_rate,
                      errors_after, errors_after * inputs.cost_per_error,
-                     ai_cost=orders * inputs.ai_cost_per_order, operating_cost=inputs.operating_cost)
+                     ai_cost=(text + phone) * inputs.ai_cost_per_order, operating_cost=inputs.operating_cost)
     return Result(before, after)
 
 
-def inputs_from_settings(orders_per_year: int, settings: dict[str, float], ai_cost_per_order: float) -> Inputs:
+def inputs_from_settings(orders_per_year: int, settings: dict[str, float], ai_cost_per_order: float,
+                         phone_orders_per_year: int = 0) -> Inputs:
     """Werte aus der Oberfläche (Fehlerquoten in %) → Inputs."""
     return Inputs(
         orders_per_year=orders_per_year,
@@ -149,23 +169,37 @@ def inputs_from_settings(orders_per_year: int, settings: dict[str, float], ai_co
         cost_per_error=settings["cost_per_error"],
         operating_cost=settings["operating_cost"],
         ai_cost_per_order=ai_cost_per_order,
+        phone_orders_per_year=phone_orders_per_year,
+        minutes_ai_phone=settings["minutes_ai_phone"],
     )
 
 
-def calculation_steps(inputs: Inputs, result: Result) -> list[str]:
-    """Der Rechenweg in Worten – für die aufklappbare Erklärung."""
-    b, a, orders = result.before, result.after, inputs.orders_per_year
-    n = format_number(orders)
+def exact(value: float) -> str:
+    """Zwischenwert ohne Rundungsfehler im Rechenweg: 325.8 → '325,8', 65.16 → '65,16', 60.0 → '60'."""
+    return format_number(value, 2).rstrip("0").rstrip(",")
+
+
+def calculation_steps(inputs: Inputs, result: Result, ai_cost_measured: bool = True) -> list[str]:
+    """Der Rechenweg in Worten – mit genauen Zwischenwerten, damit jede Zeile nachrechenbar aufgeht."""
+    b, a = result.before, result.after
+    text, phone, rate = inputs.orders_per_year, inputs.phone_orders_per_year, format_eur(inputs.hourly_rate, 0)
+    all_orders = format_number(inputs.all_orders)
+    minutes_after = f"{format_number(text)} × {exact(inputs.minutes_ai)} min"
+    errors_after = f"{format_number(text)} × {exact(inputs.error_rate_ai * 100)} %"
+    if phone:  # Telefonaufträge mit eigenen Werten
+        minutes_after += f" + {format_number(phone)} Telefon × {exact(inputs.minutes_ai_phone)} min"
+        errors_after += f" + {format_number(phone)} Telefon × {exact(inputs.error_rate_manual * 100)} %"
+    source = "gemessen" if ai_cost_measured else "angenommen – keine Messung vorhanden"
     return [
-        f"**Arbeitszeit vorher:** {n} Aufträge × {format_number(inputs.minutes_manual, 1)} min = "
-        f"{format_number(b.hours)} h × {format_eur(inputs.hourly_rate, 0)}/h = {format_eur(b.labor_cost, 0)}",
-        f"**Arbeitszeit nachher:** {n} Aufträge × {format_number(inputs.minutes_ai, 1)} min = "
-        f"{format_number(a.hours)} h × {format_eur(inputs.hourly_rate, 0)}/h = {format_eur(a.labor_cost, 0)}",
-        f"**Fehler vorher:** {n} × {format_number(inputs.error_rate_manual * 100, 1)} % = "
-        f"{format_number(b.errors)} Fehler × {format_eur(inputs.cost_per_error, 0)} = {format_eur(b.error_cost, 0)}",
-        f"**Fehler nachher:** {n} × {format_number(inputs.error_rate_ai * 100, 1)} % = "
-        f"{format_number(a.errors)} Fehler × {format_eur(inputs.cost_per_error, 0)} = {format_eur(a.error_cost, 0)}",
-        f"**KI-Kosten:** {n} Aufträge × {format_eur(inputs.ai_cost_per_order, 4)} (gemessen) = "
+        f"**Arbeitszeit vorher:** {all_orders} Aufträge × {exact(inputs.minutes_manual)} min = "
+        f"{exact(b.hours)} h × {rate}/h = {format_eur(b.labor_cost, 0)}",
+        f"**Arbeitszeit nachher:** {minutes_after} = {exact(a.hours)} h × {rate}/h = {format_eur(a.labor_cost, 0)}",
+        f"**Fehler vorher:** {all_orders} × {exact(inputs.error_rate_manual * 100)} % = {exact(b.errors)} Fehler "
+        f"× {format_eur(inputs.cost_per_error, 0)} = {format_eur(b.error_cost, 0)}",
+        f"**Fehler nachher:** {errors_after} = {exact(a.errors)} Fehler × {format_eur(inputs.cost_per_error, 0)} "
+        f"= {format_eur(a.error_cost, 0)}",
+        f"**Vermiedene Fehler:** {exact(b.errors)} − {exact(a.errors)} = {exact(result.avoided_errors)}",
+        f"**KI-Kosten:** {all_orders} Aufträge × {format_eur(inputs.ai_cost_per_order, 4)} ({source}) = "
         f"{format_eur(a.ai_cost, 0)}",
         f"**Betrieb & Wartung:** {format_eur(a.operating_cost, 0)} pro Jahr",
         f"**Ersparnis:** {format_eur(b.total, 0)} vorher − {format_eur(a.total, 0)} nachher = "
@@ -224,10 +258,12 @@ class MeasuredAiCost:
 
 
 def measured_ai_cost(model: str, path: Path = EVALUATION_FILE) -> MeasuredAiCost | None:
-    """Letzter Evaluationslauf des Modells – None, wenn es (noch) keine Messung gibt."""
+    """Letzter gültiger Evaluationslauf des Modells – None, wenn es (noch) keine Messung gibt.
+    Läufe ohne Kosten (z. B. alle Aufrufe gescheitert) zählen nicht als Messung."""
     if not path.exists():
         return None
-    runs = [run for run in json.loads(path.read_text(encoding="utf-8")) if run["model"] == model]
+    runs = [run for run in json.loads(path.read_text(encoding="utf-8"))
+            if run["model"] == model and run["cost_per_message_usd"] > 0]
     if not runs:
         return None
     run = runs[-1]

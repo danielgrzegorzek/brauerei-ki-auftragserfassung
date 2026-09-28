@@ -1,6 +1,6 @@
 """Tests für Diagramme, die Werte selbst berechnen – hier der Kostenvergleich des Business Case."""
 
-from src.charts import PALETTES, cost_comparison_chart
+from src.charts import PALETTES, contrast_ratio, cost_comparison_chart, label_color
 
 
 def test_cost_comparison_stacks_segments_and_labels_totals():
@@ -15,3 +15,15 @@ def test_cost_comparison_stacks_segments_and_labels_totals():
 
 def test_every_mode_has_three_category_colors():
     assert all(len(palette["categories"]) == 3 for palette in PALETTES.values())
+
+
+def test_segment_labels_are_readable_on_every_category_color():
+    """Text im Segment braucht mindestens 4,5:1 Kontrast (WCAG AA für normalen Text)."""
+    for palette in PALETTES.values():
+        for fill in palette["categories"]:
+            assert contrast_ratio(label_color(fill), fill) >= 4.5
+
+
+def test_contrast_ratio_extremes():
+    assert round(contrast_ratio("#ffffff", "#000000"), 1) == 21.0
+    assert contrast_ratio("#777777", "#777777") == 1

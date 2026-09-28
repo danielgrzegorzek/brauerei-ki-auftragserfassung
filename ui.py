@@ -82,7 +82,7 @@ def raw_html(markup: str) -> None:
 
 def chart_legend(items: list[tuple[str, str]]) -> None:
     """Legende als HTML über einem Diagramm: [(Bezeichnung, Farbe), …] – bricht auf schmalen Bildschirmen um."""
-    entries = "".join(f'<span class="chart-legend-item"><span class="chart-legend-swatch" '
+    entries = "".join(f'<span class="chart-legend-item" role="listitem"><span class="chart-legend-swatch" '
                       f'style="background:{html.escape(color)}"></span>{html.escape(label)}</span>'
                       for label, color in items)
     raw_html(f'<div class="chart-legend" role="list">{entries}</div>')

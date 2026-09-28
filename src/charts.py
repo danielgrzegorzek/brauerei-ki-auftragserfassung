@@ -28,6 +28,24 @@ PALETTES = {
 }
 
 
+def relative_luminance(hex_color: str) -> float:
+    """Relative Helligkeit nach WCAG 2 (0 = schwarz, 1 = weiß)."""
+    channels = [int(hex_color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+    r, g, b = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast_ratio(first: str, second: str) -> float:
+    """Kontrastverhältnis nach WCAG, z. B. 4,5 = Mindestwert für normalen Text."""
+    lighter, darker = sorted((relative_luminance(first), relative_luminance(second)), reverse=True)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def label_color(fill: str) -> str:
+    """Weiß oder Schwarz – je nachdem, was auf der Füllfarbe besser lesbar ist."""
+    return max(("#ffffff", "#000000"), key=lambda text: contrast_ratio(text, fill))
+
+
 def month_label(month: pd.Timestamp) -> str:
     """Timestamp('2026-07-01') → 'Jul 26' (deutsche Monatsnamen)."""
     return f"{MONTH_NAMES[month.month - 1]} {month.year % 100:02d}"
@@ -153,7 +171,7 @@ def cost_comparison_chart(bars: list[str], segments: list[tuple[str, list[float]
             y=labels[::-1], x=values[::-1], name=name, orientation="h", customdata=bars[::-1],
             marker=dict(color=color, line=dict(color=colors["surface"], width=2)),  # 2-px-Lücke zwischen Segmenten
             text=[f"{format_number(value)} €" for value in values[::-1]],
-            textposition="inside", insidetextanchor="middle", textfont=dict(color="#ffffff"),
+            textposition="inside", insidetextanchor="middle", textfont=dict(color=label_color(color)),
             textangle=0,  # nie senkrecht – passt die Zahl nicht, wird sie ausgeblendet (Tooltip und Tabelle bleiben)
             hovertemplate=f"<b>%{{customdata}}</b><br>{name}: %{{x:,.0f}} €<extra></extra>",
         ))

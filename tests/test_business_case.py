@@ -36,6 +36,16 @@ def test_calculation_by_hand():
     assert result.saved_work_weeks == 1
 
 
+def test_phone_orders_are_calculated_cautiously():
+    """Telefon: eigene Minuten mit KI (4 statt 2) und keine geringere Fehlerquote."""
+    result = calculate(Inputs(**{**EXAMPLE.__dict__, "phone_orders_per_year": 300, "minutes_ai_phone": 4}))
+    assert result.before.hours == 90                  # 900 × 6 min
+    assert result.after.hours == 40                   # (600 × 2 + 300 × 4) min
+    assert result.before.errors == pytest.approx(18)  # 900 × 2 %
+    assert result.after.errors == pytest.approx(12)   # 600 × 1 % + 300 × 2 %
+    assert result.after.ai_cost == pytest.approx(9)   # alle 900 Aufträge gehen durch die KI
+
+
 def test_savings_can_be_negative_and_are_shown_honestly():
     """Dauert die Erfassung mit KI länger, wird die Ersparnis negativ – nichts wird schöngerechnet."""
     worse = Inputs(**{**EXAMPLE.__dict__, "minutes_ai": 8})
@@ -64,15 +74,26 @@ def test_settings_in_percent_are_converted():
 
 def test_calculation_steps_show_the_way_with_german_numbers():
     steps = calculation_steps(EXAMPLE, calculate(EXAMPLE))
-    assert steps[0] == "**Arbeitszeit vorher:** 600 Aufträge × 6,0 min = 60 h × 40 €/h = 2.400 €"
+    assert steps[0] == "**Arbeitszeit vorher:** 600 Aufträge × 6 min = 60 h × 40 €/h = 2.400 €"
     assert "894 € pro Jahr" in steps[-1]
+    assert "(gemessen)" in steps[5]
+    assert "angenommen" in calculation_steps(EXAMPLE, calculate(EXAMPLE), ai_cost_measured=False)[5]
+
+
+def test_calculation_steps_multiply_out_without_rounding_errors():
+    """Jede Zeile muss beim Nachrechnen aufgehen – keine gerundeten Zwischenwerte."""
+    inputs = inputs_from_settings(3258, DEFAULTS, 0.0085)
+    steps = calculation_steps(inputs, calculate(inputs))
+    assert "= 325,8 h × 40 €/h = 13.032 €" in steps[0]    # 325,8 × 40 = 13.032
+    assert "= 65,16 Fehler × 50 € = 3.258 €" in steps[2]  # 65,16 × 50 = 3.258
+    assert steps[4] == "**Vermiedene Fehler:** 65,16 − 32,58 = 32,58"
 
 
 def test_every_assumption_is_cautious_and_explained():
     for assumption in ASSUMPTIONS:
         assert assumption.minimum <= assumption.default <= assumption.maximum
         assert len(assumption.reason) > 30  # mindestens ein ganzer Satz Begründung
-    assert DEFAULTS["minutes_ai"] < DEFAULTS["minutes_manual"]
+    assert DEFAULTS["minutes_ai"] < DEFAULTS["minutes_ai_phone"] < DEFAULTS["minutes_manual"]
     assert DEFAULTS["error_rate_ai"] < DEFAULTS["error_rate_manual"]
 
 
@@ -126,6 +147,9 @@ def test_measured_cost_uses_the_latest_run_of_the_model(tmp_path):
     assert measured.usd_per_order == 0.009 and measured.measured_on == date(2026, 10, 5)
     assert "7 von 7" in measured.source_text
     assert measured_ai_cost("unbekannt", path) is None
+    # Ein Lauf ohne Kosten (alle Aufrufe gescheitert) ist keine Messung
+    path.write_text(json.dumps([run, {**run, "date": "2026-10-06", "cost_per_message_usd": 0.0, "hits": 0}]))
+    assert measured_ai_cost("claude-sonnet-5", path).measured_on == date(2026, 9, 28)
     assert measured_ai_cost("claude-sonnet-5", tmp_path / "fehlt.json") is None
 
 
