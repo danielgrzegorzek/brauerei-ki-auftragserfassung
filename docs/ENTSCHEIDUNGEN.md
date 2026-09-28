@@ -17,6 +17,7 @@ pages/                 Oberfläche (Streamlit) – nur Anzeige und Eingaben
   dashboard.py         Vertriebs-Dashboard
   order_entry.py       KI-Auftragserfassung mit Bestätigung durch den Menschen
   business_case.py     Business Case: vorher/nachher mit Schiebereglern
+  process.py           Prozess & SAP-Übergabe: Ist/Soll als Schwimmbahnen, Kundenauftrag für SAP S/4HANA
 src/                   Logik ohne Streamlit – vollständig testbar
   database.py          Schema, Verbindung, Schemaversion
   master_data.py       Stammdaten: Artikel, Leergut, Preise, Kunden
@@ -33,7 +34,9 @@ src/                   Logik ohne Streamlit – vollständig testbar
   message_safety.py    erkennt Anweisungen an das System in Nachrichten (Prompt-Injection)
   chat.py              Antworten der Brauerei und Schnellantworten – aus dem Prüfergebnis
   business_case.py     Rechnung vorher/nachher: Daten, gemessene KI-Kosten, Annahmen
-  tour.py              Inhalt der geführten Tour (fünf Schritte, Zahlen aus den Daten)
+  tour.py              Inhalt der geführten Tour (sechs Schritte, Zahlen aus den Daten)
+  process.py           Ist- und Soll-Prozess als Daten, Kennzahlen (manuelle Schritte, Minuten, Medienbrüche)
+  sap_mapping.py       Übergabe an SAP S/4HANA: Kundenauftrag (OData), Vollständigkeit, Feld-Mapping
   order_capture.py     Abgleich → Prüfung → Speichern
 tests/                 automatische Tests (pytest)
 tools/                 Evaluation der KI-Auswertung (docs/evaluation.json → docs/EVALUATION.md)
@@ -216,9 +219,9 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
-| **Geführte Tour** in fünf Schritten (Problem → Live-KI → Prüfung und Mensch → Business Case → Dashboard und Fazit), je ein bis zwei Sätze | Wer die App ein, zwei Minuten ansieht – oft auf dem Handy –, soll ohne Suchen Problem, Lösung, Nutzen und Fazit sehen. | Nur ein Video: nicht zum Ausprobieren. |
+| **Geführte Tour** in sechs Schritten (Problem → Live-KI → Prüfung und Mensch → SAP-Übergabe → Business Case → Dashboard und Fazit), je ein bis zwei Sätze | Wer die App ein, zwei Minuten ansieht – oft auf dem Handy –, soll ohne Suchen Problem, Lösung, Nutzen und Fazit sehen. | Nur ein Video: nicht zum Ausprobieren. |
 | Tour als **Band oben auf der Seite**, „Weiter“ wechselt auf die passende Seite (`st.switch_page`) | Die Seite bleibt sichtbar und bedienbar – man probiert direkt aus, was die Tour erklärt. | Dialogfenster: verdeckt genau das, was erklärt wird. |
-| Tour-Inhalt in **`src/tour.py`**, Zahlen aus den Daten; das Band zeichnet `app.py` vor jeder Seite | Keine fest eingetippten Zahlen; testbar (fünf Schritte, ein bis zwei Sätze, Seiten existieren); auf allen Seiten gleich. | – |
+| Tour-Inhalt in **`src/tour.py`**, Zahlen aus den Daten; das Band zeichnet `app.py` vor jeder Seite | Keine fest eingetippten Zahlen; testbar (sechs Schritte, ein bis zwei Sätze, Seiten existieren); auf allen Seiten gleich. | – |
 | Link **„Zu diesem Schritt springen“**, wenn man während der Tour selbst navigiert | Wer abschweift, findet zurück, ohne neu zu starten. | – |
 | Dank-Hinweis nach dem Abschluss über den Session State | `st.rerun()` verwirft einen vorher gesetzten Hinweis – im Browser aufgefallen. | – |
 | **Startseite:** ein Satz, worum es geht; Knopf „In 60 Sekunden durch die App“ und „Direkt ausprobieren“; drei **Highlights mit Kennzahl** (7 von 7, Stunden pro Jahr, analysierte Aufträge) | In Sekunden verständlich: Problem, Lösung, Beleg. Die Kacheln führen zu Live-Chat, Business Case und Dashboard. | – |
@@ -254,7 +257,31 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | Zwischenspeicher (`st.cache_data`) enthalten **nur einfache Daten**, keine Objekte eigener Klassen | Nach einem Code-Update lädt Streamlit Cloud geänderte Module neu; zwischengespeicherte Objekte der alten Klasse lassen sich dann nicht mehr speichern – in der Live-App bei der Tour aufgetreten. | – |
 | **Ein API-Client für alle Besucher** (`st.cache_resource`) | Verbindungen werden wiederverwendet; der Schlüssel liegt nur im Serverprozess. | – |
 
-## 12. Bewusste Grenzen
+## 12. Prozess und SAP-Übergabe
+
+**SAP-Begriffe kurz erklärt:** Ein **Kundenauftrag** ist in SAP der Beleg für eine Bestellung. Die
+**Verkaufsorganisation** ist die Einheit, die verkauft; der **Vertriebsweg** der Weg zum Kunden (z. B.
+Gastronomie, Großhandel); die **Sparte** der Produktbereich. Alle drei zusammen bilden den
+**Vertriebsbereich**, an dem u. a. Preise und Zuständigkeiten hängen. Der Kunde ist in S/4HANA ein
+**Geschäftspartner**; im Auftrag ist er der **Auftraggeber**.
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| Übergabe als **Kundenauftrag über die Standard-API `API_SALES_ORDER_SRV`** (OData, JSON) – Kopf und Positionen in einem Aufruf („Deep Insert“) | Von SAP veröffentlichte, stabile Schnittstelle; kein Eigenbau im SAP-Kern („Clean Core“); JSON passt zur App. | **IDoc ORDERS05:** klassischer Weg für elektronischen Datenaustausch, meist über eine Middleware – bewährt, aber aufwendiger einzurichten. |
+| **Keine Preise und kein Leergut** in der Übergabe | SAP ermittelt Preise über die **Konditionstechnik** und Leergut über **Leergutstücklisten** selbst; eine zweite Preislogik würde auseinanderlaufen. Die App zeigt den erwarteten Nettowert nur zur Kontrolle. | Preise mitschicken (manuelle Konditionen): nur bei Sonderpreisen sinnvoll. |
+| **Vertriebsweg aus der Kundengruppe** (10 Gastronomie, 20 Getränkegroßhandel, 30 Lebensmittelhandel, 40 Veranstalter); Verkaufsorganisation 1010, Sparte 00 | Die Kundengruppen der App passen eins zu eins; ein Test prüft, dass jede Gruppe einen eigenen Vertriebsweg hat. | Alle Nummern sind Beispielwerte; im Echtbetrieb stehen sie im Kundenstamm in SAP. |
+| **Kundennummer → Geschäftspartner** über eine feste Regel (K1001 → 10001001) | Macht das nötige Schlüsselmapping sichtbar. Den Warenempfänger leitet SAP aus dem Geschäftspartner ab. | Im Echtbetrieb eine Zuordnungstabelle oder die Nummer direkt aus SAP. |
+| **Bestellnummer des Kunden** = „App-Auftrag <Nr.> · <Kanal>“, höchstens 35 Zeichen | So findet man den Auftrag in SAP wieder und sieht, woher er kam. | – |
+| **Vollständigkeitsprüfung** vor der Übergabe | Angelehnt an SAPs Unvollständigkeitsprotokoll: Fehlt ein Pflichtfeld, gibt es keinen Download. | – |
+| **Simulation:** Die Seite zeigt Feld-Mapping, JSON und HTTP-Aufruf und bietet das JSON zum Herunterladen an | Kein SAP-System verfügbar; so ist trotzdem genau prüfbar, was übergeben würde. | Echte Anbindung: Kommunikationsszenario mit technischem Benutzer, CSRF-Token, Antwort „201 Created“ mit Auftragsnummer. |
+| **Ist- und Soll-Prozess als Daten** (`src/process.py`), Kennzahlen daraus berechnet | Ein Test koppelt die Minuten an den Business Case (6 bzw. 2) – Prozessseite, Startseite und Tour zeigen dieselben Zahlen. | Prozessbild als Grafik: veraltet unbemerkt. |
+| Soll-Prozess und Kennzahlen gelten **für WhatsApp und E-Mail**; die Seite sagt dazu, dass Anrufe weiterhin mitgeschrieben werden (4 statt 6 min) | Wie im Business Case, wo Telefon nur zuschaltbar ist. Die Kanäle kommen aus `DEFAULT_CHANNELS`, ein Test prüft es. | Anrufe per Spracherkennung: eigener Baustein, hier nicht umgesetzt. |
+| **Schwimmbahnen** (eine Bahn je Rolle) in HTML/CSS, unter 1100 px eine nummerierte Liste mit Rollen-Etikett; weiche Trennstriche in langen Wörtern | Bekannte Darstellung aus BPMN; ohne zusätzliche Bibliothek, hell und dunkel; die Art des Schritts steht als Text und als Farbe. Kein seitliches Scrollen, keine mitten im Wort zerschnittenen Begriffe. | Diagramm-Bibliothek (z. B. Mermaid): in Streamlit nicht eingebaut. |
+| Nach dem Speichern ein Link **„So sähe die Übergabe an SAP aus“**; die Seite wählt diesen Auftrag vor | Der Weg von der Nachricht bis ins ERP ist mit einem Klick nachvollziehbar. | – |
+| Feld-Mapping als **statische Tabelle** (`st.table`) | Lange Werte werden umgebrochen statt abgeschnitten – im Browser aufgefallen. | `st.dataframe`: sortierbar, kürzt aber lange Texte. |
+| **Code-Review mit Gegenprüfung** (SAP-Fachlichkeit, Oberfläche, Tests) | Gefunden und behoben: Der Soll-Prozess nannte auch Anrufe (Widerspruch zum Business Case), die Demo bestätigt früher als der beschriebene Soll-Prozess (jetzt offen benannt), englische Kürzel „OR“/„PC“ ohne Sprachangabe im Aufruf, fehlende Cookies beim CSRF-Ablauf, „1 Positionen“, Pfeil nach oben bei „statt Stunden“, seitliches Scrollen zwischen 641 und 1100 px. Zwei Funde wurden bei der Gegenprüfung verworfen. | – |
+
+## 13. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).
@@ -271,6 +298,12 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
   an, wenn sie einen offenen Auftrag ersetzt); Rückfragen werden über Knöpfe beantwortet.
 - **Erkennung von Angriffsformulierungen über eine Wortliste** – findet typische Muster, nicht jede
   Umschreibung. Sicher ist die App durch den Aufbau, nicht durch die Liste.
+- **SAP-Übergabe nur simuliert:** Organisationsdaten, Geschäftspartner- und Materialnummern sind
+  Beispielwerte; ein echtes System verlangt zusätzlich Einrichtung (Kommunikationsszenario, Stammdaten)
+  und beantwortet Fehler, die hier nicht vorkommen (z. B. gesperrter Kunde).
+- **Auftragsbestätigung in der Demo vereinfacht:** Der Chat bestätigt schon beim Speichern, mit der
+  Nummer der App. Im Soll-Prozess käme die verbindliche Bestätigung erst, nachdem SAP den Auftrag
+  angelegt und geprüft hat (Verfügbarkeit, Kreditlimit) – mit der SAP-Auftragsnummer.
 - **KI-Qualität an sieben Beispielen gemessen** – aussagekräftig für die Demo, nicht für den
   Echtbetrieb. Sprachmodelle antworten nicht immer identisch; deshalb bestätigt immer ein Mensch.
 - **Keine Benutzerverwaltung, keine Kreditlimitprüfung, keine Lieferabwicklung** – im

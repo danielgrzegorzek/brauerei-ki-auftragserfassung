@@ -20,6 +20,7 @@ Auf der Startseite führt **„In 60 Sekunden durch die App“** durch alles Wic
 | **7 von 7** | Beispielaufträge von der KI richtig erkannt – inklusive Dialekt und Tippfehler; der Angriffsversuch wurde zusätzlich blockiert ([Evaluation](docs/EVALUATION.md)) |
 | **217 Stunden · rund 8.300 €** | Ersparnis pro Jahr, vorsichtig gerechnet – nach Abzug von KI-Kosten sowie Betrieb und Wartung |
 | **unter 1 Cent** | KI-Kosten je Auftrag, gemessen |
+| **6 → 1** | manuelle Schritte je Auftrag per WhatsApp oder E-Mail; der bestätigte Auftrag geht als Kundenauftrag an SAP S/4HANA (Standard-API, simuliert) |
 | **10.066 Aufträge** | zwei Jahre simulierte Vertriebsdaten mit Saison, Leergut und Preiserhöhung |
 
 ---
@@ -37,7 +38,7 @@ das kostet Zeit und ist fehleranfällig, besonders in der Hochsaison mit Biergä
 ## So funktioniert es
 
 ```
-Nachricht ─► KI versteht (festes Format) ─► Code ordnet zu und prüft ─► Mensch bestätigt ─► Auftrag
+Nachricht ─► KI versteht (festes Format) ─► Code ordnet zu und prüft ─► Mensch bestätigt ─► Kundenauftrag in SAP
 ```
 
 **Grundsatz: Die KI versteht, der Code entscheidet, der Mensch bestätigt.**
@@ -50,6 +51,7 @@ Nachricht ─► KI versteht (festes Format) ─► Code ordnet zu und prüft �
   kommt erst, wenn ein Mensch auf „Auftrag bestätigen & speichern“ klickt.
 - **Posteingang** (zweiter Reiter): sieben Beispielnachrichten aus WhatsApp, E-Mail und Telefon –
   vom sauberen Großhändler-Auftrag bis zum Neukunden mit Artikel, den es nicht gibt.
+- **Prozess & SAP** zeigt den Ablauf heute und mit KI und wie der bestätigte Auftrag an SAP S/4HANA geht.
 - **Business Case** und **Vertriebs-Dashboard** zeigen, was das im Jahr bringt und was die Daten über das
   Geschäft verraten.
 
@@ -106,11 +108,29 @@ Die Seite **Business Case** rechnet vorher (Abtippen) gegen nachher (KI-gestütz
   (28 €) sowie Betrieb und Wartung (2.000 €). Der Rechenweg ist aufklappbar und geht beim Nachrechnen auf;
   mit ungünstigen Annahmen zeigt der Rechner ehrlich einen Verlust.
 
+## Prozess und Übergabe an SAP S/4HANA
+
+Die Seite **Prozess & SAP** zeigt den Ablauf als Schwimmbahnen: Heute sind es 6 manuelle Schritte mit
+2 Medienbrüchen (Abtippen von Handy und Postfach in SAP), mit KI bleibt für Bestellungen per WhatsApp und
+E-Mail 1 Prüfschritt (Anrufe schreibt weiterhin jemand mit). Darunter steht, wie der bestätigte Auftrag ins
+ERP kommt:
+
+- **Schnittstelle:** Kundenauftrag über die Standard-OData-API `API_SALES_ORDER_SRV` von SAP S/4HANA –
+  Kopf und Positionen in einem Aufruf (JSON).
+- **Feld-Mapping:** Kundengruppe → Vertriebsweg, Kundennummer → Geschäftspartner (Auftraggeber),
+  Artikelnummer → Materialnummer, Liefertermin → Wunschlieferdatum; dazu Verkaufsbelegart,
+  Verkaufsorganisation und Sparte.
+- **Bewusst nicht übergeben:** Preise und Leergut – die ermittelt SAP selbst (Konditionstechnik,
+  Leergutstückliste).
+- **Vollständigkeitsprüfung**, danach JSON und HTTP-Aufruf zum Ansehen und Herunterladen. Nach dem
+  Speichern eines Auftrags führt ein Link direkt zu seiner Übergabe.
+- **Simulation:** Es ist kein SAP-System angebunden; alle Nummern sind Beispielwerte.
+
 ## Architektur
 
 ```
 app.py         Rahmen: Datenbank sicherstellen, Gestaltung, Navigation, geführte Tour
-pages/         Seiten: Start, Dashboard, KI-Auftragserfassung, Business Case (nur Anzeige und Eingaben)
+pages/         Seiten: Start, Dashboard, KI-Auftragserfassung, Prozess & SAP, Business Case (nur Anzeige und Eingaben)
 ui*.py         Oberflächen-Bausteine: Fiori-Stil (ui), Auftragserfassung (ui_capture), Chat (ui_chat), Tour (ui_tour)
 src/           Logik ohne Oberfläche – vollständig testbar:
   extraction.py     KI-Anbindung (Demo und Claude, Prompt, Antwortschema, Modelle)
@@ -118,9 +138,11 @@ src/           Logik ohne Oberfläche – vollständig testbar:
   chat.py           Antworten der Brauerei und Schnellantworten
   message_safety.py Erkennung von Anweisungen an das System
   business_case.py  Rechnung vorher/nachher
+  process.py        Ist- und Soll-Prozess mit Kennzahlen
+  sap_mapping.py    Übergabe an SAP S/4HANA: Kundenauftrag, Feld-Mapping, Vollständigkeit
   analytics.py, charts.py, database.py, Datengenerator, Plausibilitäts-Check …
 tools/         Evaluation der KI (→ docs/evaluation.json, docs/EVALUATION.md)
-tests/         pytest – 211 Tests, KI-Aufrufe nur mit Schein-Client
+tests/         pytest – 232 Tests, KI-Aufrufe nur mit Schein-Client
 docs/          Designentscheidungen und Evaluationsbericht
 ```
 
@@ -129,7 +151,8 @@ docs/          Designentscheidungen und Evaluationsbericht
 | Oberfläche | Streamlit (mehrseitig), Plotly – angelehnt an die SAP-Fiori-Designrichtlinien, eigene SVG-Illustrationen |
 | Daten | SQLite (Schema mit Schlüsseln und Prüfregeln), pandas |
 | KI | Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter |
-| Qualität | 211 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
+| ERP | SAP S/4HANA: Kundenauftrag für die OData-API `API_SALES_ORDER_SRV` (Simulation) |
+| Qualität | 232 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
 | Sprache | Python 3.13 |
 
 Jede Entscheidung mit Begründung und verworfener Alternative: **[docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md)**.
@@ -171,7 +194,7 @@ vollständig im Demo-Modus. Evaluation: `python -m tools.evaluate_extraction` (k
 - [x] Live-Chat im Messenger-Stil, sichtbarer Prompt-Injection-Test, Evaluation mit Modellvergleich
 - [x] Business Case mit Daten aus der Datenbank, gemessenen KI-Kosten und Schiebereglern
 - [x] Geführte Tour „In 60 Sekunden durch die App“
-- [ ] Prozessseite: Ist- vs. Soll-Prozess und Übergabe an SAP S/4HANA
+- [x] Prozessseite: Ist- vs. Soll-Prozess und Übergabe an SAP S/4HANA (simuliert)
 - [ ] Regelbasierter Parser als Vergleich „Regeln vs. KI“
 
 ## Hinweise

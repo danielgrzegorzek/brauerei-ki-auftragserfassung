@@ -82,7 +82,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `ui_chat.py` – Messenger-Ansicht (`chat_view`): Callbacks `use_example`, `send`, `choose`, `order_saved`;
   `process` (Live-KI, sonst Demo-Rückfall); Chat-HTML immer über `html.escape`
 - `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Illustrationen, Piktogramme
-- `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`, `business_case.py`
+- `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`, `business_case.py`,
+  `process.py` (Schwimmbahnen Ist/Soll + SAP-Übergabe; Vorauswahl über `st.session_state.sap_order_id`,
+  das beide Speicher-Callbacks setzen)
   (Reiter „Live-Chat“ = `ui_chat.chat_view`, Reiter „Posteingang“ = 7 Beispiele)
 - `src/` – Logik ohne Streamlit:
   - Daten: `database.py` (Schema, `SCHEMA_VERSION`), `master_data.py`, `order_generator.py`,
@@ -94,7 +96,11 @@ und Vertriebsanalyse für eine fiktive Brauerei.
     `OrderExtractor`; `DemoExtractor` (auch `CHAT_EXAMPLES`), `ClaudeExtractor`; `SYSTEM_PROMPT`,
     `calendar_hint`, Antwortschema `OrderSchema`), `ai_usage.py` (Kostenschutz: 1.000 Zeichen,
     5 Aufrufe je Besuch, 30 je Tag; Tabelle `ai_usage`)
-  - Tour: `tour.py` (`tour_steps` – fünf Schritte mit Seitenschlüssel aus `app.py`, Zahlen aus den Daten)
+  - Tour: `tour.py` (`tour_steps` – sechs Schritte mit Seitenschlüssel aus `app.py`, Zahlen aus den Daten)
+  - Prozess & SAP: `process.py` (`AS_IS`/`TO_BE` als `ProcessStep`, `figures` – Minuten = Business-Case-
+    Annahmen, per Test gekoppelt), `sap_mapping.py` (`OrderForSap`, `sales_order_payload` für OData
+    `API_SALES_ORDER_SRV`, `missing_fields`, `field_mapping`, `http_request`; ohne Preise und Leergut –
+    die ermittelt SAP selbst; nur Simulation, nichts wird gesendet)
   - Business Case: `business_case.py` (`ASSUMPTIONS` mit Standardwert + Begründung, `calculate`,
     `default_result` = Standardannahmen, auch für Startseite und Tour,
     `calculation_steps`, Auftragsmenge `orders_last_12_months`, KI-Kosten `measured_ai_cost` aus
@@ -128,6 +134,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   Zähler in `ai_usage` vorher/nachher vergleichen.
 - `AppTest` übernimmt einen Seitenwechsel per `st.switch_page` nicht in den nächsten `run()` (die Tour
   scheint dann auf die Startseite zu springen) – Seitenwechsel im Browser prüfen.
+- Direkt nach dem Serverstart zuerst die Startseite laden: Eine Unterseite per URL (z. B. `/process`) kam
+  beim allerersten Aufruf einmal ohne Rahmen aus `app.py` (Streamlit-Seitenliste noch nicht registriert).
 - **`st.cache_data` nur einfache Daten zurückgeben** (Zahlen, Texte, Tupel, Dicts, DataFrames) – keine
   Objekte eigener Klassen: Nach einem Code-Update lädt die Cloud geänderte Module neu, und Pickle lehnt
   Objekte der alten Klasse ab (`UnserializableReturnValueError`).
@@ -175,7 +183,8 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,
   Modellvergleich (Sonnet 5 bleibt) · Teil 2 [x] Business Case · Teil 3 [x] geführte Tour, Startseite, README
-- [ ] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess, Übergabe an SAP S/4HANA (JSON + Feld-Mapping)
+- [x] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess als Schwimmbahnen, Übergabe an SAP S/4HANA als
+  Kundenauftrag für die OData-API (JSON + Feld-Mapping, Simulation), 6. Tour-Schritt
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video
 
