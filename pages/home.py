@@ -61,7 +61,7 @@ with st.container(key="card-hero"):
 # ---------- Drei Highlights mit je einer Kennzahl ----------
 highlights = st.columns(3)
 if evaluation:
-    highlights[0].metric("Aufträge in der KI-Evaluation richtig erkannt", f"{evaluation.hits} von {evaluation.total}",
+    highlights[0].metric("Richtig erkannt (KI-Evaluation)", f"{evaluation.hits} von {evaluation.total}",
                          border=True, help=f"Live gemessen mit {evaluation.model_name} – inklusive Dialekt und "
                                            "Tippfehler; ein Angriffsversuch wurde zusätzlich blockiert.")
 highlights[1].metric("Stunden Tipparbeit gespart pro Jahr", format_number(overview["saved_hours"]), border=True,
