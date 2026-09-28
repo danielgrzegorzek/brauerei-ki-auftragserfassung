@@ -10,6 +10,7 @@ app.py                 Rahmen: Datenbank sicherstellen, Gestaltung laden, Seiten
 ui.py                  Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Kacheln, Illustrationen)
 ui_capture.py          Bausteine der Auftragserfassung: Auftragsvorschlag, „Auftrag entsteht“, Kontingent
 ui_chat.py             Messenger-Ansicht: Handy im Chat-Stil, Beispielvorschläge, Live-KI mit Demo-Rückfall
+ui_tour.py             geführte Tour: Band oben auf jeder Seite, Seitenwechsel
 assets/                Logo, SVG-Illustrationen, Stylesheet
 pages/                 Oberfläche (Streamlit) – nur Anzeige und Eingaben
   home.py              Startseite mit Datenbasis und Plausibilitäts-Check
@@ -32,6 +33,7 @@ src/                   Logik ohne Streamlit – vollständig testbar
   message_safety.py    erkennt Anweisungen an das System in Nachrichten (Prompt-Injection)
   chat.py              Antworten der Brauerei und Schnellantworten – aus dem Prüfergebnis
   business_case.py     Rechnung vorher/nachher: Daten, gemessene KI-Kosten, Annahmen
+  tour.py              Inhalt der geführten Tour (fünf Schritte, Zahlen aus den Daten)
   order_capture.py     Abgleich → Prüfung → Speichern
 tests/                 automatische Tests (pytest)
 tools/                 Evaluation der KI-Auswertung (docs/evaluation.json → docs/EVALUATION.md)
@@ -210,7 +212,20 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | **Code-Review mit Gegenprüfung** (Rechnung, Streamlit, Diagramm/Barrierefreiheit), jeder Fund gegengeprüft | Unter anderem gefunden: Telefon-Widerspruch, Rechenweg ging nicht auf, zu wenig Kontrast der Zahlen im Diagramm (jetzt schwarz/weiß nach WCAG ≥ 4,5:1). | – |
 | Reglerwerte im **deutschen Zahlenformat** (`select_slider` mit Formatfunktion) | Einheitlich mit der übrigen App. | `st.slider`: nur englisches Zahlenformat. |
 
-## 9. Oberfläche im Fiori-Stil
+## 9. Geführte Tour, Startseite und README
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| **Geführte Tour** in fünf Schritten (Problem → Live-KI → Prüfung und Mensch → Business Case → Dashboard und Fazit), je ein bis zwei Sätze | Wer die App ein, zwei Minuten ansieht – oft auf dem Handy –, soll ohne Suchen Problem, Lösung, Nutzen und Fazit sehen. | Nur ein Video: nicht zum Ausprobieren. |
+| Tour als **Band oben auf der Seite**, „Weiter“ wechselt auf die passende Seite (`st.switch_page`) | Die Seite bleibt sichtbar und bedienbar – man probiert direkt aus, was die Tour erklärt. | Dialogfenster: verdeckt genau das, was erklärt wird. |
+| Tour-Inhalt in **`src/tour.py`**, Zahlen aus den Daten; das Band zeichnet `app.py` vor jeder Seite | Keine fest eingetippten Zahlen; testbar (fünf Schritte, ein bis zwei Sätze, Seiten existieren); auf allen Seiten gleich. | – |
+| Link **„Zu diesem Schritt springen“**, wenn man während der Tour selbst navigiert | Wer abschweift, findet zurück, ohne neu zu starten. | – |
+| Dank-Hinweis nach dem Abschluss über den Session State | `st.rerun()` verwirft einen vorher gesetzten Hinweis – im Browser aufgefallen. | – |
+| **Startseite:** ein Satz, worum es geht; Knopf „In 60 Sekunden durch die App“ und „Direkt ausprobieren“; drei **Highlights mit Kennzahl** (7 von 7, Stunden pro Jahr, analysierte Aufträge) | In Sekunden verständlich: Problem, Lösung, Beleg. Die Kacheln führen zu Live-Chat, Business Case und Dashboard. | – |
+| Highlights aus **denselben Funktionen** wie Evaluation und Business Case (`measured_ai_cost`, `default_result`) | Startseite, Tour und Detailseite zeigen immer dieselben Zahlen. | Zahlen im Text pflegen: veralten unbemerkt. |
+| **README:** oben ein Satz Problem, ein Satz Lösung, Live-Link, Platzhalter für Animation und Video; danach KI-Einsatz, Sicherheit, Evaluation, Business Case, Architektur, Installation | Leser entscheiden in Sekunden, ob sie weiterlesen; Fachleute finden die Details darunter. | – |
+
+## 10. Oberfläche im Fiori-Stil
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
@@ -226,7 +241,7 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | Heatmap **Blau ↔ Orange** | Rot ist bei Fiori für Fehler reserviert; ein Sommerhoch ist nichts Schlechtes. | Blau ↔ Rot. |
 | Kennzahlen unter 1100 px Breite kleiner (Media Query) | Fünf Kennzahlen passen auch auf kleine Laptops. | – |
 
-## 10. Betrieb
+## 11. Betrieb
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
@@ -236,7 +251,7 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | **API-Schlüssel nur in den Secrets** (lokal `.streamlit/secrets.toml` in der `.gitignore`, in der Cloud die Secrets-Verwaltung) | Nie im Code oder in Git. Fehlt der Schlüssel, läuft die App vollständig im Demo-Modus. | – |
 | **Ein API-Client für alle Besucher** (`st.cache_resource`) | Verbindungen werden wiederverwendet; der Schlüssel liegt nur im Serverprozess. | – |
 
-## 11. Bewusste Grenzen
+## 12. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).
@@ -245,6 +260,8 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 - **Kostenschutz ohne Anmeldung:** Die Grenze je Besuch lässt sich durch Neuladen umgehen, und der
   Tageszähler liegt in derselben flüchtigen Datenbank. Die verlässliche Obergrenze ist deshalb das
   Ausgabenlimit in der Anthropic Console.
+- **Tour ohne Hervorhebung einzelner Elemente:** Streamlit bietet keine stabile Schnittstelle, um einzelne
+  Knöpfe anzustrahlen – die Tour beschreibt deshalb in Worten, wohin man klicken soll.
 - **Business Case:** Minuten je Auftrag, Stundensatz und Fehlerquoten sind Annahmen, keine Messungen im
   Betrieb; die Auftragsdaten sind simuliert. Gemessen sind nur die KI-Kosten.
 - **Chat ohne Gesprächsgedächtnis:** Jede frei getippte Nachricht ist eine neue Bestellung (der Chat zeigt

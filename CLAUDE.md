@@ -77,6 +77,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `ui_capture.py` – Bausteine der Auftragserfassung für beide Reiter: `show_proposal` (Formular, Prüfung,
   Speichern mit `on_saved`-Callback), `order_steps`/`show_steps` („Auftrag entsteht“), `new_capture`,
   Schlüssel/Client/Kontingent (`api_key`, `claude_client`, `live_calls_left`, `register_live_call`)
+- `ui_tour.py` – geführte Tour: `show(page, pages)` zeichnet in `app.py` vor jeder Seite das Tour-Band
+  (Zurück/Weiter/Beenden, `st.switch_page`); `start()` am Knopf der Startseite. Inhalt: `src/tour.py`
 - `ui_chat.py` – Messenger-Ansicht (`chat_view`): Callbacks `use_example`, `send`, `choose`, `order_saved`;
   `process` (Live-KI, sonst Demo-Rückfall); Chat-HTML immer über `html.escape`
 - `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Illustrationen, Piktogramme
@@ -92,7 +94,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
     `OrderExtractor`; `DemoExtractor` (auch `CHAT_EXAMPLES`), `ClaudeExtractor`; `SYSTEM_PROMPT`,
     `calendar_hint`, Antwortschema `OrderSchema`), `ai_usage.py` (Kostenschutz: 1.000 Zeichen,
     5 Aufrufe je Besuch, 30 je Tag; Tabelle `ai_usage`)
+  - Tour: `tour.py` (`tour_steps` – fünf Schritte mit Seitenschlüssel aus `app.py`, Zahlen aus den Daten)
   - Business Case: `business_case.py` (`ASSUMPTIONS` mit Standardwert + Begründung, `calculate`,
+    `default_result` = Standardannahmen, auch für Startseite und Tour,
     `calculation_steps`, Auftragsmenge `orders_last_12_months`, KI-Kosten `measured_ai_cost` aus
     `docs/evaluation.json`); Diagramm `charts.cost_comparison_chart` + HTML-Legende `ui.chart_legend`
   - Chat & Sicherheit: `chat.py` (Antwort der Brauerei aus dem Prüfergebnis; immer nur EINE Rückfrage,
@@ -165,7 +169,7 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,
-  Modellvergleich (Sonnet 5 bleibt) · Teil 2 [x] Business Case · Teil 3 [ ] geführte Tour, README, Video
+  Modellvergleich (Sonnet 5 bleibt) · Teil 2 [x] Business Case · Teil 3 [x] geführte Tour, Startseite, README, Video-Drehbuch
 - [ ] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess, Übergabe an SAP S/4HANA (JSON + Feld-Mapping)
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video
