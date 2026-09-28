@@ -80,6 +80,14 @@ def raw_html(markup: str) -> None:
     st.markdown(markup, unsafe_allow_html=True)
 
 
+def chart_legend(items: list[tuple[str, str]]) -> None:
+    """Legende als HTML über einem Diagramm: [(Bezeichnung, Farbe), …] – bricht auf schmalen Bildschirmen um."""
+    entries = "".join(f'<span class="chart-legend-item"><span class="chart-legend-swatch" '
+                      f'style="background:{html.escape(color)}"></span>{html.escape(label)}</span>'
+                      for label, color in items)
+    raw_html(f'<div class="chart-legend" role="list">{entries}</div>')
+
+
 def apply_style() -> None:
     """Lädt das Stylesheet mit den Farben des aktuellen Modus und setzt das Logo in die Kopfleiste."""
     css = (ASSETS / "style.css").read_text(encoding="utf-8")

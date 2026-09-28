@@ -133,7 +133,7 @@ with right, st.container(key="card-bc-comparison"):
     share = result.after.total / result.before.total * 100 if result.before.total else 0
     st.caption(f"Nachher fallen {format_number(share)} % der bisherigen Kosten an. Die KI-Aufrufe selbst "
                f"kosten nur {format_eur(result.after.ai_cost, 0)} im Jahr – Arbeitszeit ist der große Hebel.")
-    bars = ["Vorher (manuell)", "Nachher (mit KI)"]
+    bars = ["Vorher", "Mit KI"]
     segments = [
         ("Arbeitszeit", [result.before.labor_cost, result.after.labor_cost]),
         ("Fehlerkosten", [result.before.error_cost, result.after.error_cost]),
@@ -142,6 +142,7 @@ with right, st.container(key="card-bc-comparison"):
     colors = charts.PALETTES[ui.theme()]
     chart_tab, table_tab = st.tabs([":material/bar_chart: Diagramm", ":material/table_view: Tabelle"])
     with chart_tab:
+        ui.chart_legend([(name, color) for (name, _), color in zip(segments, colors["categories"])])
         st.plotly_chart(charts.cost_comparison_chart(bars, segments, colors), config=PLOTLY_CONFIG,
                         key="chart-bc")
     with table_tab:
