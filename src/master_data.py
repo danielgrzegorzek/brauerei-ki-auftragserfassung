@@ -4,6 +4,7 @@ import random
 import sqlite3
 
 CUSTOMER_GROUPS = ("Gastronomie", "Getränkegroßhandel", "Lebensmittelhandel", "Veranstalter")
+ORDER_CHANNELS = ("Telefon", "E-Mail", "WhatsApp")
 
 # ---------- Leergutarten ----------
 # (ID, Bezeichnung, Pfand je Stück in €)

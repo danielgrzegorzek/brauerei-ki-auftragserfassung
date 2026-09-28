@@ -1,6 +1,11 @@
-[theme]
-# Akzentfarbe für Buttons und Auswahlfelder – dasselbe Blau wie in den Diagrammen
+# Akzentfarbe getrennt für hell und dunkel – dasselbe Blau wie in den Diagrammen.
+# Wichtig: NICHT direkt unter [theme] eintragen, sonst erzwingt Streamlit ein helles Theme
+# und ignoriert die Hell-/Dunkel-Einstellung des Betrachters.
+[theme.light]
 primaryColor = "#2a78d6"
+
+[theme.dark]
+primaryColor = "#3987e5"
 
 [browser]
 # Keine Nutzungsstatistik an Streamlit senden

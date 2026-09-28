@@ -50,6 +50,20 @@ def test_channel_shares_add_up_to_one_per_quarter(conn):
     assert shares.tolist() == pytest.approx([1.0] * len(shares))
 
 
+def test_months_and_quarters_without_orders_are_kept(conn):
+    """Veranstalter bestellen nur im Sommer – Wintermonate müssen trotzdem (mit 0) erscheinen."""
+    events_only = Filters(ALL.start, ALL.end, ("Veranstalter",))
+    monthly = analytics.revenue_by_month(conn, events_only)
+    assert len(monthly) == 24
+    assert (monthly["revenue"] == 0).any()
+
+    channels = analytics.channel_share_by_quarter(conn, events_only)
+    assert channels["quarter"].nunique() == 8
+    empty_quarters = channels.groupby("quarter")["orders"].sum() == 0
+    assert empty_quarters.any()
+    assert channels[channels["quarter"].isin(empty_quarters[empty_quarters].index)]["share"].isna().all()
+
+
 def test_open_deposit_matches_customer_table(conn):
     as_of = date(2026, 9, 30)
     total = analytics.open_deposit(conn, as_of, CUSTOMER_GROUPS)

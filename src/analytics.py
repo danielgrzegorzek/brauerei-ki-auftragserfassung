@@ -9,6 +9,8 @@ from datetime import date
 
 import pandas as pd
 
+from src.master_data import ORDER_CHANNELS
+
 
 @dataclass(frozen=True)
 class Filters:
@@ -97,7 +99,9 @@ def revenue_by_month(conn: sqlite3.Connection, filters: Filters) -> pd.DataFrame
         GROUP BY month ORDER BY month
     """, params)
     df["month"] = pd.to_datetime(df["month"] + "-01")
-    return df
+    # Monate ohne Aufträge fehlen im SQL-Ergebnis → mit 0 auffüllen, sonst „verschwinden“ sie im Diagramm
+    all_months = pd.date_range(filters.start.replace(day=1), filters.end, freq="MS", name="month")
+    return df.set_index("month").reindex(all_months, fill_value=0).reset_index()
 
 
 def open_deposit_by_month(conn: sqlite3.Connection, filters: Filters) -> pd.DataFrame:
@@ -169,18 +173,31 @@ def seasonality_index(conn: sqlite3.Connection, filters: Filters) -> pd.DataFram
 
 
 def channel_share_by_quarter(conn: sqlite3.Connection, filters: Filters) -> pd.DataFrame:
-    """Anteil der Bestellkanäle je Quartal. Spalten: quarter ('Q1 2025'), channel, orders, share (0–1)."""
+    """Anteil der Bestellkanäle je Quartal. Spalten: quarter ('Q1 2025'), channel, orders, share (0–1).
+
+    Alle Quartale des Zeitraums sind enthalten; ohne Aufträge ist der Anteil leer (NaN) → Lücke im Diagramm.
+    """
     where, params = where_clause(filters)
     df = query(conn, f"""
         SELECT substr(o.order_date, 1, 4) AS year,
                (CAST(substr(o.order_date, 6, 2) AS INTEGER) + 2) / 3 AS q,
                o.channel, COUNT(DISTINCT o.order_id) AS orders
         {BASE_FROM} {where}
-        GROUP BY year, q, o.channel ORDER BY year, q
+        GROUP BY year, q, o.channel
     """, params)
-    df["quarter"] = "Q" + df["q"].astype(str) + " " + df["year"]
-    df["share"] = df["orders"] / df.groupby(["year", "q"])["orders"].transform("sum")
-    return df[["quarter", "channel", "orders", "share"]]
+    df["period"] = [pd.Period(f"{year}Q{q}", freq="Q") for year, q in zip(df["year"], df["q"])]
+    # Tabelle Quartal × Kanal, fehlende Quartale und Kanäle mit 0 Aufträgen ergänzen
+    counts = (df.pivot_table(index="period", columns="channel", values="orders", aggfunc="sum")
+                .reindex(index=pd.period_range(filters.start, filters.end, freq="Q"), columns=ORDER_CHANNELS)
+                .fillna(0))
+    shares = counts.div(counts.sum(axis=1), axis=0)  # 0 / 0 → NaN (Quartal ohne Aufträge)
+    result = pd.DataFrame({
+        "quarter": [f"Q{p.quarter} {p.year}" for p in counts.index for _ in ORDER_CHANNELS],
+        "channel": list(ORDER_CHANNELS) * len(counts),
+        "orders": counts.to_numpy().ravel().astype(int),
+        "share": shares.to_numpy().ravel(),
+    })
+    return result
 
 
 def open_empties_by_customer(conn: sqlite3.Connection, as_of: date, customer_groups: tuple[str, ...]) -> pd.DataFrame:
