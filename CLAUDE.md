@@ -73,6 +73,12 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 
 # Datenbank von Hand neu erzeugen (passiert sonst automatisch beim App-Start)
 .venv\Scripts\python.exe -m src.data_setup
+
+# Plausibilitäts-Check der Daten
+.venv\Scripts\python.exe -m src.plausibility
+
+# Tests (einmalig vorher: pip install -r requirements-dev.txt)
+.venv\Scripts\python.exe -m pytest -q
 ```
 
 Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fehlt oder

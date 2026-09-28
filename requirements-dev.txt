@@ -1,0 +1,3 @@
+# Nur für die Entwicklung (Tests). Installation: pip install -r requirements-dev.txt
+-r requirements.txt
+pytest==9.1.1
