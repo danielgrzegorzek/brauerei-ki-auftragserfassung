@@ -9,8 +9,8 @@ import streamlit as st
 import ui
 from src.data_setup import ensure_database
 
-# Muss der erste Streamlit-Befehl sein: Titel im Browser-Tab, Symbol, breites Layout
-st.set_page_config(page_title="Bräu am Stein", page_icon="🍺", layout="wide")
+# Muss der erste Streamlit-Befehl sein: Titel im Browser-Tab, Symbol (eigenes Logo), breites Layout
+st.set_page_config(page_title="Bräu am Stein", page_icon="assets/logo_icon.svg", layout="wide")
 
 
 @st.cache_resource(show_spinner="Datenbank wird beim ersten Start erzeugt …")

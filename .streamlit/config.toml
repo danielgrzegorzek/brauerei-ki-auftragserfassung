@@ -8,6 +8,7 @@ baseFontSize = 17          # etwas größer als der Standard (16 px)
 baseRadius = "0.5rem"      # abgerundete Bedienelemente wie bei Fiori
 buttonRadius = "0.5rem"
 showWidgetBorder = true    # Eingabefelder mit Rahmen, wie Fiori-Felder
+metricValueFontSize = "1.75rem"   # passt auch bei fünf Kennzahlen nebeneinander auf Laptop-Breite
 
 [theme.light]
 primaryColor = "#0070f2"               # Fiori-Blau: Buttons, Auswahl, Links

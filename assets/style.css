@@ -8,6 +8,13 @@
    Streamlit-Updates können Selektoren ändern → Paketversionen sind fest.
    ===================================================================== */
 
+/* ---------- Seitenränder wie bei Fiori: schmaler als Streamlits Standard im Breitmodus ---------- */
+[data-testid="stMainBlockContainer"] {
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 5.25rem;   /* Platz unter der festen Kopfleiste */
+}
+
 /* ---------- Kopfleiste wie die Fiori-„Shell Bar“ ---------- */
 [data-testid="stHeader"] {
   background: var(--fiori-card);
@@ -26,7 +33,11 @@
   box-shadow: var(--fiori-shadow);
 }
 [class*="st-key-card"] { padding: 1.1rem 1.35rem; }
-[data-testid="stMetric"] { padding: 0.85rem 1rem; }
+[data-testid="stMetric"] { padding: 0.75rem 0.9rem; }
+/* Schmale Fenster (kleine Laptops): Kennzahlen etwas kleiner, damit fünf nebeneinander passen */
+@media (max-width: 1100px) {
+  [data-testid="stMetricValue"], [data-testid="stMetricValue"] * { font-size: 1.3rem !important; }
+}
 
 /* ---------- Titelbanner der Startseite: ruhigerer Titel als Streamlits Standard ---------- */
 .st-key-card-hero h1 { font-size: 2.3rem; line-height: 1.2; padding-top: 0.25rem; }
