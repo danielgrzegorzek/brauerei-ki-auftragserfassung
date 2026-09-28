@@ -1,0 +1,20 @@
+# Virtuelle Umgebung (wird aus requirements.txt neu erzeugt)
+.venv/
+
+# Automatisch erzeugte Python-Zwischendateien
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datenbank (wird vom Datengenerator erzeugt)
+data/*.db
+
+# Geheimnisse wie API-Schlüssel – NIEMALS committen!
+.streamlit/secrets.toml
+.env
+
+# Lokale Einstellungen für Claude Code
+.claude/
+
+# Windows-Systemdateien
+Thumbs.db
