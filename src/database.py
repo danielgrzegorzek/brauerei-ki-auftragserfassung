@@ -23,8 +23,9 @@ CREATE TABLE empties_types (
 -- Artikel (in SAP: Materialstamm)
 CREATE TABLE products (
     product_id      TEXT PRIMARY KEY,                          -- z. B. 'HELL-K20'
-    name            TEXT NOT NULL,                             -- z. B. 'Helles 20 × 0,5 l'
-    category        TEXT NOT NULL,                             -- Sorte, z. B. 'Weißbier'
+    name            TEXT NOT NULL,                             -- z. B. 'Helles – Kasten 20 × 0,5 l'
+    beverage        TEXT NOT NULL,                             -- Sorte, z. B. 'Weißbier Alkoholfrei'
+    product_group   TEXT NOT NULL,                             -- Warengruppe (SAP), z. B. 'Alkoholfrei'
     volume_liters   REAL NOT NULL CHECK (volume_liters > 0),   -- Inhalt je Einheit (für Hektoliter)
     empties_type_id TEXT NOT NULL REFERENCES empties_types (empties_type_id)
 ) STRICT;
