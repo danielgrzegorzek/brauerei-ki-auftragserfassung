@@ -1,0 +1,39 @@
+"""Tests für die geführte Tour: fünf Schritte, richtige Seiten, kurze Texte mit Zahlen aus den Daten."""
+
+import re
+from pathlib import Path
+
+from src.business_case import default_result
+from src.extraction import MODEL
+from src.tour import PAGES, tour_steps
+
+STEPS = tour_steps(orders_per_year=5025, saved_hours=217.2, saved_eur=8288.9)
+
+
+def test_five_steps_in_the_agreed_order():
+    assert [step.page for step in STEPS] == ["home", "order_entry", "order_entry", "business_case", "dashboard"]
+    assert [step.title for step in STEPS] == ["Das Problem der Brauerei", "Live-KI ausprobieren",
+                                              "Prüfung und Mensch", "Was es bringt", "Überblick und Fazit"]
+
+
+def test_every_step_page_exists():
+    assert all(step.page in PAGES for step in STEPS)
+    assert all((Path("pages") / f"{page}.py").exists() for page in PAGES)
+
+
+def test_every_text_has_one_or_two_sentences():
+    for step in STEPS:
+        sentences = [part for part in re.split(r"(?<=[.!?])\s+", step.text) if part]
+        assert 1 <= len(sentences) <= 2, step.title
+
+
+def test_numbers_come_from_the_data_in_german_format():
+    assert "Rund 5.000 Bestellungen" in STEPS[0].text
+    assert "217 Stunden und 8.289 €" in STEPS[3].text
+
+
+def test_default_result_matches_the_business_case_page(conn):
+    inputs, result = default_result(conn, MODEL)
+    assert inputs.phone_orders_per_year == 0       # Standard: nur WhatsApp und E-Mail
+    assert inputs.minutes_manual == 6 and inputs.minutes_ai == 2
+    assert result.saved_hours > 0 and result.saved_eur > 0

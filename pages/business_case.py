@@ -19,7 +19,6 @@ from src.formatting import format_date, format_eur, format_month, format_number
 PLOTLY_CONFIG = {"displayModeBar": False}
 EURO = st.column_config.NumberColumn(format="euro")
 EVALUATION_URL = "https://github.com/danig204/brauerei-ki-auftragserfassung/blob/main/docs/EVALUATION.md"
-FALLBACK_AI_COST = 0.01  # nur falls es keine Messung gibt: 1 Cent je Auftrag (vorsichtig)
 UNIT_FORMATS = {         # Anzeige der Reglerwerte im deutschen Format
     "min": lambda v: f"{format_number(v, 1)} min",
     "%": lambda v: f"{format_number(v, 1)} %",
@@ -78,7 +77,7 @@ include_phone = st.session_state.bc_phone
 text_orders = sum(data["per_channel"].get(channel, 0) for channel in bc.DEFAULT_CHANNELS)
 phone_orders = data["per_channel"].get("Telefon", 0) if include_phone else 0
 measured = bc.measured_ai_cost(MODEL)
-ai_cost = measured.eur_per_order if measured else FALLBACK_AI_COST
+ai_cost = measured.eur_per_order if measured else bc.FALLBACK_AI_COST
 settings = {assumption.key: st.session_state[f"bc_{assumption.key}"] for assumption in bc.ASSUMPTIONS}
 inputs = bc.inputs_from_settings(text_orders, settings, ai_cost, phone_orders)
 result = bc.calculate(inputs)

@@ -19,6 +19,7 @@ from src.formatting import format_date, format_eur, format_number
 
 EVALUATION_FILE = Path(__file__).resolve().parent.parent / "docs" / "evaluation.json"
 USD_TO_EUR = 1.0              # vorsichtig: 1 US-$ = 1 € – überschätzt die KI-Kosten eher
+FALLBACK_AI_COST = 0.01       # nur falls es keine Messung gibt: 1 Cent je Auftrag (vorsichtig)
 HOURS_PER_WEEK = 40           # für „entspricht X Arbeitswochen“
 DEFAULT_CHANNELS = ("WhatsApp", "E-Mail")   # Telefon zuschaltbar: dort muss weiterhin jemand mitschreiben
 
@@ -172,6 +173,16 @@ def inputs_from_settings(orders_per_year: int, settings: dict[str, float], ai_co
         phone_orders_per_year=phone_orders_per_year,
         minutes_ai_phone=settings["minutes_ai_phone"],
     )
+
+
+def default_result(conn: sqlite3.Connection, model: str) -> tuple[Inputs, Result]:
+    """Ergebnis mit den vorsichtigen Standardannahmen (WhatsApp + E-Mail) – für Startseite und Tour,
+    damit überall dieselben Zahlen stehen wie auf der Business-Case-Seite."""
+    per_channel = orders_last_12_months(conn)
+    measured = measured_ai_cost(model)
+    ai_cost = measured.eur_per_order if measured else FALLBACK_AI_COST
+    inputs = inputs_from_settings(sum(per_channel.get(c, 0) for c in DEFAULT_CHANNELS), DEFAULTS, ai_cost)
+    return inputs, calculate(inputs)
 
 
 def exact(value: float) -> str:
