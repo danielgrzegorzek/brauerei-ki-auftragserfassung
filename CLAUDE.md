@@ -70,7 +70,13 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 ```powershell
 # App starten (ohne die virtuelle Umgebung aktivieren zu müssen)
 .venv\Scripts\python.exe -m streamlit run app.py
+
+# Datenbank von Hand neu erzeugen (passiert sonst automatisch beim App-Start)
+.venv\Scripts\python.exe -m src.data_setup
 ```
+
+Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fehlt oder
+`SCHEMA_VERSION` in `src/database.py` nicht passt → **bei Schemaänderungen die Version erhöhen.**
 
 ## Phasenplan & Status
 

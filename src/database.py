@@ -8,6 +8,10 @@ from pathlib import Path
 # aus welchem Ordner die App gestartet wird.
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "brauerei.db"
 
+# Versionsnummer des Schemas. Bei jeder Schemaänderung erhöhen –
+# dann wird eine vorhandene alte Datenbank beim nächsten Start neu aufgebaut.
+SCHEMA_VERSION = 1
+
 # Tabellenschema. Reihenfolge: erst Stammdaten, dann Bewegungsdaten.
 # STRICT = SQLite prüft Datentypen streng (sonst würde z. B. Text in einer Zahlenspalte akzeptiert).
 SCHEMA = """
@@ -93,5 +97,12 @@ def get_connection(db_path: Path = DB_PATH) -> sqlite3.Connection:
 
 
 def create_schema(conn: sqlite3.Connection) -> None:
-    """Legt alle Tabellen in einer leeren Datenbank an."""
+    """Legt alle Tabellen in einer leeren Datenbank an und merkt sich die Schemaversion."""
     conn.executescript(SCHEMA)
+    # user_version ist ein freies Zahlenfeld, das SQLite in jeder Datenbankdatei mitführt
+    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+
+
+def read_schema_version(conn: sqlite3.Connection) -> int:
+    """Liest die Schemaversion einer vorhandenen Datenbank (0 = unbekannt/leer)."""
+    return conn.execute("PRAGMA user_version").fetchone()[0]

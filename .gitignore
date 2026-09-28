@@ -6,8 +6,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Datenbank (wird vom Datengenerator erzeugt)
-data/*.db
+# Datenbank und Temp-Dateien (werden beim Start automatisch erzeugt)
+data/
 
 # Geheimnisse wie API-Schlüssel – NIEMALS committen!
 .streamlit/secrets.toml
