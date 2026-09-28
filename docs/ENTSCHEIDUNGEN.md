@@ -224,6 +224,8 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | **Startseite:** ein Satz, worum es geht; Knopf „In 60 Sekunden durch die App“ und „Direkt ausprobieren“; drei **Highlights mit Kennzahl** (7 von 7, Stunden pro Jahr, analysierte Aufträge) | In Sekunden verständlich: Problem, Lösung, Beleg. Die Kacheln führen zu Live-Chat, Business Case und Dashboard. | – |
 | Highlights aus **denselben Funktionen** wie Evaluation und Business Case (`measured_ai_cost`, `default_result`) | Startseite, Tour und Detailseite zeigen immer dieselben Zahlen. | Zahlen im Text pflegen: veralten unbemerkt. |
 | **README:** oben ein Satz Problem, ein Satz Lösung, Live-Link, Platzhalter für Animation und Video; danach KI-Einsatz, Sicherheit, Evaluation, Business Case, Architektur, Installation | Leser entscheiden in Sekunden, ob sie weiterlesen; Fachleute finden die Details darunter. | – |
+| Startseite rechnet mit dem **Zeitraum der Historie** (`analytics.history_period`) | Nach dem 30.09. erfasste Demo-Aufträge würden sonst Zeitraum und 12-Monats-Umsatz verschieben. | – |
+| **Code-Review mit Gegenprüfung** auch für Tour und README | Gefunden: Die Tour versprach Leergut im Dashboard (wird aber erst bei der Lieferung gebucht), „rechts“ stimmt auf dem Handy nicht, die Vorschläge stehen über dem Handy, das README verallgemeinerte den Demo-Rückfall. Texte, die Bedienung beschreiben, müssen genau stimmen. | – |
 
 ## 10. Oberfläche im Fiori-Stil
 
