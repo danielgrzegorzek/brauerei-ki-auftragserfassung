@@ -1,11 +1,39 @@
-# Akzentfarbe getrennt für hell und dunkel – dasselbe Blau wie in den Diagrammen.
-# Wichtig: NICHT direkt unter [theme] eintragen, sonst erzwingt Streamlit ein helles Theme
+# Oberfläche angelehnt an die SAP-Fiori-Designrichtlinien (Theme „Horizon“) – eigene Farbwerte,
+# kein SAP-Logo, keine SAP-Schrift.
+# Wichtig: Farben NICHT direkt unter [theme] eintragen, sonst erzwingt Streamlit ein helles Theme
 # und ignoriert die Hell-/Dunkel-Einstellung des Betrachters.
+
+[theme]
+baseFontSize = 17          # etwas größer als der Standard (16 px)
+baseRadius = "0.5rem"      # abgerundete Bedienelemente wie bei Fiori
+buttonRadius = "0.5rem"
+showWidgetBorder = true    # Eingabefelder mit Rahmen, wie Fiori-Felder
+
 [theme.light]
-primaryColor = "#2a78d6"
+primaryColor = "#0070f2"               # Fiori-Blau: Buttons, Auswahl, Links
+backgroundColor = "#f5f6f7"            # hellgrauer Seitenhintergrund
+secondaryBackgroundColor = "#ffffff"   # Eingabefelder weiß
+textColor = "#1d2d3e"
+linkColor = "#0064d9"
+borderColor = "#d9d9d9"
+dataframeHeaderBackgroundColor = "#f5f6f7"
+greenColor = "#256f3a"                 # Signalfarben: positiv, kritisch, negativ, Info
+orangeColor = "#e76500"
+redColor = "#aa0808"
+blueColor = "#0070f2"
 
 [theme.dark]
-primaryColor = "#3987e5"
+primaryColor = "#1b90ff"
+backgroundColor = "#12171c"
+secondaryBackgroundColor = "#1d232a"
+textColor = "#eaecee"
+linkColor = "#4db1ff"
+borderColor = "#3a4552"
+dataframeHeaderBackgroundColor = "#12171c"
+greenColor = "#5dc122"
+orangeColor = "#ff8f4d"
+redColor = "#ff5c5c"
+blueColor = "#1b90ff"
 
 [browser]
 # Keine Nutzungsstatistik an Streamlit senden

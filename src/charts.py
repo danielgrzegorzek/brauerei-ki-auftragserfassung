@@ -13,12 +13,14 @@ from src.master_data import ORDER_CHANNELS
 
 MONTH_NAMES = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
 
-# Farben je Hell-/Dunkelmodus. Im dunklen Modus eigene, hellere Stufen – nicht einfach invertiert.
+# Farben je Hell-/Dunkelmodus, angelehnt an SAP Fiori (Horizon). Im dunklen Modus eigene,
+# hellere Stufen – nicht einfach invertiert. „surface“ = Kartenhintergrund, auf dem die Diagramme stehen.
+# Heatmap: Blau (unter Durchschnitt) ↔ Orange (darüber) – Rot ist bei Fiori für Fehler reserviert.
 PALETTES = {
-    "light": {"accent": "#2a78d6", "muted": "#b4b2a9", "text": "#52514e", "grid": "#e1e0d9",
-              "surface": "#ffffff", "low": "#256abf", "mid": "#f0efec", "high": "#e34948"},
-    "dark": {"accent": "#3987e5", "muted": "#5f5e5a", "text": "#c3c2b7", "grid": "#2c2c2a",
-             "surface": "#0e1117", "low": "#3987e5", "mid": "#383835", "high": "#e66767"},
+    "light": {"accent": "#0070f2", "muted": "#a9b4be", "text": "#556b82", "grid": "#e5e5e5",
+              "surface": "#ffffff", "low": "#0070f2", "mid": "#eaecee", "high": "#e76500"},
+    "dark": {"accent": "#1b90ff", "muted": "#5b738b", "text": "#a9b4be", "grid": "#2c3440",
+             "surface": "#1d232a", "low": "#1b90ff", "mid": "#3a4552", "high": "#ff8f4d"},
 }
 
 
