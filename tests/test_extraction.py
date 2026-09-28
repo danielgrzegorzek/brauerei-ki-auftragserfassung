@@ -9,8 +9,8 @@ import pytest
 
 from src.demo_messages import DEMO_MESSAGES
 from src.extraction import (
-    SYSTEM_PROMPT, ClaudeExtractor, DemoExtractor, ExtractionError, IncomingMessage, ItemSchema, OrderSchema,
-    build_user_prompt,
+    MODELS, SYSTEM_PROMPT, ClaudeExtractor, DemoExtractor, ExtractionError, IncomingMessage, ItemSchema,
+    OrderSchema, build_user_prompt,
 )
 from src.order_models import BEVERAGES
 
@@ -46,14 +46,34 @@ class FakeClient:
 
 def test_claude_answer_is_converted_to_target_format():
     client = FakeClient(parsed=schema_answer())
-    result = ClaudeExtractor(client).extract(MESSAGE, TODAY)
+    result = ClaudeExtractor(client, model="claude-sonnet-5").extract(MESSAGE, TODAY)
     assert result.order.customer_name == "Gasthof Zur Post"
     assert result.order.delivery_date == date(2026, 10, 2)
     assert result.order.items[0].beverage == "Helles"
     assert result.cost_usd == pytest.approx((2500 * 2 + 170 * 10) / 1_000_000)
+    assert result.source == "Claude Sonnet 5"
     request = client.calls[0]
     assert request["model"] == "claude-sonnet-5"
     assert request["output_format"] is OrderSchema
+    assert request["output_config"] == {"effort": "low"}
+
+
+def test_haiku_gets_no_effort_and_own_prices():
+    """Haiku 4.5 kennt den Parameter effort nicht – er darf nicht mitgeschickt werden."""
+    client = FakeClient(parsed=schema_answer())
+    result = ClaudeExtractor(client, model="claude-haiku-4-5").extract(MESSAGE, TODAY)
+    assert "output_config" not in client.calls[0]
+    assert result.cost_usd == pytest.approx((2500 * 1 + 170 * 5) / 1_000_000)
+    assert result.source == "Claude Haiku 4.5"
+
+
+def test_unknown_model_is_rejected():
+    with pytest.raises(ValueError):
+        ClaudeExtractor(FakeClient(), model="gpt-irgendwas")
+
+
+def test_every_model_has_positive_prices():
+    assert all(info.price_input > 0 and info.price_output > 0 for info in MODELS.values())
 
 
 def test_unreadable_date_becomes_empty_with_note():

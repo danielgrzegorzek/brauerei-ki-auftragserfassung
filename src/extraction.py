@@ -19,11 +19,24 @@ from pydantic import BaseModel, Field
 from src.demo_messages import DEMO_MESSAGES
 from src.order_models import BEVERAGES, ExtractedOrder
 
-MODEL = "claude-sonnet-5"
-# Listenpreise in US-Dollar je 1 Mio. Tokens – nur für die Kostenanzeige in der Oberfläche
-PRICE_INPUT_PER_MTOK = 2.00
-PRICE_OUTPUT_PER_MTOK = 10.00
 WEEKDAYS = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+
+
+@dataclass(frozen=True)
+class ModelInfo:
+    """Was die App über ein Claude-Modell wissen muss."""
+    name: str                  # Anzeigename
+    price_input: float         # Listenpreis in US-Dollar je 1 Mio. Eingabe-Tokens
+    price_output: float        # Listenpreis in US-Dollar je 1 Mio. Ausgabe-Tokens
+    effort: str | None = None  # Denkaufwand; None = das Modell kennt diesen Parameter nicht
+
+
+# Unterstützte Modelle – ein Wechsel ist nur eine andere Kennung in MODEL
+MODELS = {
+    "claude-sonnet-5": ModelInfo("Claude Sonnet 5", 2.00, 10.00, effort="low"),
+    "claude-haiku-4-5": ModelInfo("Claude Haiku 4.5", 1.00, 5.00),
+}
+MODEL = "claude-sonnet-5"  # Modell der App
 
 
 @dataclass
@@ -38,14 +51,18 @@ class IncomingMessage:
 class ExtractionResult:
     """Ergebnis einer Auswertung plus Angaben zu Herkunft, Verbrauch und Dauer."""
     order: ExtractedOrder
-    source: str               # z. B. "Demo – vorbereitetes Ergebnis" oder "Claude (claude-sonnet-5)"
+    source: str               # z. B. "Demo – vorbereitetes Ergebnis" oder "Claude Sonnet 5"
     input_tokens: int = 0
     output_tokens: int = 0
     seconds: float = 0.0
+    model: str | None = None  # Modellkennung; None = keine echte KI (Demo)
 
     @property
     def cost_usd(self) -> float:
-        return (self.input_tokens * PRICE_INPUT_PER_MTOK + self.output_tokens * PRICE_OUTPUT_PER_MTOK) / 1_000_000
+        if self.model is None:
+            return 0.0
+        info = MODELS[self.model]
+        return (self.input_tokens * info.price_input + self.output_tokens * info.price_output) / 1_000_000
 
 
 class ExtractionError(Exception):
@@ -157,20 +174,25 @@ class ClaudeExtractor:
     """Echter KI-Modus: Claude liest die Nachricht und antwortet im festen Format."""
 
     def __init__(self, client: anthropic.Anthropic, model: str = MODEL):
+        if model not in MODELS:
+            raise ValueError(f"Unbekanntes Modell: {model}")
         self.client = client  # wird von außen übergeben → in Tests durch einen Schein-Client ersetzbar
         self.model = model
 
     def extract(self, message: IncomingMessage, today: date) -> ExtractionResult:
+        info = MODELS[self.model]
+        request = {
+            "model": self.model,
+            "max_tokens": 16000,
+            "system": SYSTEM_PROMPT,
+            "messages": [{"role": "user", "content": build_user_prompt(message, today)}],
+            "output_format": OrderSchema,
+        }
+        if info.effort:  # einfache Aufgabe → wenig Nachdenken, schneller und günstiger (nur wo unterstützt)
+            request["output_config"] = {"effort": info.effort}
         started = time.perf_counter()
         try:
-            response = self.client.messages.parse(
-                model=self.model,
-                max_tokens=16000,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": build_user_prompt(message, today)}],
-                output_format=OrderSchema,
-                output_config={"effort": "low"},  # einfache Aufgabe → wenig Nachdenken, schneller und günstiger
-            )
+            response = self.client.messages.parse(**request)
         # Spezielle Fehler zuerst, allgemeine zuletzt
         except anthropic.AuthenticationError as error:
             raise ExtractionError("Der API-Schlüssel wurde abgelehnt – bitte in den Secrets prüfen.") from error
@@ -191,8 +213,9 @@ class ClaudeExtractor:
 
         return ExtractionResult(
             order=to_extracted_order(response.parsed_output),
-            source=f"Claude ({self.model})",
+            source=info.name,
             input_tokens=response.usage.input_tokens,
             output_tokens=response.usage.output_tokens,
             seconds=time.perf_counter() - started,
+            model=self.model,
         )
