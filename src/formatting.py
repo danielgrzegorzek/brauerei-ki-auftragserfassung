@@ -8,6 +8,16 @@ def format_date(day: date) -> str:
     return day.strftime("%d.%m.%Y")
 
 
+MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober",
+          "November", "Dezember"]
+
+
+def format_month(year_month: str) -> str:
+    """'2026-09' → 'September 2026'."""
+    year, month = year_month.split("-")
+    return f"{MONTHS[int(month) - 1]} {year}"
+
+
 def format_number(value: float, decimals: int = 0) -> str:
     """1234567.891 → '1.234.567,89' (bei decimals=2)."""
     english = f"{value:,.{decimals}f}"  # '1,234,567.89'

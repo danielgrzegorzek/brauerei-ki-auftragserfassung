@@ -11,6 +11,7 @@ from src.business_case import (
     period_last_12_months,
 )
 from src.extraction import MODEL
+from src.formatting import format_month
 
 # 600 Aufträge, 6 bzw. 2 min, 40 €/h, 2 % bzw. 1 % Fehler à 50 €, 1.000 € Betrieb, 1 Cent KI je Auftrag
 EXAMPLE = Inputs(orders_per_year=600, minutes_manual=6, minutes_ai=2, hourly_rate=40,
@@ -102,6 +103,10 @@ def test_monthly_orders_and_season(conn):
     (_, busiest), (quiet_month, quietest) = busiest_and_quietest(monthly)
     assert busiest > quietest * 1.3                              # deutliche Saisonspitze
     assert quiet_month[5:7] in {"11", "12", "01", "02", "03"}     # ruhig im Winter
+
+
+def test_month_names_are_german():
+    assert format_month("2026-09") == "September 2026" and format_month("2026-03") == "März 2026"
 
 
 def test_busiest_and_quietest_by_hand():

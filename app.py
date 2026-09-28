@@ -26,5 +26,6 @@ pages = [
     st.Page("pages/home.py", title="Start", icon=":material/home:", default=True),
     st.Page("pages/dashboard.py", title="Dashboard", icon=":material/bar_chart:"),
     st.Page("pages/order_entry.py", title="KI-Auftragserfassung", icon=":material/smart_toy:"),
+    st.Page("pages/business_case.py", title="Business Case", icon=":material/savings:"),
 ]
 st.navigation(pages, position="top").run()

@@ -1,0 +1,17 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect class="ill-soft" width="48" height="48" rx="12"/>
+  <g class="ill-accent">
+    <!-- Münzstapel -->
+    <rect x="9" y="31" width="17" height="5" rx="2.5"/>
+    <rect x="9" y="25" width="17" height="5" rx="2.5"/>
+    <rect x="9" y="19" width="17" height="5" rx="2.5"/>
+    <!-- Pfeil nach oben: Ersparnis -->
+    <rect x="31" y="19" width="5" height="17" rx="2.5"/>
+    <path d="M26.5 22 L33.5 12 L40.5 22 Z"/>
+  </g>
+  <g class="ill-on-accent">
+    <rect x="12" y="21" width="11" height="1" rx="0.5"/>
+    <rect x="12" y="27" width="11" height="1" rx="0.5"/>
+    <rect x="12" y="33" width="11" height="1" rx="0.5"/>
+  </g>
+</svg>
