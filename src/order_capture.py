@@ -26,6 +26,7 @@ INFO = "info"        # zur Kenntnis
 
 MAX_DAYS_AHEAD = 60             # Liefertermin weiter in der Zukunft → Warnung
 UNUSUAL_QUANTITY_FACTOR = 2     # Menge über dem Doppelten der bisher größten Menge → Warnung
+HARD_LIMIT_FACTOR = 3           # Menge über dem Dreifachen der größten Menge aller Kunden → Fehler
 CUSTOMER_MATCH_CUTOFF = 0.75    # Mindest-Ähnlichkeit (0–1) für einen unsicheren Kundentreffer
 
 # Namensabgleich über Wortbestandteile: Abkürzungen auflösen, allgemeine Wörter ignorieren
@@ -120,6 +121,21 @@ def customer_history(conn: sqlite3.Connection, customer_id: str) -> dict[str, tu
         GROUP BY i.product_id
     """, (customer_id,))
     return {product_id: (count, max_quantity) for product_id, count, max_quantity in rows}
+
+
+def largest_quantities(conn: sqlite3.Connection) -> dict[str, int]:
+    """Größte Menge, die je ein Kunde in einer Position bestellt hat – je Gebinde: {"Kasten": …, "Fass": …}.
+    Nur die Historie zählt, damit erfasste Demo-Aufträge die Grenze nicht verschieben."""
+    rows = conn.execute("""
+        SELECT e.name, MAX(i.quantity)
+        FROM order_items i
+        JOIN orders o        ON o.order_id = i.order_id
+        JOIN products p      ON p.product_id = i.product_id
+        JOIN empties_types e ON e.empties_type_id = p.empties_type_id
+        WHERE o.source = 'Historie'
+        GROUP BY e.name
+    """)
+    return dict(rows.fetchall())
 
 
 def price_on(conn: sqlite3.Connection, product_id: str, customer_group: str, day: date) -> float | None:
@@ -260,6 +276,7 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
         issues.append(Issue(ERROR, "Der Auftrag hat keine Positionen."))
     group = customers[customer_id]["group"] if customer_id else None
     history = customer_history(conn, customer_id) if customer_id else {}
+    largest = largest_quantities(conn)
 
     checked, seen = [], set()
     for product_id, quantity in lines:
@@ -274,6 +291,13 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
             if product_id in seen:
                 line_issues.append(Issue(WARNING, "Der Artikel steht mehrfach im Auftrag – zusammenfassen?"))
             seen.add(product_id)
+            limit = HARD_LIMIT_FACTOR * largest[product["unit"]] if product["unit"] in largest else None
+            too_large = limit is not None and quantity > limit
+            if too_large:  # Plausibilitätsgrenze – schützt auch vor manipulierten Nachrichten
+                line_issues.append(Issue(ERROR, f"Unrealistische Menge: {format_number(quantity)} – mehr als das "
+                                                f"{HARD_LIMIT_FACTOR}-Fache der größten Bestellung aller Kunden "
+                                                f"({format_number(largest[product['unit']])}). "
+                                                "Bitte mit dem Kunden klären."))
             if group:
                 price = price_on(conn, product_id, group, today)
                 if price is None:
@@ -281,7 +305,7 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
                                                     "nicht freigegeben (kein Preis hinterlegt)."))
                 elif product_id not in history:
                     line_issues.append(Issue(INFO, "Der Kunde hat diesen Artikel bisher noch nie bestellt."))
-                elif quantity > UNUSUAL_QUANTITY_FACTOR * history[product_id][1]:
+                elif not too_large and quantity > UNUSUAL_QUANTITY_FACTOR * history[product_id][1]:
                     line_issues.append(Issue(WARNING, f"Ungewöhnlich hohe Menge: {format_number(quantity)} "
                                                       f"(bisher höchstens {format_number(history[product_id][1])}). "
                                                       "Tippfehler?"))
