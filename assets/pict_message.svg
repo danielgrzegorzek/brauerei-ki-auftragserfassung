@@ -1,0 +1,5 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect class="ill-soft" width="48" height="48" rx="12"/>
+  <path class="ill-accent" d="M12 12h24a4 4 0 0 1 4 4v13a4 4 0 0 1-4 4H22l-7 6v-6h-3a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4z"/>
+  <path class="ill-on-accent" d="M24 15.5l1.8 4 4 1.8-4 1.8-1.8 4-1.8-4-4-1.8 4-1.8z"/>
+</svg>

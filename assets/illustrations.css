@@ -1,0 +1,29 @@
+/* Farben der SVG-Illustrationen. ui.py schreibt diese Regeln samt Farbvariablen des aktuellen
+   Modus direkt in jedes SVG – so wirken sie auch, wenn das SVG als <img> eingebettet ist. */
+.ill-sky { fill: var(--ill-sky); }
+.ill-sun { fill: var(--ill-sun); }
+.ill-cloud, .ill-smoke { fill: var(--ill-cloud); }
+.ill-smoke { opacity: 0.8; }
+.ill-hill-far { fill: var(--ill-hill-far); }
+.ill-hill { fill: var(--ill-hill); }
+.ill-pole { fill: var(--ill-pole); }
+.ill-hop { fill: var(--ill-hop); }
+.ill-wall { fill: var(--ill-wall); }
+.ill-wall-2 { fill: var(--ill-wall-2); }
+.ill-roof { fill: var(--ill-roof); }
+.ill-chimney { fill: var(--ill-chimney); }
+.ill-window { fill: var(--ill-window); }
+.ill-door, .ill-bottle { fill: var(--ill-door); }
+.ill-crate { fill: var(--fiori-accent); }
+.ill-crate-dark { fill: var(--ill-crate-dark); }
+.ill-keg { fill: var(--ill-keg); }
+.ill-keg-ring { fill: var(--ill-keg-ring); }
+.ill-pole-white, .ill-on-accent { fill: #ffffff; }
+.ill-accent { fill: var(--fiori-accent); }
+.ill-accent-line { stroke: var(--fiori-accent); }
+.ill-soft { fill: var(--fiori-accent-soft); }
+.ill-card { fill: var(--fiori-card); }
+.ill-line { fill: var(--ill-line); }
+.ill-beer { fill: #ffb300; }
+.ill-foam { fill: var(--ill-foam); }
+.ill-shine { fill: #ffffff; opacity: 0.5; }

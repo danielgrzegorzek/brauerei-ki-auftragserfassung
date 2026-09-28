@@ -6,6 +6,7 @@ Start (PowerShell):  .venv\\Scripts\\python.exe -m streamlit run app.py
 
 import streamlit as st
 
+import ui
 from src.data_setup import ensure_database
 
 # Muss der erste Streamlit-Befehl sein: Titel im Browser-Tab, Symbol, breites Layout
@@ -19,6 +20,7 @@ def init_database() -> None:
 
 
 init_database()
+ui.apply_style()  # Fiori-inspirierte Gestaltung und Logo – gilt für alle Seiten
 
 pages = [
     st.Page("pages/home.py", title="Start", icon=":material/home:", default=True),

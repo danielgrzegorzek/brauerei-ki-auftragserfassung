@@ -1,0 +1,85 @@
+/* =====================================================================
+   Gestaltung angelehnt an die SAP-Fiori-Designrichtlinien (Theme „Horizon“).
+   Die Farben kommen als CSS-Variablen (--fiori-*) aus ui.py –
+   passend zum hellen oder dunklen Modus des Betrachters.
+
+   Selektoren: bevorzugt die Klassen "st-key-<key>", die Streamlit für Container
+   mit key vergibt (dafür dokumentiert), und data-testid-Attribute.
+   Streamlit-Updates können Selektoren ändern → Paketversionen sind fest.
+   ===================================================================== */
+
+/* ---------- Kopfleiste wie die Fiori-„Shell Bar“ ---------- */
+[data-testid="stHeader"] {
+  background: var(--fiori-card);
+  border-bottom: 1px solid var(--fiori-border);
+  box-shadow: var(--fiori-shadow);
+}
+
+/* ---------- Karten: weiß auf grauem Grund, runde Ecken, leichter Schatten ---------- */
+[class*="st-key-card"],
+[class*="st-key-tile-"],
+.st-key-page-header,
+[data-testid="stMetric"] {
+  background: var(--fiori-card);
+  border: 1px solid var(--fiori-card-border) !important;
+  border-radius: 0.75rem;
+  box-shadow: var(--fiori-shadow);
+}
+[class*="st-key-card"] { padding: 1.1rem 1.35rem; }
+[data-testid="stMetric"] { padding: 0.85rem 1rem; }
+
+/* ---------- Titelbanner der Startseite: ruhigerer Titel als Streamlits Standard ---------- */
+.st-key-card-hero h1 { font-size: 2.3rem; line-height: 1.2; padding-top: 0.25rem; }
+
+/* ---------- Seitenkopf wie die Fiori-„Object Page“ ---------- */
+.st-key-page-header { padding: 1.1rem 1.5rem; }
+.fiori-page-header { display: flex; align-items: center; gap: 1.1rem; }
+.fiori-page-header h1 {
+  font-size: 1.9rem; font-weight: 700; line-height: 1.2;
+  margin: 0; padding: 0; color: var(--fiori-text);
+}
+.fiori-page-header p { margin: 0.3rem 0 0; color: var(--fiori-label); }
+.fiori-pictogram img { width: 3.25rem; height: 3.25rem; display: block; }
+
+/* ---------- Launchpad-Kacheln ---------- */
+[class*="st-key-tile-"] {
+  position: relative;
+  min-height: 13rem;
+  justify-content: space-between;   /* alle Kacheln gleich hoch, „Öffnen“ immer unten */
+  padding: 1.1rem 1.25rem;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+[class*="st-key-tile-"]:hover { box-shadow: var(--fiori-shadow-hover); transform: translateY(-2px); }
+.st-key-tile-soon { opacity: 0.7; }
+.st-key-tile-soon:hover { box-shadow: var(--fiori-shadow); transform: none; }
+.fiori-tile-title { font-size: 1.15rem; font-weight: 700; color: var(--fiori-text); }
+.fiori-tile-subtitle { font-size: 0.92rem; color: var(--fiori-label); margin-top: 0.2rem; }
+.fiori-tile-footer {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 0.75rem; margin-top: 1.6rem;
+}
+.fiori-tile-footer img { width: 2.75rem; height: 2.75rem; display: block; flex-shrink: 0; }
+.fiori-tile-kpi { text-align: right; }
+.fiori-tile-kpi .value { font-size: 2.4rem; line-height: 1; color: var(--fiori-accent); }
+.fiori-tile-kpi .unit { display: block; font-size: 0.82rem; color: var(--fiori-label); margin-top: 0.3rem; }
+/* Ganze Kachel klickbar: Der Link spannt eine unsichtbare Fläche über die Kachel („stretched link“) */
+[class*="st-key-tile-"] [data-testid="stElementContainer"],
+[class*="st-key-tile-"] [data-testid="stPageLink"],
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] { position: static; }
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]::after {
+  content: ""; position: absolute; inset: 0; border-radius: 0.75rem;
+}
+
+/* ---------- Nachricht als Sprechblase ---------- */
+.st-key-message-bubble {
+  background: var(--fiori-accent-soft);
+  border-radius: 0.9rem 0.9rem 0.9rem 0.25rem;
+  padding: 0.9rem 1.1rem;
+}
+
+/* ---------- Illustrationen und „Illustrated Message“ (Leerzustand) ---------- */
+.fiori-illustration img { width: 100%; height: auto; display: block; }
+.fiori-illustrated-message { text-align: center; padding: 1.5rem 1rem 1rem; }
+.fiori-illustrated-message img { width: 15rem; max-width: 100%; height: auto; }
+.fiori-illustrated-message .title { font-size: 1.2rem; font-weight: 700; color: var(--fiori-text); margin-top: 0.75rem; }
+.fiori-illustrated-message .text { color: var(--fiori-label); margin-top: 0.3rem; }

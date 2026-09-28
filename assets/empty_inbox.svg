@@ -1,0 +1,17 @@
+<svg viewBox="0 0 240 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration: Nachricht und Bierglas">
+  <circle class="ill-soft" cx="120" cy="88" r="72"/>
+  <rect class="ill-card" x="40" y="44" width="112" height="72" rx="14"/>
+  <polygon class="ill-card" points="60,112 54,136 82,114"/>
+  <g class="ill-line">
+    <rect x="56" y="60" width="70" height="7" rx="3.5"/>
+    <rect x="56" y="76" width="80" height="7" rx="3.5"/>
+    <rect x="56" y="92" width="52" height="7" rx="3.5"/>
+  </g>
+  <path class="ill-beer" d="M160 80 h34 l-4 58 a6 6 0 0 1 -6 5 h-14 a6 6 0 0 1 -6 -5 z"/>
+  <path class="ill-foam" d="M157 84 a8 8 0 0 1 10 -10 a9 9 0 0 1 15 -3 a8 8 0 0 1 15 9 a4 4 0 0 1 -2 4 z"/>
+  <rect class="ill-shine" x="168" y="94" width="4" height="34" rx="2"/>
+  <g class="ill-accent">
+    <circle cx="38" cy="34" r="4"/><circle cx="202" cy="36" r="3"/>
+    <circle cx="28" cy="122" r="3"/><circle cx="216" cy="130" r="4"/>
+  </g>
+</svg>

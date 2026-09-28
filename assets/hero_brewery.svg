@@ -1,0 +1,80 @@
+<svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Illustration: Brauerei vor niederbayerischen Hügeln mit Hopfengarten, Maibaum, Kästen und Fässern">
+  <defs>
+    <clipPath id="hero-clip"><rect width="520" height="240" rx="16"/></clipPath>
+  </defs>
+  <g clip-path="url(#hero-clip)">
+    <rect class="ill-sky" width="520" height="240"/>
+    <circle class="ill-sun" cx="440" cy="56" r="24"/>
+    <g class="ill-cloud">
+      <rect x="64" y="46" width="88" height="20" rx="10"/>
+      <rect x="86" y="32" width="42" height="24" rx="12"/>
+      <rect x="318" y="70" width="66" height="16" rx="8"/>
+      <rect x="334" y="60" width="30" height="18" rx="9"/>
+    </g>
+    <path class="ill-hill-far" d="M0 150 C80 112 170 118 250 138 C330 158 420 116 520 128 V240 H0 Z"/>
+    <g class="ill-pole">
+      <rect x="26" y="108" width="2.5" height="34"/>
+      <rect x="46" y="104" width="2.5" height="36"/>
+      <rect x="66" y="102" width="2.5" height="34"/>
+      <rect x="86" y="100" width="2.5" height="34"/>
+      <rect x="106" y="100" width="2.5" height="32"/>
+      <rect x="26" y="104" width="83" height="1.5"/>
+    </g>
+    <g class="ill-hop">
+      <circle cx="27" cy="116" r="3.5"/><circle cx="28" cy="126" r="3.5"/><circle cx="27" cy="135" r="3"/>
+      <circle cx="47" cy="112" r="3.5"/><circle cx="48" cy="122" r="3.5"/><circle cx="47" cy="131" r="3"/>
+      <circle cx="67" cy="110" r="3.5"/><circle cx="68" cy="120" r="3.5"/><circle cx="67" cy="129" r="3"/>
+      <circle cx="87" cy="108" r="3.5"/><circle cx="88" cy="118" r="3.5"/><circle cx="87" cy="127" r="3"/>
+      <circle cx="107" cy="108" r="3.5"/><circle cx="108" cy="118" r="3.5"/><circle cx="107" cy="126" r="3"/>
+    </g>
+    <path class="ill-hill" d="M0 196 C110 168 250 170 360 184 C430 192 480 180 520 174 V240 H0 Z"/>
+    <rect class="ill-chimney" x="226" y="88" width="11" height="34"/>
+    <g class="ill-smoke">
+      <circle cx="234" cy="78" r="6"/><circle cx="243" cy="66" r="8"/><circle cx="256" cy="54" r="10"/>
+    </g>
+    <rect class="ill-wall" x="196" y="128" width="116" height="66"/>
+    <polygon class="ill-roof" points="188,130 254,94 320,130"/>
+    <rect class="ill-wall-2" x="304" y="104" width="44" height="90"/>
+    <polygon class="ill-roof" points="298,106 326,84 354,106"/>
+    <g class="ill-window">
+      <rect x="208" y="146" width="16" height="18" rx="2"/>
+      <rect x="228" y="146" width="16" height="18" rx="2"/>
+      <rect x="282" y="146" width="16" height="18" rx="2"/>
+      <rect x="318" y="116" width="16" height="14" rx="2"/>
+      <rect x="318" y="140" width="16" height="14" rx="2"/>
+      <rect x="318" y="164" width="16" height="14" rx="2"/>
+    </g>
+    <rect class="ill-accent" x="250" y="136" width="26" height="10" rx="2"/>
+    <path class="ill-door" d="M252 194 V172 a11 11 0 0 1 22 0 V194 Z"/>
+    <g class="ill-crate">
+      <rect x="140" y="176" width="24" height="18" rx="2"/>
+      <rect x="166" y="176" width="24" height="18" rx="2"/>
+      <rect x="153" y="157" width="24" height="18" rx="2"/>
+    </g>
+    <g class="ill-crate-dark">
+      <rect x="146" y="182" width="12" height="4" rx="2"/>
+      <rect x="172" y="182" width="12" height="4" rx="2"/>
+      <rect x="159" y="163" width="12" height="4" rx="2"/>
+    </g>
+    <g class="ill-bottle">
+      <rect x="156" y="150" width="4" height="8" rx="1.5"/>
+      <rect x="163" y="150" width="4" height="8" rx="1.5"/>
+      <rect x="170" y="150" width="4" height="8" rx="1.5"/>
+    </g>
+    <g class="ill-keg">
+      <rect x="360" y="168" width="22" height="26" rx="5"/>
+      <rect x="386" y="168" width="22" height="26" rx="5"/>
+    </g>
+    <g class="ill-keg-ring">
+      <rect x="360" y="174" width="22" height="2"/><rect x="360" y="186" width="22" height="2"/>
+      <rect x="386" y="174" width="22" height="2"/><rect x="386" y="186" width="22" height="2"/>
+    </g>
+    <rect class="ill-pole-white" x="468" y="94" width="6" height="100"/>
+    <g class="ill-accent">
+      <rect x="468" y="102" width="6" height="6"/><rect x="468" y="116" width="6" height="6"/>
+      <rect x="468" y="130" width="6" height="6"/><rect x="468" y="144" width="6" height="6"/>
+      <rect x="468" y="158" width="6" height="6"/><rect x="468" y="172" width="6" height="6"/>
+    </g>
+    <circle class="ill-hop" cx="471" cy="92" r="6"/>
+  </g>
+</svg>
