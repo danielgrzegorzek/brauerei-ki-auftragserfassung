@@ -171,7 +171,7 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,
-  Modellvergleich (Sonnet 5 bleibt) · Teil 2 [x] Business Case · Teil 3 [x] geführte Tour, Startseite, README, Video-Drehbuch
+  Modellvergleich (Sonnet 5 bleibt) · Teil 2 [x] Business Case · Teil 3 [x] geführte Tour, Startseite, README
 - [ ] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess, Übergabe an SAP S/4HANA (JSON + Feld-Mapping)
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video
