@@ -6,6 +6,7 @@ Die Zahlen kommen aus den Daten und dem Business Case – nichts ist fest einget
 
 from dataclasses import dataclass
 
+from src.business_case import DEFAULT_CHANNELS
 from src.formatting import format_eur, format_number
 from src.process import AS_IS, TO_BE, figures
 
@@ -35,7 +36,8 @@ def tour_steps(orders_per_year: int, saved_hours: float, saved_eur: float) -> li
                  "versteht nur. Gespeichert wird erst, wenn ein Mensch auf „Auftrag bestätigen & speichern“ klickt."),
         TourStep("process", "SAP-Übergabe",
                  f"Oben der Ablauf heute und mit KI: {figures(TO_BE).manual_steps} statt "
-                 f"{figures(AS_IS).manual_steps} manuelle Schritte je Auftrag. Darunter sehen Sie Feld für Feld, "
+                 f"{figures(AS_IS).manual_steps} manuelle Schritte je Auftrag per "
+                 f"{' oder '.join(DEFAULT_CHANNELS)}. Darunter sehen Sie Feld für Feld, "
                  "wie der bestätigte Auftrag als Kundenauftrag in SAP S/4HANA ankommt – Preise und Leergut "
                  "ermittelt SAP selbst."),
         TourStep("business_case", "Was es bringt",

@@ -23,6 +23,13 @@ def test_every_step_page_exists():
     assert all((Path("pages") / f"{page}.py").exists() for page in PAGES)
 
 
+def test_tour_pages_match_the_navigation_in_app_py():
+    """ui_tour greift mit pages[step.page] zu – die Schlüssel in app.py müssen den Dateinamen entsprechen."""
+    pairs = re.findall(r'"(\w+)": st\.Page\("pages/(\w+)\.py"', Path("app.py").read_text(encoding="utf-8"))
+    assert pairs and all(key == file for key, file in pairs)
+    assert set(PAGES) <= {key for key, _ in pairs}
+
+
 def test_every_text_has_one_or_two_sentences():
     for step in STEPS:
         sentences = [part for part in re.split(r"(?<=[.!?])\s+", step.text) if part]

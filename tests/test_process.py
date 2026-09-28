@@ -2,8 +2,8 @@
 
 import pytest
 
-from src.business_case import DEFAULTS
-from src.process import AS_IS, LANES, MANUAL, TO_BE, figures
+from src.business_case import DEFAULT_CHANNELS, DEFAULTS
+from src.process import AS_IS, CUSTOMER, LANES, MANUAL, TO_BE, figures
 
 
 def test_figures_as_is_and_to_be():
@@ -16,6 +16,14 @@ def test_minutes_match_the_business_case():
     """Prozessseite und Business Case müssen dieselbe Geschichte erzählen."""
     assert figures(AS_IS).minutes == DEFAULTS["minutes_manual"]
     assert figures(TO_BE).minutes == DEFAULTS["minutes_ai"]
+
+
+def test_to_be_covers_the_same_channels_as_the_business_case():
+    """Anrufe rechnet der Business Case getrennt (dort schreibt weiterhin jemand mit) – der Soll-Prozess
+    darf deshalb nur die Kanäle nennen, für die 2 Minuten gelten."""
+    order_step = next(step for step in TO_BE if step.kind == CUSTOMER)
+    assert all(channel in order_step.title for channel in DEFAULT_CHANNELS)
+    assert "Anruf" not in order_step.title and "Telefon" not in order_step.title
 
 
 @pytest.mark.parametrize("steps", [AS_IS, TO_BE], ids=["Ist", "Soll"])

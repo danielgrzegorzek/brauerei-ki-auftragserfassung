@@ -1,10 +1,13 @@
 """Ist- und Soll-Prozess der Auftragserfassung – als Daten, ohne Streamlit, testbar.
 
 Die Minuten des Innendiensts passen zu den Annahmen des Business Case (6 min heute, 2 min mit KI) –
-ein Test stellt sicher, dass beide Seiten dieselbe Geschichte erzählen.
+ein Test stellt sicher, dass beide Seiten dieselbe Geschichte erzählen. Der Soll-Prozess gilt wie dort
+für Bestellungen per WhatsApp und E-Mail; bei Anrufen schreibt weiterhin jemand mit.
 """
 
 from dataclasses import dataclass
+
+from src.business_case import DEFAULT_CHANNELS
 
 LANES = ("Kunde", "Innendienst", "KI & Prüfung", "SAP S/4HANA")  # „Schwimmbahnen“: wer macht was
 MANUAL, AUTOMATIC, CUSTOMER = "manuell", "automatisch", "Kunde"
@@ -38,19 +41,20 @@ AS_IS = [
 ]
 
 TO_BE = [
-    ProcessStep("Kunde", "Bestellung per WhatsApp, E-Mail oder Anruf", CUSTOMER,
+    ProcessStep("Kunde", f"Bestellung per {' oder '.join(DEFAULT_CHANNELS)}", CUSTOMER,
                 note="Für den Kunden ändert sich nichts – kein neues Portal"),
     ProcessStep("KI & Prüfung", "KI übersetzt die Nachricht in ein festes Format", AUTOMATIC,
                 note="In Sekunden, auch Dialekt"),
     ProcessStep("KI & Prüfung", "Code ordnet Kunde und Artikel zu und prüft die Regeln", AUTOMATIC,
                 note="Freigaben, Mengen, Termin – nachvollziehbar und getestet"),
-    ProcessStep("KI & Prüfung", "Eingangsbestätigung oder Rückfrage mit Knöpfen", AUTOMATIC,
+    # ­ = weiches Trennzeichen: Nur wenn das Wort in der schmalen Spalte umbrechen muss, erscheint dort „-“
+    ProcessStep("KI & Prüfung", "Eingangs­bestätigung oder Rückfrage mit Knöpfen", AUTOMATIC,
                 note="Antwort an den Kunden in Sekunden"),
     ProcessStep("Innendienst", "Vorschlag prüfen und bestätigen", MANUAL, 2.0,
                 note="Der Mensch entscheidet (Human-in-the-Loop)"),
     ProcessStep("SAP S/4HANA", "Kundenauftrag per Standard-API anlegen", AUTOMATIC,
                 note="Kein Abtippen; Preise und Leergut ermittelt SAP selbst"),
-    ProcessStep("SAP S/4HANA", "Verbindliche Auftragsbestätigung an den Kunden", AUTOMATIC,
+    ProcessStep("SAP S/4HANA", "Verbindliche Auftrags­bestätigung an den Kunden", AUTOMATIC,
                 note="Erst nach der Freigabe durch den Menschen"),
 ]
 

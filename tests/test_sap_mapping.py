@@ -72,7 +72,8 @@ def test_incomplete_orders_are_reported(change, expected):
 def test_http_request_shows_method_url_and_body():
     text = http_request(sales_order_payload(ORDER))
     assert text.startswith("POST https://") and "API_SALES_ORDER_SRV/A_SalesOrder" in text
-    assert "x-csrf-token" in text and '"SoldToParty": "10001001"' in text
+    assert "x-csrf-token" in text and "Cookie:" in text and '"SoldToParty": "10001001"' in text
+    assert "Accept-Language: en" in text   # „OR“ und „PC“ sind die englischen Kürzel
 
 
 def test_saved_order_is_loaded_for_the_transfer(writable_conn):
@@ -97,4 +98,6 @@ def test_field_mapping_explains_every_header_field(conn):
     rows = field_mapping(ORDER, payload, {pid: p["name"] for pid, p in load_products(conn).items()})
     mapped = {row["SAP-Feld"] for row in rows}
     assert {key for key in payload if key != "to_Item"} <= mapped
+    item_fields = " ".join(field for field in mapped if field.startswith("to_Item/"))
+    assert all(key in item_fields for key in payload["to_Item"][0])   # auch jedes Positionsfeld erklärt
     assert rows[-1]["SAP-Feld"] == "– (nicht übergeben)"   # Preis und Pfand ausdrücklich nicht

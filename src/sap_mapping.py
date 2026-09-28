@@ -20,10 +20,11 @@ from src.demo_messages import DEMO_MESSAGES
 from src.order_capture import build_draft, load_customers
 
 SERVICE_URL = "https://<s4hana-host>/sap/opu/odata/sap/API_SALES_ORDER_SRV/A_SalesOrder"
-SALES_ORDER_TYPE = "OR"       # Terminauftrag – intern „TA“, in der (englischen) API-Sicht „OR“
+# Belegart und Einheit sind sprachabhängige Kürzel – hier die englischen, deshalb „Accept-Language: en“
+SALES_ORDER_TYPE = "OR"       # Terminauftrag – deutsch „TA“, englisch „OR“
 SALES_ORGANIZATION = "1010"   # Verkaufsorganisation „Bräu am Stein Inland“ (Beispielwert)
 DIVISION = "00"               # Sparte: spartenübergreifend (Getränke)
-QUANTITY_UNIT = "PC"          # Stück (intern „ST“) – jeder Artikel ist ein ganzes Gebinde: 1 Kasten, 1 Fass
+QUANTITY_UNIT = "PC"          # Stück (deutsch „ST“) – jeder Artikel ist ein ganzes Gebinde: 1 Kasten, 1 Fass
 BUSINESS_PARTNER_OFFSET = 10_000_000  # K1001 → Geschäftspartner 10001001 (Schlüsselmapping, Beispielregel)
 # Vertriebsweg je Kundengruppe – über ihn steuert SAP u. a. Preise und Zuständigkeiten
 DISTRIBUTION_CHANNELS = {
@@ -112,7 +113,9 @@ def http_request(payload: dict) -> str:
         f"POST {SERVICE_URL}\n"
         "Content-Type: application/json\n"
         "Accept: application/json\n"
+        "Accept-Language: en\n"
         "x-csrf-token: <Token aus einem vorherigen GET mit „x-csrf-token: Fetch“>\n"
+        "Cookie: <Sitzungs-Cookies aus demselben GET – das Token gilt nur mit ihnen>\n"
         "Authorization: <technischer Benutzer aus dem Kommunikationsszenario>\n\n"
         f"{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
@@ -148,7 +151,7 @@ def field_mapping(order: OrderForSap, payload: dict, product_names: dict[str, st
     delivery = order.delivery_date.strftime("%d.%m.%Y") if order.delivery_date else "–"
     return [
         {"App": "– (fest)", "SAP-Feld": "SalesOrderType", "SAP-Begriff": "Verkaufsbelegart",
-         "Wert": payload["SalesOrderType"], "Erklärung": "Terminauftrag (intern „TA“)"},
+         "Wert": payload["SalesOrderType"], "Erklärung": "Terminauftrag – englisches Kürzel, deutsch „TA“"},
         {"App": "– (fest)", "SAP-Feld": "SalesOrganization", "SAP-Begriff": "Verkaufsorganisation",
          "Wert": payload["SalesOrganization"], "Erklärung": "Wer verkauft – Bräu am Stein Inland"},
         {"App": f"Kundengruppe: {order.customer_group}", "SAP-Feld": "DistributionChannel",
@@ -165,13 +168,16 @@ def field_mapping(order: OrderForSap, payload: dict, product_names: dict[str, st
         {"App": f"Liefertermin: {delivery}", "SAP-Feld": "RequestedDeliveryDate",
          "SAP-Begriff": "Wunschlieferdatum", "Wert": payload["RequestedDeliveryDate"] or "–",
          "Erklärung": "OData-V2-Datumsformat (Millisekunden seit 1970)"},
+        {"App": "Position 1", "SAP-Feld": "to_Item/SalesOrderItem", "SAP-Begriff": "Positionsnummer",
+         "Wert": first.get("SalesOrderItem", "–"),
+         "Erklärung": "10er-Schritte wie in SAP; jede weitere Position genauso (20, 30 …)"},
         {"App": f"Artikel: {product_names.get(first_line[0], first_line[0])}", "SAP-Feld": "to_Item/Material",
          "SAP-Begriff": "Materialnummer", "Wert": first.get("Material", "–"),
          "Erklärung": "Artikelnummer der App = Materialnummer"},
-        {"App": f"Menge: {first_line[1]}", "SAP-Feld": "to_Item/RequestedQuantity + Unit",
+        {"App": f"Menge: {first_line[1]}", "SAP-Feld": "to_Item/RequestedQuantity + RequestedQuantityUnit",
          "SAP-Begriff": "Auftragsmenge + Mengeneinheit",
          "Wert": f"{first.get('RequestedQuantity', '–')} {first.get('RequestedQuantityUnit', '')}".strip(),
-         "Erklärung": "1 Stück = 1 Gebinde (Kasten bzw. Fass)"},
+         "Erklärung": "1 Stück = 1 Gebinde (Kasten bzw. Fass); englisches Kürzel PC, deutsch „ST“"},
         {"App": "Preis, Pfand", "SAP-Feld": "– (nicht übergeben)", "SAP-Begriff": "Preisfindung, Leergut",
          "Wert": "–", "Erklärung": "Ermittelt SAP selbst (Konditionstechnik, Leergutstückliste)"},
     ]
