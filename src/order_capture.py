@@ -11,6 +11,7 @@ jeder Änderung des Menschen neu und kennt den aktuellen Stand.
 """
 
 import difflib
+import re
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -26,6 +27,11 @@ INFO = "info"        # zur Kenntnis
 MAX_DAYS_AHEAD = 60             # Liefertermin weiter in der Zukunft → Warnung
 UNUSUAL_QUANTITY_FACTOR = 2     # Menge über dem Doppelten der bisher größten Menge → Warnung
 CUSTOMER_MATCH_CUTOFF = 0.75    # Mindest-Ähnlichkeit (0–1) für einen unsicheren Kundentreffer
+
+# Namensabgleich über Wortbestandteile: Abkürzungen auflösen, allgemeine Wörter ignorieren
+NAME_ABBREVIATIONS = {"ff": "freiwillige feuerwehr"}
+NAME_IGNORED_WORDS = {"gasthof", "gasthaus", "wirtshaus", "landgasthof", "wirt", "wirtin",
+                      "vom", "von", "beim", "der", "die", "das", "team", "familie"}
 
 
 @dataclass
@@ -128,18 +134,40 @@ def price_on(conn: sqlite3.Connection, product_id: str, customer_group: str, day
 
 # ---------- Stufe 1: Abgleich ----------
 
+def name_tokens(name: str) -> set[str]:
+    """Wortbestandteile eines Namens: 'FF Hengersberg' → {'freiwillige', 'feuerwehr', 'hengersberg'}."""
+    words = re.findall(r"\w+", name.casefold())
+    expanded = " ".join(NAME_ABBREVIATIONS.get(word, word) for word in words).split()
+    return {word for word in expanded if word not in NAME_IGNORED_WORDS}
+
+
 def match_customer(name: str | None, customers: dict[str, dict]) -> tuple[str | None, list[Issue]]:
-    """Ordnet den erkannten Kundennamen einer Kundennummer zu: exakt, sonst ähnlich, sonst gar nicht."""
+    """Ordnet den erkannten Kundennamen einer Kundennummer zu – in dieser Reihenfolge:
+    1. exakt gleicher Name
+    2. eindeutig über Wortbestandteile ('Brandl Wirt' → 'Gasthaus Brandl')
+    3. ähnlich geschriebener Name (Tippfehler)
+    Unsichere Treffer immer mit Warnung; bei mehreren Kandidaten entscheidet der Mensch."""
     if not name:
         return None, [Issue(WARNING, "Die KI hat keinen Kunden erkannt – bitte Kunden auswählen.")]
     ids_by_name = {customer["name"]: cid for cid, customer in customers.items()}
     for customer_name, cid in ids_by_name.items():
         if customer_name.casefold() == name.casefold():
             return cid, []
+
+    tokens = name_tokens(name)
+    candidates = [cid for cid, customer in customers.items() if tokens and tokens <= name_tokens(customer["name"])]
+    if len(candidates) == 1:
+        found = customers[candidates[0]]["name"]
+        return candidates[0], [Issue(WARNING, f"Kunde über Namensbestandteile zugeordnet: „{name}“ → „{found}“. "
+                                              "Bitte prüfen.")]
+
     close = difflib.get_close_matches(name, list(ids_by_name), n=1, cutoff=CUSTOMER_MATCH_CUTOFF)
     if close:
         return ids_by_name[close[0]], [Issue(WARNING, f"Kunde nicht exakt erkannt: „{name}“ → „{close[0]}“ "
                                                       "zugeordnet. Bitte prüfen.")]
+    if candidates:
+        names = ", ".join(sorted(customers[cid]["name"] for cid in candidates))
+        return None, [Issue(WARNING, f"„{name}“ passt zu mehreren Kunden ({names}) – bitte Kunden auswählen.")]
     return None, [Issue(WARNING, f"„{name}“ ist nicht im Kundenstamm. Ein Neukunde muss zuerst angelegt werden "
                                  "(in SAP: Geschäftspartner anlegen).")]
 

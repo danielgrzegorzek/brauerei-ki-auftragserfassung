@@ -93,6 +93,26 @@ def test_matching_only_gives_hints_never_errors(conn, message):
     assert ERROR not in levels(hints)
 
 
+@pytest.mark.parametrize("written, expected", [
+    ("Donaublick", "Biergarten Donaublick"),                  # Namensteil
+    ("FF Hengersberg", "Freiwillige Feuerwehr Hengersberg"),  # Abkürzung
+    ("Brandl Wirt", "Gasthaus Brandl"),                       # allgemeines Wort ignoriert
+])
+def test_customer_is_matched_by_name_parts(conn, written, expected):
+    """Diese Schreibweisen hat Claude in der Evaluation geliefert – sie müssen zugeordnet werden."""
+    customer_id, hints = match_customer(written, load_customers(conn))
+    assert customer_name(conn, customer_id) == expected
+    assert levels(hints) == {WARNING}  # unsichere Zuordnung → Mensch soll prüfen
+
+
+def test_ambiguous_name_parts_leave_choice_to_human():
+    customers = {"K1": {"name": "Gasthof Huber", "group": "Gastronomie", "city": "Passau"},
+                 "K2": {"name": "Getränke Huber GmbH", "group": "Getränkegroßhandel", "city": "Bogen"}}
+    customer_id, hints = match_customer("Huber", customers)
+    assert customer_id is None
+    assert "mehreren Kunden" in hints[0].text and "Getränke Huber GmbH" in hints[0].text
+
+
 def test_similar_customer_name_is_matched_with_warning(conn):
     customer_id, hints = match_customer("Gasthof Post", load_customers(conn))
     assert customer_name(conn, customer_id) == "Gasthof Zur Post"

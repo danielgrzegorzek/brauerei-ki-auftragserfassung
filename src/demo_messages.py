@@ -111,15 +111,15 @@ DEMO_MESSAGES = [
         title="Feuerwehrfest – Telefonnotiz",
         channel="Telefon",
         sender="Telefonnotiz Innendienst – Anruf Hr. Aigner",
-        text=("Anruf Hr. Aigner, FF Hengersberg: Herbstfest am Samstag in zwei Wochen. Brauchen 25 Fass Helles, "
+        text=("Anruf Hr. Aigner, FF Hengersberg: Herbstfest am Samstag nächste Woche. Brauchen 25 Fass Helles, "
               "10 Fass Weißbier, 15 Kasten alkoholfreies Helles und 10 Kasten Limo gemischt. "
               "Lieferung am Freitag davor. Leergut vom Sommerfest bitte mitnehmen."),
         shows="„Limo gemischt“ ist mehrdeutig – hier entscheidet der Mensch, das System rät nicht.",
         prepared_result=lambda today: {
             "customer_name": "Freiwillige Feuerwehr Hengersberg",
-            # Fest: Samstag in zwei Wochen → Lieferung am Freitag davor
-            "delivery_date": (next_weekday(today, SATURDAY) + timedelta(days=6)).isoformat(),
-            "delivery_date_text": "am Freitag vor dem Fest (Samstag in zwei Wochen)",
+            # Fest: Samstag nächste Woche → Lieferung am Freitag davor (ebenfalls nächste Woche)
+            "delivery_date": weekday_next_week(today, FRIDAY).isoformat(),
+            "delivery_date_text": "am Freitag vor dem Fest (Samstag nächste Woche)",
             "items": [
                 item("25 Fass Helles", 25, "Helles", "Fass", note="Fassgröße nicht angegeben"),
                 item("10 Fass Weißbier", 10, "Weißbier", "Fass", note="Fassgröße nicht angegeben"),
