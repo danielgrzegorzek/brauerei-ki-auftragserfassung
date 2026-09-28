@@ -37,8 +37,9 @@ NAME_IGNORED_WORDS = {"gasthof", "gasthaus", "wirtshaus", "landgasthof", "wirt",
 
 @dataclass
 class Issue:
-    level: str  # ERROR, WARNING oder INFO
+    level: str               # ERROR, WARNING oder INFO
     text: str
+    code: str | None = None  # maschinenlesbare Art des Hinweises, z. B. "sunday" – für die Chat-Antwort
 
 
 @dataclass
@@ -102,14 +103,15 @@ def load_customers(conn: sqlite3.Connection) -> dict[str, dict]:
 
 
 def load_products(conn: sqlite3.Connection) -> dict[str, dict]:
-    """{Artikelnummer: {"name", "beverage", "volume", "unit", "deposit"}}"""
+    """{Artikelnummer: {"name", "beverage", "group", "volume", "unit", "deposit"}}"""
     rows = conn.execute("""
-        SELECT p.product_id, p.name, p.beverage, p.volume_liters, e.name, e.deposit_eur
+        SELECT p.product_id, p.name, p.beverage, p.product_group, p.volume_liters, e.name, e.deposit_eur
         FROM products p JOIN empties_types e ON e.empties_type_id = p.empties_type_id
         ORDER BY p.name
     """)
-    return {pid: {"name": name, "beverage": beverage, "volume": volume, "unit": unit, "deposit": deposit}
-            for pid, name, beverage, volume, unit, deposit in rows}
+    return {pid: {"name": name, "beverage": beverage, "group": group, "volume": volume, "unit": unit,
+                  "deposit": deposit}
+            for pid, name, beverage, group, volume, unit, deposit in rows}
 
 
 def customer_history(conn: sqlite3.Connection, customer_id: str) -> dict[str, tuple[int, int]]:
@@ -193,7 +195,7 @@ def match_product(item: ExtractedItem, products: dict[str, dict],
     """Sucht den Artikel zu Sorte, Einheit und Größe. Bei mehreren Treffern entscheidet die Historie."""
     if item.beverage is None:
         return None, [Issue(WARNING, f"Artikel nicht erkannt: „{item.original_text}“ – bitte Artikel auswählen "
-                                     "oder Position löschen.")]
+                                     "oder Position löschen.", "not_recognized")]
     candidates = [
         pid for pid, product in products.items()
         if product["beverage"] == item.beverage
@@ -201,7 +203,8 @@ def match_product(item: ExtractedItem, products: dict[str, dict],
         and (item.size_liters is None or product["volume"] == item.size_liters)
     ]
     if not candidates:
-        return None, [Issue(WARNING, f"„{item.original_text}“ gibt es so nicht im Sortiment – bitte Artikel auswählen.")]
+        return None, [Issue(WARNING, f"„{item.original_text}“ gibt es so nicht im Sortiment – bitte Artikel auswählen.",
+                            "not_in_assortment")]
     if len(candidates) == 1:
         return candidates[0], []
 
@@ -210,13 +213,14 @@ def match_product(item: ExtractedItem, products: dict[str, dict],
     if ordered_before:
         chosen = ordered_before[0]
         return chosen, [Issue(INFO, f"Nicht eindeutig – „{products[chosen]['name']}“ gewählt, "
-                                    "weil der Kunde diesen Artikel bisher am häufigsten bestellt.")]
+                                    "weil der Kunde diesen Artikel bisher am häufigsten bestellt.", "from_history")]
     if len({products[c]["unit"] for c in candidates}) == 1:
         # Nur die Größe fehlt und es gibt keine Historie → Standard: größtes Gebinde
         chosen = max(candidates, key=lambda c: products[c]["volume"])
         return chosen, [Issue(WARNING, f"Größe nicht angegeben und keine Bestellhistorie – "
-                                       f"„{products[chosen]['name']}“ angenommen. Bitte prüfen.")]
-    return None, [Issue(WARNING, f"„{item.original_text}“ ist mehrdeutig (Kasten oder Fass?) – bitte Artikel auswählen.")]
+                                       f"„{products[chosen]['name']}“ angenommen. Bitte prüfen.", "size_assumed")]
+    return None, [Issue(WARNING, f"„{item.original_text}“ ist mehrdeutig (Kasten oder Fass?) – bitte Artikel auswählen.",
+                        "ambiguous_unit")]
 
 
 def build_draft(conn: sqlite3.Connection, extracted: ExtractedOrder) -> Draft:
@@ -236,15 +240,16 @@ def build_draft(conn: sqlite3.Connection, extracted: ExtractedOrder) -> Draft:
 
 def check_delivery_date(delivery_date: date | None, today: date) -> list[Issue]:
     if delivery_date is None:
-        return [Issue(ERROR, "Kein Liefertermin – bitte Datum wählen.")]
+        return [Issue(ERROR, "Kein Liefertermin – bitte Datum wählen.", "no_date")]
     if delivery_date < today:
-        return [Issue(ERROR, "Der Liefertermin liegt in der Vergangenheit.")]
+        return [Issue(ERROR, "Der Liefertermin liegt in der Vergangenheit.", "past_date")]
     if delivery_date.weekday() == 6:
-        return [Issue(ERROR, "Sonntags wird nicht ausgeliefert – bitte einen anderen Tag wählen.")]
+        return [Issue(ERROR, "Sonntags wird nicht ausgeliefert – bitte einen anderen Tag wählen.", "sunday")]
     if delivery_date == today:
-        return [Issue(WARNING, "Lieferung noch heute – bitte mit der Tourenplanung abstimmen.")]
+        return [Issue(WARNING, "Lieferung noch heute – bitte mit der Tourenplanung abstimmen.", "today")]
     if delivery_date > today + timedelta(days=MAX_DAYS_AHEAD):
-        return [Issue(WARNING, f"Der Liefertermin liegt mehr als {MAX_DAYS_AHEAD} Tage in der Zukunft.")]
+        return [Issue(WARNING, f"Der Liefertermin liegt mehr als {MAX_DAYS_AHEAD} Tage in der Zukunft.",
+                      "far_future")]
     return []
 
 
@@ -261,7 +266,7 @@ def open_empties_hint(conn: sqlite3.Connection, customer_id: str) -> list[Issue]
     parts = [f"{format_number(quantity)} × {name}" for name, quantity, _ in rows]
     deposit = sum(value for _, _, value in rows)
     return [Issue(INFO, f"Beim Kunden steht noch Leergut: {', '.join(parts)} ({format_eur(deposit)} Pfand) "
-                        "– bei der Lieferung mitnehmen.")]
+                        "– bei der Lieferung mitnehmen.", "empties")]
 
 
 def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date: date | None,
@@ -271,9 +276,9 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
     products = load_products(conn)
     issues = check_delivery_date(delivery_date, today)
     if customer_id is None:
-        issues.insert(0, Issue(ERROR, "Kein Kunde ausgewählt."))
+        issues.insert(0, Issue(ERROR, "Kein Kunde ausgewählt.", "no_customer"))
     if not lines:
-        issues.append(Issue(ERROR, "Der Auftrag hat keine Positionen."))
+        issues.append(Issue(ERROR, "Der Auftrag hat keine Positionen.", "no_lines"))
     group = customers[customer_id]["group"] if customer_id else None
     history = customer_history(conn, customer_id) if customer_id else {}
     largest = largest_quantities(conn)
@@ -282,14 +287,15 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
     for product_id, quantity in lines:
         line_issues, price, deposit = [], None, 0.0
         if quantity <= 0:
-            line_issues.append(Issue(ERROR, "Die Menge muss größer als 0 sein."))
+            line_issues.append(Issue(ERROR, "Die Menge muss größer als 0 sein.", "zero_quantity"))
         if product_id is None:
-            line_issues.append(Issue(ERROR, "Kein Artikel ausgewählt."))
+            line_issues.append(Issue(ERROR, "Kein Artikel ausgewählt.", "no_product"))
         else:
             product = products[product_id]
             deposit = product["deposit"]
             if product_id in seen:
-                line_issues.append(Issue(WARNING, "Der Artikel steht mehrfach im Auftrag – zusammenfassen?"))
+                line_issues.append(Issue(WARNING, "Der Artikel steht mehrfach im Auftrag – zusammenfassen?",
+                                         "duplicate"))
             seen.add(product_id)
             limit = HARD_LIMIT_FACTOR * largest[product["unit"]] if product["unit"] in largest else None
             too_large = limit is not None and quantity > limit
@@ -297,18 +303,19 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
                 line_issues.append(Issue(ERROR, f"Unrealistische Menge: {format_number(quantity)} – mehr als das "
                                                 f"{HARD_LIMIT_FACTOR}-Fache der größten Bestellung aller Kunden "
                                                 f"({format_number(largest[product['unit']])}). "
-                                                "Bitte mit dem Kunden klären."))
+                                                "Bitte mit dem Kunden klären.", "hard_limit"))
             if group:
                 price = price_on(conn, product_id, group, today)
                 if price is None:
                     line_issues.append(Issue(ERROR, f"„{product['name']}“ ist für die Kundengruppe „{group}“ "
-                                                    "nicht freigegeben (kein Preis hinterlegt)."))
+                                                    "nicht freigegeben (kein Preis hinterlegt).", "not_released"))
                 elif product_id not in history:
-                    line_issues.append(Issue(INFO, "Der Kunde hat diesen Artikel bisher noch nie bestellt."))
+                    line_issues.append(Issue(INFO, "Der Kunde hat diesen Artikel bisher noch nie bestellt.",
+                                             "never_ordered"))
                 elif not too_large and quantity > UNUSUAL_QUANTITY_FACTOR * history[product_id][1]:
                     line_issues.append(Issue(WARNING, f"Ungewöhnlich hohe Menge: {format_number(quantity)} "
                                                       f"(bisher höchstens {format_number(history[product_id][1])}). "
-                                                      "Tippfehler?"))
+                                                      "Tippfehler?", "unusual_quantity"))
         checked.append(CheckedLine(product_id, quantity, price, deposit, line_issues))
 
     if customer_id:
