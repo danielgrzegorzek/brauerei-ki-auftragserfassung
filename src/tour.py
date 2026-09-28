@@ -27,16 +27,17 @@ def tour_steps(orders_per_year: int, saved_hours: float, saved_eur: float) -> li
                  "im Jahr kommen per WhatsApp, Telefon und E-Mail – als Freitext, oft im Dialekt. Heute tippt "
                  "der Innendienst jede davon von Hand ab."),
         TourStep("order_entry", "Live-KI ausprobieren",
-                 "Tippen Sie im Handy auf den Vorschlag „Dialekt“ und senden Sie ihn ab: Claude macht daraus in "
-                 "Sekunden einen sauberen Auftrag. Auch der Angriffsversuch lohnt einen Klick."),
+                 "Tippen Sie über dem Handy auf den Vorschlag „Dialekt“ und senden Sie ihn im Handy ab: Claude macht "
+                 "daraus in Sekunden einen sauberen Auftrag. Auch der Angriffsversuch lohnt einen Klick."),
         TourStep("order_entry", "Prüfung und Mensch",
-                 "Rechts prüft normaler Code Kunde, Artikel, Preise und Regeln – die KI versteht nur. Gespeichert "
-                 "wird erst, wenn ein Mensch auf „Bestätigen & speichern“ klickt."),
+                 "Daneben (auf dem Handy darunter) prüft normaler Code Kunde, Artikel, Preise und Regeln – die KI "
+                 "versteht nur. Gespeichert wird erst, wenn ein Mensch auf „Auftrag bestätigen & speichern“ klickt."),
         TourStep("business_case", "Was es bringt",
                  f"Mit den Auftragsmengen aus den Daten und gemessenen KI-Kosten spart die Brauerei rund "
                  f"{format_number(saved_hours)} Stunden und {format_eur(saved_eur, 0)} im Jahr. Alle Annahmen "
                  "sind vorsichtig gewählt – verschieben Sie die Regler ruhig selbst."),
         TourStep("dashboard", "Überblick und Fazit",
-                 "Jeder bestätigte Auftrag erscheint sofort hier – mit Umsatz, Saison und Leergut. Fazit: Die KI "
-                 "spart Tipparbeit, der Code sichert die Regeln, der Mensch behält die Entscheidung."),
+                 "Jeder bestätigte Auftrag erscheint sofort hier in Umsatz und Saison (Leergut wird erst bei der "
+                 "Lieferung gebucht). Fazit: Die KI spart Tipparbeit, der Code sichert die Regeln, der Mensch behält "
+                 "die Entscheidung."),
     ]

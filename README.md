@@ -43,11 +43,11 @@ Nachricht ─► KI versteht (festes Format) ─► Code ordnet zu und prüft �
 **Grundsatz: Die KI versteht, der Code entscheidet, der Mensch bestätigt.**
 
 - **Live-Chat** (Hauptansicht): ein Handy im Messenger-Stil. Man schreibt selbst oder tippt auf einen
-  Vorschlag – *Dialekt*, *Tippfehler*, *Volksfest* oder *Angriff*. Rechts entsteht der Auftrag Schritt für
-  Schritt: Kunde → Positionen → Prüfung → Pfand → Summe.
+  Vorschlag – *Dialekt*, *Tippfehler*, *Volksfest* oder *Angriff*. Daneben (auf dem Handy darunter) entsteht
+  der Auftrag Schritt für Schritt: Kunde → Positionen → Prüfung → Pfand → Summe.
 - Die Brauerei antwortet im Chat sofort mit Eingangsbestätigung oder **einer** Rückfrage mit Knöpfen
   („Welche Limo – Zitrone, Orange oder Cola-Mix?“). Die **verbindliche** Bestätigung mit Auftragsnummer
-  kommt erst, wenn ein Mensch auf „Bestätigen & speichern“ klickt.
+  kommt erst, wenn ein Mensch auf „Auftrag bestätigen & speichern“ klickt.
 - **Posteingang** (zweiter Reiter): sieben Beispielnachrichten aus WhatsApp, E-Mail und Telefon –
   vom sauberen Großhändler-Auftrag bis zum Neukunden mit Artikel, den es nicht gibt.
 - **Business Case** und **Vertriebs-Dashboard** zeigen, was das im Jahr bringt und was die Daten über das
@@ -62,7 +62,7 @@ Nachricht ─► KI versteht (festes Format) ─► Code ordnet zu und prüft �
 | Austauschbar | Ein schmaler Vertrag (`OrderExtractor`): Demo-Modus und Claude sind zwei Klassen mit derselben Methode – ein anderer Anbieter wäre eine weitere Klasse |
 | Grounding | Der Prompt enthält einen Kalender der nächsten 14 Tage – Sprachmodelle rechnen bei Wochentagen unzuverlässig |
 | Was die KI **nicht** tut | Artikelnummern, Preise, Regeln, Antworten an den Kunden – das macht normaler, getesteter Code |
-| Modi | **Live-KI** (ca. 3 s und knapp 1 Cent je Nachricht) oder **Demo-Modus** mit vorbereiteten Ergebnissen im selben Format – ohne Schlüssel, bei leerem Kontingent oder API-Störung automatisch |
+| Modi | **Live-KI** (ca. 3 s und knapp 1 Cent je Nachricht) oder **Demo-Modus** mit vorbereiteten Ergebnissen im selben Format – ohne Schlüssel automatisch; im Live-Chat auch bei leerem Kontingent oder API-Störung |
 
 ## Sicherheit
 
@@ -120,7 +120,7 @@ src/           Logik ohne Oberfläche – vollständig testbar:
   business_case.py  Rechnung vorher/nachher
   analytics.py, charts.py, database.py, Datengenerator, Plausibilitäts-Check …
 tools/         Evaluation der KI (→ docs/evaluation.json, docs/EVALUATION.md)
-tests/         pytest – 210 Tests, KI-Aufrufe nur mit Schein-Client
+tests/         pytest – 211 Tests, KI-Aufrufe nur mit Schein-Client
 docs/          Designentscheidungen und Evaluationsbericht
 ```
 
@@ -129,7 +129,7 @@ docs/          Designentscheidungen und Evaluationsbericht
 | Oberfläche | Streamlit (mehrseitig), Plotly – angelehnt an die SAP-Fiori-Designrichtlinien, eigene SVG-Illustrationen |
 | Daten | SQLite (Schema mit Schlüsseln und Prüfregeln), pandas |
 | KI | Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter |
-| Qualität | 210 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
+| Qualität | 211 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
 | Sprache | Python 3.13 |
 
 Jede Entscheidung mit Begründung und verworfener Alternative: **[docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md)**.

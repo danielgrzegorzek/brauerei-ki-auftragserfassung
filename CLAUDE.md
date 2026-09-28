@@ -126,6 +126,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - **Vorsicht Kosten:** `streamlit.testing.v1.AppTest` liest die lokale `secrets.toml` mit – Seitentests
   laufen dann mit Live-KI. Im Test immer den Schalter `chat_live` ausschalten bzw. „Demo“ wählen und den
   Zähler in `ai_usage` vorher/nachher vergleichen.
+- `AppTest` übernimmt einen Seitenwechsel per `st.switch_page` nicht in den nächsten `run()` (die Tour
+  scheint dann auf die Startseite zu springen) – Seitenwechsel im Browser prüfen.
 
 ## Befehle
 

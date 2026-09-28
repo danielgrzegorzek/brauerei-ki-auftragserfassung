@@ -62,6 +62,13 @@ def data_period(conn: sqlite3.Connection) -> tuple[date, date]:
     return date.fromisoformat(first), date.fromisoformat(last)
 
 
+def history_period(conn: sqlite3.Connection) -> tuple[date, date]:
+    """Zeitraum der simulierten Historie – verschiebt sich nicht durch später erfasste Demo-Aufträge."""
+    first, last = conn.execute(
+        "SELECT MIN(order_date), MAX(order_date) FROM orders WHERE source = 'Historie'").fetchone()
+    return date.fromisoformat(first), date.fromisoformat(last)
+
+
 def kpis(conn: sqlite3.Connection, filters: Filters) -> dict[str, float]:
     """Kennzahlen: Umsatz, Anzahl Aufträge, Absatz in Hektolitern, durchschnittlicher Auftragswert."""
     where, params = where_clause(filters)

@@ -97,3 +97,13 @@ def test_format_change():
     assert format_change(106.2, 100) == "+6,2 %"
     assert format_change(95, 100) == "-5,0 %"
     assert format_change(10, 0) is None
+
+
+def test_history_period_ignores_captured_orders(writable_conn):
+    """Ein nach der Simulation erfasster Demo-Auftrag darf den Zeitraum der Startseite nicht verschieben."""
+    before = analytics.history_period(writable_conn)
+    writable_conn.execute("INSERT INTO orders (order_id, customer_id, order_date, delivery_date, channel, source) "
+                          "SELECT MAX(order_id) + 1, 'K1001', '2026-12-01', '2026-12-03', 'WhatsApp', "
+                          "'KI-Erfassung' FROM orders")
+    assert analytics.history_period(writable_conn) == before
+    assert analytics.data_period(writable_conn)[1].isoformat() == "2026-12-01"  # alle Aufträge: verschoben

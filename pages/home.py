@@ -22,7 +22,7 @@ def load_overview() -> dict:
     """Eckdaten für Highlights, Kacheln und Datenbasis (zwischengespeichert, nach neuen Aufträgen geleert)."""
     # closing(...) schließt die Verbindung am Ende des with-Blocks automatisch
     with closing(get_connection()) as conn:
-        first, last = analytics.data_period(conn)
+        first, last = analytics.history_period(conn)  # nur die Historie – Demo-Aufträge verschieben nichts
         # Umsatz der letzten 12 Monate – dieselbe Berechnung wie im Dashboard
         last_12 = Filters(analytics.shift_year(last, -1) + timedelta(days=1), last, CUSTOMER_GROUPS)
         customers, products, orders = conn.execute(
