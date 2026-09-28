@@ -87,7 +87,7 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 ## Phasenplan & Status
 
 - [x] **Phase 0 – Setup:** Git, `.gitignore`, `.venv`, `requirements.txt`, Test-Startseite
-- [ ] **Phase 1 – Datenbasis:** SQLite-Schema, Datengenerator (Saisonalität, Leergut), Plausibilitäts-Check
+- [x] **Phase 1 – Datenbasis:** SQLite-Schema, Datengenerator (Saisonalität, Leergut), Plausibilitäts-Check
 - [ ] **Phase 2 – Dashboard:** KPIs, Umsatz nach Monat/Kundengruppe/Produkt, Saisonalität, Top-Kunden, Leergut
 - [ ] **Phase 3 – Auftragserfassung (Demo-Modus):** Zielformat, Beispielnachrichten, Stammdatenabgleich, Human-in-the-Loop
 - [ ] **Phase 4 – Erste Veröffentlichung:** Git-E-Mail ändern (vorher!), GitHub, Streamlit Cloud, Basis-README
