@@ -16,7 +16,7 @@ def empty_db(tmp_path):
     conn.execute("INSERT INTO customers VALUES ('K1001', 'Gasthof Test', 'Gastronomie', 'Deggendorf')")
     conn.execute("INSERT INTO empties_types VALUES ('KASTEN', 'Kasten', 3.10)")
     conn.execute("INSERT INTO products VALUES ('HELL-K20', 'Helles', 'Helles', 'Helles', 10.0, 'KASTEN')")
-    conn.execute("INSERT INTO orders VALUES (100001, 'K1001', '2026-09-28', '2026-10-02', 'WhatsApp')")
+    conn.execute("INSERT INTO orders VALUES (100001, 'K1001', '2026-09-28', '2026-10-02', 'WhatsApp', 'Historie')")
     conn.execute("INSERT INTO order_items VALUES (100001, 10, 'HELL-K20', 5, 17.50)")
     yield conn
     conn.close()
@@ -34,7 +34,7 @@ def test_schema_version_is_stored(empty_db):
 
 def test_foreign_key_rejects_unknown_customer(empty_db):
     with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
-        empty_db.execute("INSERT INTO orders VALUES (100002, 'K9999', '2026-09-28', '2026-10-02', 'Telefon')")
+        empty_db.execute("INSERT INTO orders VALUES (100002, 'K9999', '2026-09-28', '2026-10-02', 'Telefon', 'Historie')")
 
 
 def test_foreign_key_prevents_deleting_customer_with_orders(empty_db):
@@ -54,7 +54,7 @@ def test_check_rejects_unknown_customer_group(empty_db):
 
 def test_check_rejects_delivery_before_order(empty_db):
     with pytest.raises(sqlite3.IntegrityError, match="CHECK"):
-        empty_db.execute("INSERT INTO orders VALUES (100003, 'K1001', '2026-09-28', '2026-09-01', 'Telefon')")
+        empty_db.execute("INSERT INTO orders VALUES (100003, 'K1001', '2026-09-28', '2026-09-01', 'Telefon', 'Historie')")
 
 
 def test_strict_rejects_text_as_quantity(empty_db):

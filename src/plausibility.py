@@ -1,5 +1,9 @@
 """Plausibilitäts-Check: Ergeben die simulierten Daten fachlich Sinn?
 
+Geprüft wird die simulierte Historie (source = 'Historie'). Neu erfasste Aufträge prüft die
+Auftragserfassung selbst (order_capture.check_order) – z. B. darf eine Feuerwehr auch im
+Oktober ein Fest feiern.
+
 Aufruf von Hand (PowerShell):
     .venv\\Scripts\\python.exe -m src.plausibility
 """
@@ -93,7 +97,8 @@ def check_seasonality(conn) -> CheckResult:
 def check_event_season(conn) -> CheckResult:
     outside = scalar(conn, """
         SELECT COUNT(*) FROM orders o JOIN customers c ON c.customer_id = o.customer_id
-        WHERE c.customer_group = 'Veranstalter' AND CAST(substr(o.delivery_date, 6, 2) AS INTEGER) NOT BETWEEN 5 AND 9
+        WHERE c.customer_group = 'Veranstalter' AND o.source = 'Historie'
+          AND CAST(substr(o.delivery_date, 6, 2) AS INTEGER) NOT BETWEEN 5 AND 9
     """)
     return CheckResult("Veranstalter: Lieferungen nur Mai–September", outside == 0, f"{outside} Lieferungen außerhalb")
 
@@ -112,7 +117,8 @@ def check_no_kegs_for_grocery(conn) -> CheckResult:
 def check_delivery_dates(conn) -> CheckResult:
     # strftime('%w') liefert den Wochentag: 0 = Sonntag
     sundays = scalar(conn, "SELECT COUNT(*) FROM orders WHERE strftime('%w', delivery_date) = '0'")
-    too_late = scalar(conn, "SELECT COUNT(*) FROM orders WHERE julianday(delivery_date) - julianday(order_date) > 30")
+    too_late = scalar(conn, """SELECT COUNT(*) FROM orders WHERE source = 'Historie'
+                               AND julianday(delivery_date) - julianday(order_date) > 30""")
     return CheckResult("Lieferung nie sonntags und max. 30 Tage nach Bestellung", sundays == 0 and too_late == 0,
                        f"{sundays} Sonntagslieferungen, {too_late} mit > 30 Tagen Vorlauf")
 
@@ -140,7 +146,9 @@ def check_empties_never_negative(conn) -> CheckResult:
 
 
 def check_empties_match_deliveries(conn) -> CheckResult:
-    delivered_items = scalar(conn, "SELECT SUM(quantity) FROM order_items")
+    # Nur Historie: Neu erfasste Aufträge sind noch nicht geliefert, ihr Leergut ist noch nicht gebucht
+    delivered_items = scalar(conn, """SELECT SUM(i.quantity) FROM order_items i
+                                      JOIN orders o ON o.order_id = i.order_id WHERE o.source = 'Historie'""")
     delivered_empties = scalar(conn, "SELECT SUM(quantity) FROM empties_movements WHERE quantity > 0")
     return CheckResult("Ausgeliefertes Leergut = gelieferte Mengen", delivered_items == delivered_empties,
                        f"{delivered_items} Einheiten geliefert, {delivered_empties} Leergut ausgebucht")

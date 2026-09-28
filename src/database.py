@@ -10,7 +10,7 @@ DB_PATH = Path(__file__).resolve().parent.parent / "data" / "brauerei.db"
 
 # Versionsnummer des Schemas. Bei jeder Schemaänderung erhöhen –
 # dann wird eine vorhandene alte Datenbank beim nächsten Start neu aufgebaut.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 2: Spalte orders.source (Historie / KI-Erfassung)
 
 # Tabellenschema. Reihenfolge: erst Stammdaten, dann Bewegungsdaten.
 # STRICT = SQLite prüft Datentypen streng (sonst würde z. B. Text in einer Zahlenspalte akzeptiert).
@@ -62,7 +62,9 @@ CREATE TABLE orders (
     customer_id   TEXT NOT NULL REFERENCES customers (customer_id),
     order_date    TEXT NOT NULL,
     delivery_date TEXT NOT NULL CHECK (delivery_date >= order_date),
-    channel       TEXT NOT NULL CHECK (channel IN ('Telefon', 'E-Mail', 'WhatsApp'))
+    channel       TEXT NOT NULL CHECK (channel IN ('Telefon', 'E-Mail', 'WhatsApp')),
+    source        TEXT NOT NULL DEFAULT 'Historie'             -- Herkunft: simulierte Historie oder neu erfasst
+                  CHECK (source IN ('Historie', 'KI-Erfassung'))
 ) STRICT;
 
 -- Auftragspositionen: was, wie viel, zu welchem Preis (in SAP: Tabelle VBAP)

@@ -6,8 +6,10 @@ import pytest
 
 from src.demo_messages import DEMO_MESSAGES
 from src.order_capture import (
-    ERROR, INFO, WARNING, build_draft, check_delivery_date, check_order, load_customers, match_customer,
+    ERROR, INFO, WARNING, build_draft, captured_orders, check_delivery_date, check_order,
+    delete_captured_orders, load_customers, match_customer, save_order,
 )
+from src.plausibility import run_checks
 
 TODAY = date(2026, 9, 28)  # ein Montag
 DEMOS = {message.title: message for message in DEMO_MESSAGES}
@@ -110,6 +112,50 @@ def test_delivery_date_rules(delivery, expected):
 
 def test_normal_delivery_date_has_no_issues():
     assert check_delivery_date(date(2026, 10, 2), TODAY) == []
+
+
+def save_demo(conn, title, fix_missing_product=None):
+    draft = build_draft(conn, DEMOS[title].extract(TODAY))
+    lines = [(line.product_id or fix_missing_product, line.quantity) for line in draft.lines]
+    return save_order(conn, draft.customer_id, draft.delivery_date, DEMOS[title].channel, lines, TODAY)
+
+
+def test_saved_order_gets_next_number_and_list_prices(writable_conn):
+    highest = writable_conn.execute("SELECT MAX(order_id) FROM orders").fetchone()[0]
+    order_id = save_demo(writable_conn, "Stammwirt bestellt per WhatsApp")
+    assert order_id == highest + 1
+    source, channel = writable_conn.execute(
+        "SELECT source, channel FROM orders WHERE order_id = ?", (order_id,)).fetchone()
+    assert (source, channel) == ("KI-Erfassung", "WhatsApp")
+    items = writable_conn.execute(
+        "SELECT item_no, product_id, quantity, unit_price_eur FROM order_items WHERE order_id = ?", (order_id,)
+    ).fetchall()
+    assert items == [(10, "HELL-F50", 5, 141.8), (20, "WEISS-K20", 10, 19.4)]  # Gastronomie-Preise 2026
+
+
+def test_order_with_errors_is_not_saved(writable_conn):
+    count_before = writable_conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
+    with pytest.raises(ValueError):
+        save_demo(writable_conn, "Supermarkt möchte Fässer")
+    assert writable_conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == count_before
+
+
+def test_captured_orders_can_be_listed_and_deleted(writable_conn):
+    save_demo(writable_conn, "Großhändler bestellt per E-Mail")
+    save_demo(writable_conn, "Feuerwehrfest – Telefonnotiz", fix_missing_product="ZITRO-K20")
+    assert len(captured_orders(writable_conn)) == 2
+    history_count = writable_conn.execute("SELECT COUNT(*) FROM orders WHERE source = 'Historie'").fetchone()[0]
+
+    assert delete_captured_orders(writable_conn) == 2
+    assert captured_orders(writable_conn) == []
+    assert writable_conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0] == history_count
+
+
+def test_plausibility_still_passes_after_capturing_orders(writable_conn):
+    """Ein Feuerwehrfest im Oktober ist ein echter neuer Auftrag – kein Fehler der Simulation."""
+    save_demo(writable_conn, "Feuerwehrfest – Telefonnotiz", fix_missing_product="ZITRO-K20")
+    failed = [result.name for result in run_checks(writable_conn) if not result.passed]
+    assert failed == []
 
 
 def test_zero_quantity_and_missing_product_are_errors(conn):

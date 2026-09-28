@@ -241,5 +241,6 @@ def insert_orders(conn: sqlite3.Connection, orders: list[Order]) -> None:
                            order.delivery_date.isoformat(), order.channel))
         for position, (product_id, quantity, price) in enumerate(order.items, start=1):
             item_rows.append((order_id, position * 10, product_id, quantity, price))  # Positionen 10, 20, 30 …
-    conn.executemany("INSERT INTO orders VALUES (?, ?, ?, ?, ?)", order_rows)
+    conn.executemany("INSERT INTO orders (order_id, customer_id, order_date, delivery_date, channel) "
+                     "VALUES (?, ?, ?, ?, ?)", order_rows)  # source = 'Historie' (Standardwert)
     conn.executemany("INSERT INTO order_items VALUES (?, ?, ?, ?, ?)", item_rows)

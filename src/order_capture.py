@@ -262,3 +262,51 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
     if customer_id:
         issues += open_empties_hint(conn, customer_id)
     return CheckResult(issues, checked)
+
+
+# ---------- Stufe 3: Speichern ----------
+
+def save_order(conn: sqlite3.Connection, customer_id: str, delivery_date: date, channel: str,
+               lines: list[tuple[str, int]], today: date) -> int:
+    """Speichert einen vom Menschen bestätigten Auftrag und gibt die neue Auftragsnummer zurück.
+
+    Die Prüfung läuft hier noch einmal – die Datenbank-Schicht verlässt sich nicht auf die Oberfläche.
+    Leergut wird NICHT gebucht: Das passiert erst bei der Lieferung (in der Praxis im ERP).
+    """
+    result = check_order(conn, customer_id, delivery_date, lines, today)
+    if result.has_errors:
+        raise ValueError("Der Auftrag enthält Fehler und kann nicht gespeichert werden.")
+    # „with conn“ = Transaktion: Kopf und Positionen werden gemeinsam gespeichert – oder gar nicht
+    with conn:
+        order_id = conn.execute("SELECT COALESCE(MAX(order_id), 0) + 1 FROM orders").fetchone()[0]
+        conn.execute(
+            "INSERT INTO orders (order_id, customer_id, order_date, delivery_date, channel, source) "
+            "VALUES (?, ?, ?, ?, ?, 'KI-Erfassung')",
+            (order_id, customer_id, today.isoformat(), delivery_date.isoformat(), channel),
+        )
+        conn.executemany(
+            "INSERT INTO order_items VALUES (?, ?, ?, ?, ?)",
+            [(order_id, position * 10, line.product_id, line.quantity, line.unit_price)
+             for position, line in enumerate(result.lines, start=1)],
+        )
+    return order_id
+
+
+def delete_captured_orders(conn: sqlite3.Connection) -> int:
+    """Löscht alle in der Demo erfassten Aufträge (die simulierte Historie bleibt). Gibt die Anzahl zurück."""
+    with conn:
+        conn.execute("DELETE FROM order_items WHERE order_id IN "
+                     "(SELECT order_id FROM orders WHERE source = 'KI-Erfassung')")
+        return conn.execute("DELETE FROM orders WHERE source = 'KI-Erfassung'").rowcount
+
+
+def captured_orders(conn: sqlite3.Connection) -> list[tuple]:
+    """Erfasste Aufträge, neueste zuerst: (Nr., Kunde, Liefertermin, Kanal, Positionen, Nettowert)."""
+    return conn.execute("""
+        SELECT o.order_id, c.name, o.delivery_date, o.channel, COUNT(*), SUM(i.quantity * i.unit_price_eur)
+        FROM orders o
+        JOIN customers c   ON c.customer_id = o.customer_id
+        JOIN order_items i ON i.order_id = o.order_id
+        WHERE o.source = 'KI-Erfassung'
+        GROUP BY o.order_id ORDER BY o.order_id DESC
+    """).fetchall()
