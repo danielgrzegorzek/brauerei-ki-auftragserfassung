@@ -68,7 +68,8 @@ ui.page_header("Prozess & SAP-Übergabe",
 
 # 1. Kennzahlen: heute → mit KI
 before, after = process.figures(process.AS_IS), process.figures(process.TO_BE)
-tiles = st.columns(4)
+with st.container(key="process-kpis"):  # CSS: unter 1100 px 2 × 2 statt vier gequetschter Spalten
+    tiles = st.columns(4)
 tiles[0].metric("Manuelle Schritte je Auftrag", format_number(after.manual_steps), border=True,
                 delta=f"-{before.manual_steps - after.manual_steps} gegenüber heute", delta_color="inverse")
 tiles[1].metric("Arbeitszeit je Auftrag", f"{format_number(after.minutes)} min", border=True,
@@ -77,9 +78,10 @@ tiles[1].metric("Arbeitszeit je Auftrag", f"{format_number(after.minutes)} min",
 tiles[2].metric("Medienbrüche", format_number(after.media_breaks), border=True,
                 delta=f"-{before.media_breaks - after.media_breaks} gegenüber heute", delta_color="inverse",
                 help="Stellen, an denen jemand Informationen von einem System ins andere überträgt.")
-tiles[3].metric("Erste Rückmeldung an den Kunden", "Sekunden", border=True, delta="statt Stunden",
+tiles[3].metric("Erste Rückmeldung", "Sekunden", border=True, delta="statt Stunden",  # kurz: sonst abgeschnitten
                 delta_color="off", delta_arrow="off",
-                help="Eingangsbestätigung oder Rückfrage im Chat – verbindlich wird es nach der Freigabe.")
+                help="An den Kunden: Eingangsbestätigung oder Rückfrage im Chat – verbindlich wird es nach der "
+                     "Freigabe.")
 st.caption(f"Gilt für Bestellungen per {' und '.join(DEFAULT_CHANNELS)}. Bei Anrufen schreibt weiterhin jemand "
            f"mit – rund {format_number(DEFAULTS['minutes_ai_phone'])} statt "
            f"{format_number(DEFAULTS['minutes_manual'])} Minuten (siehe Business Case).")

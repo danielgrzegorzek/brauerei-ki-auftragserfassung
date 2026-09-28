@@ -238,6 +238,13 @@
   .chat-typing span, .order-step { animation: none; }
 }
 
+/* ---------- Kennzahlen der Prozessseite: 641–1100 px zwei mal zwei, damit nichts abgeschnitten wird ----------
+   (darunter stapelt Streamlit die Spalten ohnehin untereinander) */
+@media (min-width: 641px) and (max-width: 1100px) {
+  .st-key-process-kpis [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
+  .st-key-process-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 1rem) !important; min-width: calc(50% - 1rem) !important; }
+}
+
 /* ---------- Prozess als Schwimmbahnen: Rollen als Zeilen, Schritte von links nach rechts ---------- */
 .swimlane {
   display: grid; gap: 0.4rem 0.5rem;
