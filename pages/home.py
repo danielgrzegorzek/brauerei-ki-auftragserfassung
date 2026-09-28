@@ -50,7 +50,7 @@ with middle:
     st.markdown("#### :material/smart_toy: KI-Auftragserfassung")
     st.write("Freitext → strukturierter Auftrag → Prüfung gegen Stammdaten → Bestätigung. "
              "Mit Demo-Modus, der ohne API-Schlüssel funktioniert.")
-    st.caption("Kommt in Kürze.")
+    st.page_link("pages/order_entry.py", label="Zur Auftragserfassung", icon=":material/arrow_forward:")
 with right:
     st.markdown("#### :material/account_tree: Prozess & ERP")
     st.write("Ist- vs. Soll-Prozess und die Übergabe des Auftrags an SAP S/4HANA.")
