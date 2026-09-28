@@ -282,6 +282,10 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
     group = customers[customer_id]["group"] if customer_id else None
     history = customer_history(conn, customer_id) if customer_id else {}
     largest = largest_quantities(conn)
+    totals = {}  # Menge je Artikel über alle Positionen – aufgeteilte Mengen umgehen die Höchstmenge nicht
+    for product_id, quantity in lines:
+        if product_id is not None:
+            totals[product_id] = totals.get(product_id, 0) + max(quantity, 0)
 
     checked, seen = [], set()
     for product_id, quantity in lines:
@@ -298,10 +302,12 @@ def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date
                                          "duplicate"))
             seen.add(product_id)
             limit = HARD_LIMIT_FACTOR * largest[product["unit"]] if product["unit"] in largest else None
-            too_large = limit is not None and quantity > limit
+            total = totals[product_id]
+            too_large = limit is not None and total > limit
             if too_large:  # Plausibilitätsgrenze – schützt auch vor manipulierten Nachrichten
-                line_issues.append(Issue(ERROR, f"Unrealistische Menge: {format_number(quantity)} – mehr als das "
-                                                f"{HARD_LIMIT_FACTOR}-Fache der größten Bestellung aller Kunden "
+                split = " (Summe aller Positionen mit diesem Artikel)" if total != quantity else ""
+                line_issues.append(Issue(ERROR, f"Unrealistische Menge: {format_number(total)}{split} – mehr als "
+                                                f"das {HARD_LIMIT_FACTOR}-Fache der größten Bestellung aller Kunden "
                                                 f"({format_number(largest[product['unit']])}). "
                                                 "Bitte mit dem Kunden klären.", "hard_limit"))
             if group:

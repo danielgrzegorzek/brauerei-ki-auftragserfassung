@@ -151,13 +151,18 @@ def calendar_hint(today: date) -> str:
             f"{next_start.strftime('%d.%m.')} bis {next_end.strftime('%d.%m.')}.")
 
 
+def neutralize(text: str) -> str:
+    """Spitze Klammern entschärfen – so kann fremder Text die Markierung <nachricht> nicht schließen."""
+    return text.replace("<", "‹").replace(">", "›")
+
+
 def build_user_prompt(message: IncomingMessage, today: date) -> str:
     """Heutiges Datum mit Kalender, Kanal, Absender und die Nachricht selbst – klar voneinander getrennt."""
     return (
         f"Heute ist {WEEKDAYS[today.weekday()]}, der {today.strftime('%d.%m.%Y')} ({today.isoformat()}).\n"
         f"{calendar_hint(today)}\n"
-        f"Kanal: {message.channel}\nAbsender: {message.sender}\n\n"
-        f"<nachricht>\n{message.text}\n</nachricht>"
+        f"Kanal: {message.channel}\nAbsender: {neutralize(message.sender)}\n\n"
+        f"<nachricht>\n{neutralize(message.text)}\n</nachricht>"
     )
 
 
