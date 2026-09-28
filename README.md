@@ -2,7 +2,8 @@
 
 KI-gestützte Auftragserfassung und Vertriebsanalyse für eine fiktive Familienbrauerei in Niederbayern.
 
-**▶ Live-Demo: [braeu-am-stein.streamlit.app](https://braeu-am-stein.streamlit.app/)** – kostenlos testbar, kein API-Schlüssel nötig.
+**▶ Live-Demo: [braeu-am-stein.streamlit.app](https://braeu-am-stein.streamlit.app/)** – kostenlos testbar, ohne Anmeldung.
+Im Modus **KI live** wertet Claude auch eigene Nachrichten aus (begrenzte Anzahl pro Tag).
 *(Nach längerer Pause „schläft“ die App – dann einmal auf „Yes, get this app back up“ klicken und kurz warten.)*
 
 ---
@@ -26,8 +27,9 @@ der Hochsaison mit Biergärten und Volksfesten.
 Freitext ─► KI versteht die Nachricht ─► Abgleich mit Stammdaten ─► Prüfung der Regeln ─► Mensch bestätigt
 ```
 
-- Die KI übersetzt die Nachricht in ein festes Format (Kunde, Liefertermin, Sorte, Einheit, Menge) –
-  auch Dialekt wie „3 Fassl Weizn“ oder „5 Kistn Spezi“.
+- Die KI (**Claude Sonnet 5**) übersetzt die Nachricht in ein festes Format (Kunde, Liefertermin,
+  Sorte, Einheit, Menge) – auch Dialekt wie „3 Fassl Weizn“ oder „5 Kistn Spezi“. Die API garantiert
+  dieses Format (strukturierte Ausgabe); Sorten außerhalb des Sortiments sind gar nicht möglich.
 - Normaler, getesteter Code ordnet Kunde und Artikel den Stammdaten zu (fehlt die Fassgröße,
   entscheidet die Bestellhistorie) und prüft die Geschäftsregeln: Freigabe des Artikels für die
   Kundengruppe, Liefertermin, auffällige Mengen, offenes Leergut.
@@ -63,9 +65,22 @@ Auf der Seite **KI-Auftragserfassung** stehen sieben Beispielnachrichten bereit:
 | Tippfehler bei der Menge | 50 statt 5 Fässer – Warnung aus der Historie |
 | Neukunde, unbekannter Artikel | Kunde nicht im Stamm, Artikel nicht im Sortiment – blockiert |
 
-Im **Demo-Modus** sind die KI-Antworten vorbereitet – im exakt gleichen Format, das die echte
-KI liefert. Abgleich, Prüfung und Speichern laufen live; gespeicherte Aufträge erscheinen sofort
+Zwei Modi:
+
+- **Demo:** Die KI-Antworten sind vorbereitet – im exakt gleichen Format, das die echte KI liefert.
+  Kostenlos und ohne API-Schlüssel.
+- **KI live:** Claude wertet die Beispiele wirklich aus – oder eine **eigene Nachricht**. Eine
+  Auswertung dauert etwa 3 Sekunden und kostet rund 1 US-Cent; angezeigt werden Dauer und Kosten.
+  Kostenschutz: höchstens 1.000 Zeichen je Nachricht, 5 Auswertungen je Besuch, 30 je Tag.
+
+In beiden Modi laufen Abgleich, Prüfung und Speichern live; gespeicherte Aufträge erscheinen sofort
 im Dashboard.
+
+**Wie gut ist die KI?** Ein Evaluationsskript schickt die sieben Beispiele an Claude und vergleicht
+das Ergebnis mit dem geprüften Soll: **7 von 7 Aufträgen identisch** (Kunde, Termin, Artikel, Mengen),
+Kosten ca. 6 US-Cent je Lauf → [docs/EVALUATION.md](docs/EVALUATION.md). Der erste Lauf ergab nur
+4 von 7 – die gefundenen Schwächen (Kundennamen wie „FF Hengersberg“, Wochentagsrechnung) wurden
+im Code und im Prompt behoben.
 
 ## Technik
 
@@ -73,8 +88,8 @@ im Dashboard.
 |---|---|
 | Oberfläche | Streamlit (mehrseitig), Plotly – Gestaltung angelehnt an die SAP-Fiori-Designrichtlinien (Launchpad, Object Page, Illustrated Message), eigene SVG-Illustrationen |
 | Daten | SQLite, pandas |
-| KI | Claude-API (Anthropic), austauschbar gebaut – *echter KI-Modus in Arbeit* |
-| Qualität | pytest (93 Tests), Plausibilitäts-Check der Daten |
+| KI | Claude Sonnet 5 über die Claude-API (offizielles `anthropic`-Paket, strukturierte Ausgabe), Anbieter austauschbar |
+| Qualität | pytest (111 Tests, KI-Aufrufe mit Schein-Client), Plausibilitäts-Check der Daten, Live-Evaluation der KI |
 | Sprache | Python 3.13 |
 
 Warum welche Entscheidung getroffen wurde – mit Begründung und verworfener Alternative –
@@ -87,9 +102,10 @@ app.py        Einstieg: Datenbank sicherstellen, Gestaltung laden, Seitennavigat
 ui.py         Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Kacheln, Illustrationen)
 assets/       Logo, SVG-Illustrationen, Stylesheet
 pages/        Oberfläche: Start, Dashboard, KI-Auftragserfassung
-src/          Logik ohne Oberfläche: Datenmodell, Datengenerator, Auswertungen, Auftragserfassung
+src/          Logik ohne Oberfläche: Datenmodell, Datengenerator, Auswertungen, Auftragserfassung, KI-Anbindung
 tests/        automatische Tests
-docs/         Designentscheidungen
+tools/        Evaluation der KI-Auswertung
+docs/         Designentscheidungen, Evaluationsbericht
 ```
 
 ## Lokal starten
@@ -118,18 +134,25 @@ macOS / Linux:
 
 Tests: `pip install -r requirements-dev.txt`, dann `python -m pytest`.
 
+**Optional – KI live lokal:** Datei `.streamlit/secrets.toml` anlegen (steht in der `.gitignore`)
+mit der Zeile `ANTHROPIC_API_KEY = "sk-ant-…"` (eigener Schlüssel aus der Anthropic Console).
+Ohne Schlüssel läuft die App vollständig im Demo-Modus. Evaluation:
+`python -m tools.evaluate_extraction` (kostet ca. 6 US-Cent).
+
 ## Stand und nächste Schritte
 
 - [x] Datenbasis mit Plausibilitäts-Check
 - [x] Vertriebs-Dashboard
 - [x] KI-Auftragserfassung im Demo-Modus
-- [ ] Echter KI-Modus mit der Claude-API
+- [x] Echter KI-Modus mit der Claude-API, Kostenschutz und Evaluation
 - [ ] Prozessseite: Ist- vs. Soll-Prozess und Übergabe an SAP S/4HANA
 - [ ] Regelbasierter Parser als Vergleich „Regeln vs. KI“
 
 ## Hinweise
 
 - **Alle Firmen, Personen und Zahlen sind frei erfunden.**
+- Im Modus **KI live** werden eingegebene Texte zur Auswertung an Anthropic übertragen – bitte keine
+  echten personenbezogenen Daten eingeben.
 - Die Oberfläche ist an die SAP-Fiori-Designrichtlinien angelehnt; Logo und Illustrationen sind
   eigene Entwürfe. Es handelt sich nicht um ein SAP-Produkt.
 - Entwickelt mit Claude Code als KI-Pair-Programming-Werkzeug.

@@ -57,7 +57,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 
 - **Python 3.13** (Windows 11, PowerShell), virtuelle Umgebung in `.venv`
 - **Streamlit** (Oberfläche), **Plotly** (Diagramme), **SQLite** (Datenbank), **pandas**
-- **Claude-API** über das offizielle `anthropic`-Paket (ab Phase 5)
+- **Claude-API** über das offizielle `anthropic`-Paket: Modell `claude-sonnet-5`, strukturierte Ausgabe
+  (`messages.parse` mit Pydantic-Schema), `effort: low`
 
 ## Konventionen
 
@@ -80,11 +81,17 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   - Auswertung: `analytics.py` (SQL → DataFrame), `charts.py` (Plotly), `formatting.py` (deutsche Formate)
   - Auftragserfassung: `order_models.py` (Zielformat der KI, JSON), `demo_messages.py`
     (7 Beispiele mit vorbereiteten KI-Antworten), `order_capture.py` (Abgleich → Prüfung → Speichern)
+  - KI: `extraction.py` (Vertrag `OrderExtractor`; `DemoExtractor`, `ClaudeExtractor`; `SYSTEM_PROMPT`,
+    `calendar_hint`, Antwortschema `OrderSchema`), `ai_usage.py` (Kostenschutz: 1.000 Zeichen,
+    5 Aufrufe je Besuch, 30 je Tag; Tabelle `ai_usage`)
+- `tools/evaluate_extraction.py` – schickt die 7 Demo-Nachrichten an Claude, vergleicht mit dem Soll,
+  schreibt `docs/EVALUATION.md` (kostet ca. 6 US-Cent je Lauf)
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
   Abgleich (`build_draft`) gibt nur Hinweise (Warnung/Info); blockierende Fehler kommen nur aus
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,
   kein Leergut bis zur Lieferung.
-- `tests/` – pytest; `conftest.py` baut einmal pro Lauf eine Test-Datenbank im Temp-Ordner
+- `tests/` – pytest; `conftest.py` baut einmal pro Lauf eine Test-Datenbank im Temp-Ordner;
+  KI-Aufrufe nur mit Schein-Client (`FakeClient`), nie mit der echten API
 - `docs/ENTSCHEIDUNGEN.md` – Designentscheidungen mit Begründung (öffentlich)
 - Diagramm-Regeln: eine Akzentfarbe (`charts.PALETTES`, hell/dunkel), Tabellenansicht zu jedem
   Diagramm, keine zweite y-Achse; Theme-Farbe nur unter `[theme.light]`/`[theme.dark]`
@@ -110,10 +117,16 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 
 # Tests (einmalig vorher: pip install -r requirements-dev.txt)
 .venv\Scripts\python.exe -m pytest -q
+
+# Live-Evaluation der KI (braucht den Schlüssel in .streamlit/secrets.toml, kostet ca. 6 US-Cent)
+.venv\Scripts\python.exe -m tools.evaluate_extraction
 ```
 
+Der API-Schlüssel steht nur in `.streamlit/secrets.toml` (lokal) bzw. in den Secrets der
+Streamlit Community Cloud – **nie ausgeben, nie committen.** Ohne Schlüssel läuft nur der Demo-Modus.
+
 Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fehlt oder
-`SCHEMA_VERSION` in `src/database.py` nicht passt → **bei Schemaänderungen die Version erhöhen.**
+`SCHEMA_VERSION` in `src/database.py` nicht passt (aktuell 3) → **bei Schemaänderungen die Version erhöhen.**
 
 ## Phasenplan & Status
 
@@ -124,7 +137,8 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Phase 4 – Erste Veröffentlichung:** GitHub, Streamlit Cloud, Basis-README
   - Live: https://braeu-am-stein.streamlit.app · Repo: https://github.com/danig204/brauerei-ki-auftragserfassung
   - **Jeder Push auf `main` aktualisiert die Live-App automatisch** → vor dem Push Tests laufen lassen.
-- [ ] **Phase 5 – Echter KI-Modus:** Claude-API, strukturierte Ausgabe, austauschbarer Anbieter
+- [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
+  Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess, Übergabe an SAP S/4HANA (JSON + Feld-Mapping)
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video
