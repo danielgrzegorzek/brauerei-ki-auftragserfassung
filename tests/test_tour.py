@@ -1,4 +1,4 @@
-"""Tests für die geführte Tour: fünf Schritte, richtige Seiten, kurze Texte mit Zahlen aus den Daten."""
+"""Tests für die geführte Tour: sechs Schritte, richtige Seiten, kurze Texte mit Zahlen aus den Daten."""
 
 import re
 from pathlib import Path
@@ -10,10 +10,12 @@ from src.tour import PAGES, tour_steps
 STEPS = tour_steps(orders_per_year=5025, saved_hours=217.2, saved_eur=8288.9)
 
 
-def test_five_steps_in_the_agreed_order():
-    assert [step.page for step in STEPS] == ["home", "order_entry", "order_entry", "business_case", "dashboard"]
+def test_six_steps_in_the_agreed_order():
+    assert [step.page for step in STEPS] == ["home", "order_entry", "order_entry", "process", "business_case",
+                                             "dashboard"]
     assert [step.title for step in STEPS] == ["Das Problem der Brauerei", "Live-KI ausprobieren",
-                                              "Prüfung und Mensch", "Was es bringt", "Überblick und Fazit"]
+                                              "Prüfung und Mensch", "SAP-Übergabe", "Was es bringt",
+                                              "Überblick und Fazit"]
 
 
 def test_every_step_page_exists():
@@ -29,7 +31,8 @@ def test_every_text_has_one_or_two_sentences():
 
 def test_numbers_come_from_the_data_in_german_format():
     assert "Rund 5.000 Bestellungen" in STEPS[0].text
-    assert "217 Stunden und 8.289 €" in STEPS[3].text
+    assert "1 statt 6 manuelle Schritte" in STEPS[3].text  # aus src/process.py
+    assert "217 Stunden und 8.289 €" in STEPS[4].text
 
 
 def test_default_result_matches_the_business_case_page(conn):
