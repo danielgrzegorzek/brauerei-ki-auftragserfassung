@@ -10,11 +10,13 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 ## Arbeitsweise (wichtig)
 
 - Vor jedem Schritt **kurz und einfach auf Deutsch erklären**, was gemacht wird und warum – dann umsetzen.
-- In **kleinen Schritten** arbeiten; nach jedem Schritt zeigen, wie man das Ergebnis prüft/testet.
+- In **kleinen Schritten** arbeiten, ein Commit pro Schritt; nach jedem Schritt zeigen, wie man das Ergebnis prüft.
 - Einfacher, lesbarer Code vor cleverem Code. Keine unnötigen Abstraktionen.
 - Neue Bibliotheken nur mit kurzer Begründung einführen.
 - Vor größeren Änderungen erst Plan zeigen, dann Code schreiben.
 - **SAP-Begriffe** (z. B. Verkaufsorganisation, Vertriebsweg) beim ersten Auftauchen einfach erklären.
+- **Designentscheidungen** mit Begründung und Alternative in `docs/ENTSCHEIDUNGEN.md` festhalten.
+- Persönliche Notizen bleiben lokal (stehen in der `.gitignore`) und werden nie committet.
 
 ## Szenario (fiktiv)
 
@@ -80,6 +82,7 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,
   kein Leergut bis zur Lieferung.
 - `tests/` – pytest; `conftest.py` baut einmal pro Lauf eine Test-Datenbank im Temp-Ordner
+- `docs/ENTSCHEIDUNGEN.md` – Designentscheidungen mit Begründung (öffentlich)
 - Diagramm-Regeln: eine Akzentfarbe (`charts.PALETTES`, hell/dunkel), Tabellenansicht zu jedem
   Diagramm, keine zweite y-Achse; Theme-Farbe nur unter `[theme.light]`/`[theme.dark]`
 - Nach Änderungen in `src/` den Streamlit-Server neu starten (lädt Module nicht immer neu)

@@ -16,5 +16,8 @@ data/
 # Lokale Einstellungen für Claude Code
 .claude/
 
+# Persönliche Notizen – bleiben lokal
+LERNNOTIZEN.md
+
 # Windows-Systemdateien
 Thumbs.db
