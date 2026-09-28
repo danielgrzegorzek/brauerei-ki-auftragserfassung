@@ -39,6 +39,8 @@ def go(index: int, current, pages: dict, steps: list[TourStep]) -> None:
 
 def show(current, pages: dict) -> None:
     """Zeigt das Tour-Band, solange die Tour läuft. current = aktuelle Seite, pages = {Schlüssel: st.Page}."""
+    if st.session_state.pop("tour_done", False):  # nach dem Neuzeichnen, sonst ginge der Hinweis verloren
+        st.toast("Danke fürs Mitkommen – probieren Sie jetzt selbst weiter!", icon=":material/celebration:")
     index = st.session_state.get("tour_step")
     if index is None:
         return
@@ -59,8 +61,7 @@ def show(current, pages: dict) -> None:
             end = st.button("Tour beenden", type="tertiary", icon=":material/close:", key="tour_end")
     if end or (forward and last):
         st.session_state.tour_step = None
-        if forward:
-            st.toast("Danke fürs Mitkommen – probieren Sie jetzt selbst weiter!", icon=":material/celebration:")
+        st.session_state.tour_done = bool(forward)
         st.rerun()
     if back or forward:
         go(index - 1 if back else index + 1, current, pages, steps)
