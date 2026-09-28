@@ -16,11 +16,15 @@ MONTH_NAMES = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "
 # Farben je Hell-/Dunkelmodus, angelehnt an SAP Fiori (Horizon). Im dunklen Modus eigene,
 # hellere Stufen – nicht einfach invertiert. „surface“ = Kartenhintergrund, auf dem die Diagramme stehen.
 # Heatmap: Blau (unter Durchschnitt) ↔ Orange (darüber) – Rot ist bei Fiori für Fehler reserviert.
+# Kategorien (Business Case): Blau, Orange, Aqua – in dieser Reihenfolge mit dem Prüfskript validiert
+# (Unterscheidbarkeit auch bei Farbsehschwäche); im dunklen Modus ein dunkleres Orange.
 PALETTES = {
     "light": {"accent": "#0070f2", "muted": "#a9b4be", "text": "#556b82", "grid": "#e5e5e5",
-              "surface": "#ffffff", "low": "#0070f2", "mid": "#eaecee", "high": "#e76500"},
+              "surface": "#ffffff", "low": "#0070f2", "mid": "#eaecee", "high": "#e76500",
+              "categories": ["#0070f2", "#e76500", "#1baf7a"]},
     "dark": {"accent": "#1b90ff", "muted": "#5b738b", "text": "#a9b4be", "grid": "#2c3440",
-             "surface": "#1d232a", "low": "#1b90ff", "mid": "#3a4552", "high": "#ff8f4d"},
+             "surface": "#1d232a", "low": "#1b90ff", "mid": "#3a4552", "high": "#ff8f4d",
+             "categories": ["#1b90ff", "#d95926", "#199e70"]},
 }
 
 
@@ -133,4 +137,31 @@ def channel_chart(shares: pd.DataFrame, colors: dict) -> go.Figure:
     apply_base_style(fig, colors, height=320)
     fig.update_layout(showlegend=True, legend=dict(orientation="h", x=0, y=1.12), margin=dict(r=120, t=40))
     fig.update_yaxes(tickformat=".0%", rangemode="tozero")
+    return fig
+
+
+def cost_comparison_chart(bars: list[str], segments: list[tuple[str, list[float]]], colors: dict) -> go.Figure:
+    """Gestapelte waagrechte Balken, z. B. Kosten pro Jahr vorher/nachher je Kostenart.
+    bars = Balkennamen (oben beginnend), segments = [(Kostenart, Wert je Balken), …].
+    Farbe nie allein: Werte stehen im Segment (wenn Platz ist), Legende, Summe am Balkenende, Tabellenansicht."""
+    fig = go.Figure()
+    for (name, values), color in zip(segments, colors["categories"]):
+        fig.add_trace(go.Bar(
+            y=bars[::-1], x=values[::-1], name=name, orientation="h",
+            marker=dict(color=color, line=dict(color=colors["surface"], width=2)),  # 2-px-Lücke zwischen Segmenten
+            text=[f"{format_number(value)} €" for value in values[::-1]],
+            textposition="inside", insidetextanchor="middle", textfont=dict(color="#ffffff"),
+            hovertemplate=f"<b>%{{y}}</b><br>{name}: %{{x:,.0f}} €<extra></extra>",
+        ))
+    totals = [sum(values[i] for _, values in segments) for i in range(len(bars))]
+    for bar, total in zip(bars, totals):
+        fig.add_annotation(x=total, y=bar, text=f"<b>{format_number(total)} €</b>", xanchor="left", xshift=8,
+                           showarrow=False, font=dict(color=colors["text"]))
+    apply_base_style(fig, colors, height=90 * len(bars) + 80)
+    fig.update_layout(barmode="stack", bargap=0.35, barcornerradius=4, showlegend=True,
+                      legend=dict(orientation="h", x=0, y=1.18, traceorder="normal"),
+                      uniformtext=dict(minsize=11, mode="hide"),  # zu kleine Segmente ohne Zahl
+                      margin=dict(r=110, t=40))
+    fig.update_xaxes(showgrid=True, gridcolor=colors["grid"], tickformat=",.0f", ticksuffix=" €", rangemode="tozero")
+    fig.update_yaxes(showgrid=False, automargin=True)
     return fig
