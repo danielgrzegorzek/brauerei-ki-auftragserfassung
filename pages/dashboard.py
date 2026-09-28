@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 import streamlit as st
 
+import ui
 from src import analytics, charts
 from src.analytics import Filters
 from src.database import get_connection
@@ -20,15 +21,16 @@ def percent(part: float, whole: float) -> str:
     return f"{format_number(part / whole * 100)} %" if whole else "–"
 
 
-def chart_section(title: str, insight: str, fig, table, column_config: dict | None = None) -> None:
-    """Einheitlicher Abschnitt: Überschrift, Kernaussage, Reiter „Diagramm“ und „Tabelle“."""
-    st.markdown(f"#### {title}")
-    st.caption(insight)
-    chart_tab, table_tab = st.tabs([":material/bar_chart: Diagramm", ":material/table_view: Tabelle"])
-    with chart_tab:
-        st.plotly_chart(fig, config=PLOTLY_CONFIG, key=f"chart_{title}")
-    with table_tab:
-        st.dataframe(table, hide_index=True, column_config=column_config)
+def chart_section(key: str, title: str, insight: str, fig, table, column_config: dict | None = None) -> None:
+    """Einheitlicher Abschnitt als Karte: Überschrift, Kernaussage, Reiter „Diagramm“ und „Tabelle“."""
+    with st.container(key=f"card-{key}"):
+        st.markdown(f"#### {title}")
+        st.caption(insight)
+        chart_tab, table_tab = st.tabs([":material/bar_chart: Diagramm", ":material/table_view: Tabelle"])
+        with chart_tab:
+            st.plotly_chart(fig, config=PLOTLY_CONFIG, key=f"chart-{key}")
+        with table_tab:
+            st.dataframe(table, hide_index=True, column_config=column_config)
 
 
 @st.cache_data(show_spinner=False)
@@ -62,48 +64,48 @@ def load_dashboard_data(filters: Filters, compare: bool) -> dict:
 
 first_day, last_day = load_period()
 
-st.title("Vertriebs-Dashboard")
-st.caption("Alle Umsätze netto, ohne Mehrwertsteuer und ohne Pfand.")
+ui.page_header("Vertriebs-Dashboard",
+               "Umsatz, Absatz und Leergut – alle Umsätze netto, ohne Mehrwertsteuer und ohne Pfand.", "chart")
 
-# ---------- Filter: eine Zeile oben, gilt für alles darunter ----------
+# ---------- Filterleiste (Fiori „Filter Bar“): eine Karte oben, gilt für alles darunter ----------
 # Letztes volles Kalenderjahr in den Daten (z. B. 2025, solange 2026 noch läuft)
 full_year = last_day.year if (last_day.month, last_day.day) == (12, 31) else last_day.year - 1
 PERIOD_OPTIONS = ["Letzte 12 Monate", "Gesamter Zeitraum", f"Kalenderjahr {full_year}", "Benutzerdefiniert"]
-filter_left, filter_right = st.columns([3, 2])
-with filter_left:
-    period_choice = st.segmented_control("Zeitraum", PERIOD_OPTIONS, default="Letzte 12 Monate",
-                                         required=True)
-    if period_choice == "Letzte 12 Monate":
-        start, end = analytics.shift_year(last_day, -1) + timedelta(days=1), last_day
-    elif period_choice == "Gesamter Zeitraum":
-        start, end = first_day, last_day
-    elif period_choice == f"Kalenderjahr {full_year}":
-        start, end = date(full_year, 1, 1), date(full_year, 12, 31)
-    else:
-        picked = st.date_input("Von – bis", value=(first_day, last_day), min_value=first_day,
-                               max_value=last_day, format="DD.MM.YYYY")
-        if len(picked) != 2:
-            st.info("Bitte ein Start- und ein Enddatum wählen.")
-            st.stop()
-        start, end = picked
-with filter_right:
-    groups = st.pills("Kundengruppen", CUSTOMER_GROUPS, selection_mode="multi", default=CUSTOMER_GROUPS,
-                      wrap=True)
+with st.container(key="card-filters"):
+    filter_left, filter_right = st.columns([3, 2])
+    with filter_left:
+        period_choice = st.segmented_control("Zeitraum", PERIOD_OPTIONS, default="Letzte 12 Monate",
+                                             required=True, wrap=True)
+        if period_choice == "Letzte 12 Monate":
+            start, end = analytics.shift_year(last_day, -1) + timedelta(days=1), last_day
+        elif period_choice == "Gesamter Zeitraum":
+            start, end = first_day, last_day
+        elif period_choice == f"Kalenderjahr {full_year}":
+            start, end = date(full_year, 1, 1), date(full_year, 12, 31)
+        else:
+            picked = st.date_input("Von – bis", value=(first_day, last_day), min_value=first_day,
+                                   max_value=last_day, format="DD.MM.YYYY")
+            if len(picked) != 2:
+                st.info("Bitte ein Start- und ein Enddatum wählen.")
+                st.stop()
+            start, end = picked
+    with filter_right:
+        groups = st.pills("Kundengruppen", CUSTOMER_GROUPS, selection_mode="multi", default=CUSTOMER_GROUPS,
+                          wrap=True)
+    if not groups:
+        st.info("Bitte mindestens eine Kundengruppe auswählen.")
+        st.stop()
 
-if not groups:
-    st.info("Bitte mindestens eine Kundengruppe auswählen.")
-    st.stop()
+    filters = Filters(start, end, tuple(groups))
+    # Vorjahresvergleich nur, wenn der ganze Vorjahreszeitraum in den Daten liegt
+    compare = analytics.previous_year(filters).start >= first_day
+    st.caption(f"{format_date(start)} – {format_date(end)}"
+               + (" · Veränderung gegenüber dem Vorjahreszeitraum" if compare else " · kein Vorjahresvergleich möglich"))
 
-filters = Filters(start, end, tuple(groups))
-# Vorjahresvergleich nur, wenn der ganze Vorjahreszeitraum in den Daten liegt
-compare = analytics.previous_year(filters).start >= first_day
 data = load_dashboard_data(filters, compare)
 if data["kpis"]["orders"] == 0:
     st.info("Im gewählten Zeitraum gibt es für diese Kundengruppen keine Aufträge.")
     st.stop()
-
-st.caption(f"{format_date(start)} – {format_date(end)}"
-           + (" · Veränderung gegenüber dem Vorjahreszeitraum" if compare else " · kein Vorjahresvergleich möglich"))
 
 # ---------- Kennzahlen ----------
 kpis = data["kpis"]
@@ -153,7 +155,7 @@ total_revenue = kpis["revenue"]
 month_labels = [charts.month_label(m) for m in monthly["month"]]
 peak, low = monthly["revenue"].idxmax(), monthly["revenue"].idxmin()
 chart_section(
-    "Umsatz je Monat",
+    "monthly", "Umsatz je Monat",
     f"Stärkster Monat: {month_labels[peak]} ({format_eur_compact(monthly['revenue'][peak])}), "
     f"schwächster: {month_labels[low]} ({format_eur_compact(monthly['revenue'][low])}).",
     charts.monthly_revenue_chart(monthly, colors),
@@ -167,7 +169,7 @@ with left:
     groups_df = data["groups"]
     top_group = groups_df.iloc[0]
     chart_section(
-        "Umsatz nach Kundengruppe",
+        "groups", "Umsatz nach Kundengruppe",
         f"{top_group['customer_group']} bringt {percent(top_group['revenue'], total_revenue)} des Umsatzes.",
         charts.ranking_chart(
             groups_df["customer_group"].tolist(), (groups_df["revenue"] / 1000).tolist(),
@@ -182,7 +184,7 @@ with right:
     products_df = data["products"]
     top_product = products_df.iloc[0]
     chart_section(
-        "Umsatz nach Artikel",
+        "products", "Umsatz nach Artikel",
         f"Umsatzstärkster Artikel: {top_product['product']} "
         f"({percent(top_product['revenue'], total_revenue)} des Umsatzes).",
         charts.ranking_chart(
@@ -209,7 +211,7 @@ with left:
         insight = "Der gewählte Zeitraum enthält keine Sommermonate."
     table = season.round(0).rename(columns=lambda m: charts.MONTH_NAMES[m - 1]).reset_index()
     chart_section(
-        "Saisonalität je Warengruppe",
+        "season", "Saisonalität je Warengruppe",
         insight + " Index 100 = Durchschnittsmonat (Absatz in hl).",
         charts.seasonality_heatmap(season, colors),
         table.rename(columns={"product_group": "Warengruppe"}),
@@ -221,7 +223,7 @@ with right:
     trend_text = ("steigt" if last["share"] > first["share"] else
                   "sinkt" if last["share"] < first["share"] else "bleibt gleich")
     chart_section(
-        "Bestellkanäle je Quartal",
+        "channels", "Bestellkanäle je Quartal",
         f"Der WhatsApp-Anteil {trend_text}: {format_number(first['share'] * 100)} % ({first['quarter']}) → "
         f"{format_number(last['share'] * 100)} % ({last['quarter']}).",
         charts.channel_chart(channels, colors),
@@ -234,7 +236,7 @@ left, right = st.columns(2, gap="large")
 with left:
     top = data["top_customers"]
     chart_section(
-        "Top-10-Kunden",
+        "top-customers", "Top-10-Kunden",
         f"Die 10 umsatzstärksten Kunden stehen für {percent(top['revenue'].sum(), total_revenue)} des Umsatzes.",
         charts.ranking_chart(
             top["customer"].tolist(), (top["revenue"] / 1000).tolist(),
@@ -251,7 +253,7 @@ with right:
     empties = data["empties"]
     top_empties = empties.head(10)
     chart_section(
-        f"Offenes Leergut am {format_date(end)}",
+        "empties", f"Offenes Leergut am {format_date(end)}",
         f"{len(empties)} Kunden haben Leergut offen; die 10 größten stehen für "
         f"{percent(top_empties['deposit_eur'].sum(), empties['deposit_eur'].sum())} des offenen Pfands.",
         charts.ranking_chart(

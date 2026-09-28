@@ -38,6 +38,9 @@ def apply_base_style(fig: go.Figure, colors: dict, height: int) -> go.Figure:
         showlegend=False,
         font=dict(color=colors["text"]),
         hoverlabel=dict(align="left"),
+        # Transparent: Das Diagramm geht nahtlos in die Karte über, auf der es steht
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
     fig.update_xaxes(showgrid=False, linecolor=colors["grid"], zeroline=False)
     fig.update_yaxes(showgrid=True, gridcolor=colors["grid"], gridwidth=1, zeroline=False)
