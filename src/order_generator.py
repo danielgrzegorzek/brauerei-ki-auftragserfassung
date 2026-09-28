@@ -51,6 +51,8 @@ DEMO_PROFILES = {
     "Gasthof Zur Post": {"size": 1.3, "assortment": ["HELL-F50", "WEISS-K20", "WEISS-F50", "HELLAF-K20", "ZITRO-K20"]},
     "Gasthaus Brandl": {"size": 0.6, "assortment": ["HELL-F30", "WEISS-F30", "PILS-K20", "HELLAF-K20"]},
     "Biergarten Donaublick": {"size": 1.5, "assortment": ["HELL-F50", "WEISS-F50", "RADLER-K20", "COLAMIX-K20", "ZITRO-K20"]},
+    "Freiwillige Feuerwehr Hengersberg": {"size": 1.0, "assortment": ["HELL-F50", "WEISS-F50", "HELLAF-K20", "ZITRO-K20", "ORANGE-K20"]},
+    "Frischemarkt Wimmer": {"size": 1.0, "assortment": ["HELL-K20", "WEISS-K20", "PILS-K20", "RADLER-K20", "ZITRO-K20"]},
 }
 
 
