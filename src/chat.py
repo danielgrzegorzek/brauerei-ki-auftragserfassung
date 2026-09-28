@@ -13,7 +13,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from src.extraction import WEEKDAYS
-from src.formatting import format_number
+from src.formatting import format_date, format_number
 from src.order_capture import (
     INFO, CheckResult, Draft, DraftLine, Issue, check_order, load_customers, load_products, price_on,
 )
@@ -81,7 +81,8 @@ def now_berlin() -> datetime:
 
 
 def date_label(day: date) -> str:
-    return f"{WEEKDAYS[day.weekday()]}, {day.strftime('%d.%m.')}"
+    """'Freitag, 02.10.2026'"""
+    return f"{WEEKDAYS[day.weekday()]}, {format_date(day)}"
 
 
 def join_or(labels: list[str]) -> str:

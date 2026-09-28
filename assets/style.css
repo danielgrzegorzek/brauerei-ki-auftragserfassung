@@ -94,3 +94,112 @@
 .fiori-illustrated-message img { width: 15rem; max-width: 100%; height: auto; }
 .fiori-illustrated-message .title { font-size: 1.2rem; font-weight: 700; color: var(--fiori-text); margin-top: 0.75rem; }
 .fiori-illustrated-message .text { color: var(--fiori-label); margin-top: 0.3rem; }
+
+/* ---------- Live-Chat: Handy im Messenger-Stil (Farben --chat-* aus ui.py) ---------- */
+.st-key-phone {
+  max-width: 26rem;
+  margin: 0.25rem auto 0;
+  border: 0.6rem solid var(--phone-frame);
+  border-radius: 2.2rem;
+  overflow: hidden;
+  background: var(--chat-bg);
+  gap: 0 !important;
+  padding-bottom: 0.6rem;
+}
+.chat-header {
+  display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.75rem 1rem;
+  background: var(--chat-header-bg); color: var(--chat-header-text);
+}
+.chat-header img { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: #ffffff; padding: 0.2rem; }
+.chat-header strong { display: block; font-size: 1rem; line-height: 1.2; }
+.chat-header span { display: block; font-size: 0.78rem; opacity: 0.9; }
+/* column-reverse: Der Verlauf beginnt unten – die neueste Nachricht ist ohne JavaScript immer sichtbar */
+.chat-scroll {
+  display: flex; flex-direction: column-reverse;
+  height: 26rem; overflow-y: auto;
+  padding: 0.75rem 0.7rem;
+  background: var(--chat-bg);
+}
+.chat-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.chat-row { display: flex; }
+.chat-row.out { justify-content: flex-end; }
+.chat-bubble {
+  max-width: 82%;
+  padding: 0.45rem 0.65rem 0.3rem;
+  border-radius: 0.6rem;
+  font-size: 0.93rem; line-height: 1.35;
+  color: var(--chat-text);
+  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  overflow-wrap: anywhere;
+}
+.chat-bubble.in { background: var(--chat-in); border-top-left-radius: 0.15rem; }
+.chat-bubble.out { background: var(--chat-out); border-top-right-radius: 0.15rem; }
+.chat-meta { display: block; text-align: right; font-size: 0.7rem; color: var(--chat-meta); margin-top: 0.15rem; }
+.chat-ticks { color: var(--chat-ticks); margin-left: 0.25rem; letter-spacing: -0.15em; }
+.chat-notice {
+  align-self: center; text-align: center;
+  max-width: 90%; margin: 0.2rem auto;
+  padding: 0.35rem 0.7rem; border-radius: 0.5rem;
+  background: var(--chat-notice-bg); color: var(--chat-notice-text);
+  font-size: 0.78rem;
+}
+/* „schreibt …“: drei hüpfende Punkte */
+.chat-typing { display: flex; gap: 0.25rem; padding: 0.7rem 0.8rem; }
+.chat-typing span {
+  width: 0.45rem; height: 0.45rem; border-radius: 50%;
+  background: var(--chat-meta);
+  animation: chat-dot 1.2s infinite ease-in-out;
+}
+.chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes chat-dot {
+  0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-0.2rem); }
+}
+/* Streamlit-Elemente im Handy: Schnellantworten und Eingabefeld */
+.st-key-quick-replies { padding: 0.45rem 0.7rem 0; justify-content: flex-end; }
+.st-key-quick-replies button,
+.st-key-chat-examples button { border-radius: 999px; }
+.st-key-quick-replies button { background: var(--chat-in); color: var(--fiori-accent); border-color: var(--fiori-accent); }
+.st-key-phone [data-testid="stChatInput"] { margin: 0.5rem 0.6rem 0; }
+/* Auf dem Handy: kein zweiter Handy-Rahmen, dafür etwas niedrigerer Verlauf */
+@media (max-width: 640px) {
+  .st-key-phone { border-width: 0.25rem; border-radius: 1.1rem; }
+  .chat-scroll { height: 22rem; }
+}
+
+/* ---------- „Auftrag entsteht“: fünf Schritte, angelehnt an den Fiori-„Process Flow“ ---------- */
+.order-steps {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem; margin: 0.25rem 0 0.9rem;
+}
+.order-step {
+  --step-color: var(--fiori-border);
+  display: flex; gap: 0.5rem; align-items: flex-start;
+  padding: 0.55rem 0.6rem; border-radius: 0.6rem;
+  background: var(--fiori-accent-soft);
+  border-top: 3px solid var(--step-color);
+  animation: step-in 0.25s ease-out;
+}
+.order-step.ok { --step-color: var(--step-ok); }
+.order-step.warn { --step-color: var(--step-warn); }
+.order-step.error { --step-color: var(--step-error); }
+.order-step.pending { opacity: 0.55; animation: none; }
+.order-step-icon {
+  flex-shrink: 0; width: 1.35rem; height: 1.35rem; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 0.8rem; font-weight: 700;
+  color: var(--fiori-card); background: var(--step-color);
+}
+.order-step.pending .order-step-icon { background: transparent; color: var(--fiori-label); border: 1px dashed var(--fiori-label); }
+.order-step-text { display: flex; flex-direction: column; min-width: 0; }
+.order-step-label { font-size: 0.75rem; color: var(--fiori-label); }
+.order-step-value { font-size: 0.88rem; font-weight: 600; color: var(--fiori-text); overflow-wrap: anywhere; }
+@keyframes step-in { from { opacity: 0; transform: translateY(0.3rem); } to { opacity: 1; transform: none; } }
+@media (max-width: 1100px) {
+  .order-steps { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-typing span, .order-step { animation: none; }
+}

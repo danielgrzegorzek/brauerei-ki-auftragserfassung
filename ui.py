@@ -33,6 +33,13 @@ COLORS = {
         "--ill-wall": "#fdfaf5", "--ill-wall-2": "#f1ebe1", "--ill-roof": "#c65a35", "--ill-chimney": "#9aa8b5",
         "--ill-window": "#5b738b", "--ill-door": "#8a5a36", "--ill-crate-dark": "#0057c2",
         "--ill-keg": "#c5ccd3", "--ill-keg-ring": "#8696a9", "--ill-line": "#a9b4be", "--ill-foam": "#ffffff",
+        # Messenger-Ansicht (angelehnt an gängige Chat-Apps, ohne fremde Marken)
+        "--chat-bg": "#efeae2", "--chat-in": "#ffffff", "--chat-out": "#d9fdd3", "--chat-text": "#111b21",
+        "--chat-meta": "#5b6b75", "--chat-ticks": "#0070f2", "--chat-notice-bg": "#fff5c4",
+        "--chat-notice-text": "#4a5a64", "--chat-header-bg": "#0070f2", "--chat-header-text": "#ffffff",
+        "--phone-frame": "#1d2d3e",
+        # Fortschritt „Auftrag entsteht“ – Zustand immer auch über Symbol und Text erkennbar
+        "--step-ok": "#256f3a", "--step-warn": "#b44f00", "--step-error": "#aa0808",
     },
     "dark": {
         "--fiori-card": "#1d232a",
@@ -49,6 +56,11 @@ COLORS = {
         "--ill-wall": "#d8d2c7", "--ill-wall-2": "#c7c0b3", "--ill-roof": "#b0502f", "--ill-chimney": "#6f7f8f",
         "--ill-window": "#34495e", "--ill-door": "#6e4a2f", "--ill-crate-dark": "#0f6fd0",
         "--ill-keg": "#9aa8b5", "--ill-keg-ring": "#5b738b", "--ill-line": "#5b738b", "--ill-foam": "#eaecee",
+        "--chat-bg": "#0b141a", "--chat-in": "#202c33", "--chat-out": "#005c4b", "--chat-text": "#e9edef",
+        "--chat-meta": "#a3b1ba", "--chat-ticks": "#53bdeb", "--chat-notice-bg": "#182229",
+        "--chat-notice-text": "#ffd279", "--chat-header-bg": "#1d232a", "--chat-header-text": "#eaecee",
+        "--phone-frame": "#3a4552",
+        "--step-ok": "#6dd58c", "--step-warn": "#ffab6e", "--step-error": "#ff8888",
     },
 }
 
