@@ -88,15 +88,36 @@ def open_deposit(conn: sqlite3.Connection, as_of: date, customer_groups: tuple[s
 
 
 def revenue_by_month(conn: sqlite3.Connection, filters: Filters) -> pd.DataFrame:
-    """Umsatz und Absatz je Monat. Spalten: month (Datum des Monatsersten), revenue, hectoliters."""
+    """Kennzahlen je Monat. Spalten: month (Datum des Monatsersten), revenue, hectoliters, orders."""
     where, params = where_clause(filters)
     df = query(conn, f"""
-        SELECT substr(o.order_date, 1, 7) AS month, SUM({REVENUE}) AS revenue, SUM({HECTOLITERS}) AS hectoliters
+        SELECT substr(o.order_date, 1, 7) AS month, SUM({REVENUE}) AS revenue,
+               SUM({HECTOLITERS}) AS hectoliters, COUNT(DISTINCT o.order_id) AS orders
         {BASE_FROM} {where}
         GROUP BY month ORDER BY month
     """, params)
     df["month"] = pd.to_datetime(df["month"] + "-01")
     return df
+
+
+def open_deposit_by_month(conn: sqlite3.Connection, filters: Filters) -> pd.DataFrame:
+    """Offenes Pfand jeweils am Monatsende im Zeitraum. Spalten: month, deposit_eur.
+
+    Der Saldo braucht ALLE Bewegungen seit Beginn, nicht nur die im Zeitraum:
+    erst Veränderung je Monat, dann laufende Summe (cumsum), dann auf den Zeitraum kürzen.
+    """
+    placeholders = ", ".join("?" for _ in filters.customer_groups)
+    df = query(conn, f"""
+        SELECT substr(m.movement_date, 1, 7) AS month, SUM(m.quantity * e.deposit_eur) AS change_eur
+        FROM empties_movements m
+        JOIN empties_types e ON e.empties_type_id = m.empties_type_id
+        JOIN customers c     ON c.customer_id = m.customer_id
+        WHERE m.movement_date <= ? AND c.customer_group IN ({placeholders})
+        GROUP BY month ORDER BY month
+    """, [filters.end.isoformat(), *filters.customer_groups])
+    df["deposit_eur"] = df["change_eur"].cumsum()
+    df = df[df["month"] >= filters.start.isoformat()[:7]]
+    return df[["month", "deposit_eur"]].reset_index(drop=True)
 
 
 def revenue_by_customer_group(conn: sqlite3.Connection, filters: Filters) -> pd.DataFrame:

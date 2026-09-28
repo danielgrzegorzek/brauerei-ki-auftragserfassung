@@ -58,6 +58,13 @@ def test_open_deposit_matches_customer_table(conn):
     assert total > 0
 
 
+def test_deposit_by_month_ends_with_open_deposit(conn):
+    by_month = analytics.open_deposit_by_month(conn, YEAR_2025)
+    assert len(by_month) == 12
+    total = analytics.open_deposit(conn, YEAR_2025.end, CUSTOMER_GROUPS)
+    assert by_month["deposit_eur"].iloc[-1] == pytest.approx(total)
+
+
 def test_previous_year_shifts_period():
     shifted = analytics.previous_year(Filters(date(2025, 10, 1), date(2026, 9, 30), ("Gastronomie",)))
     assert (shifted.start, shifted.end) == (date(2024, 10, 1), date(2025, 9, 30))
