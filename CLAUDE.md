@@ -69,7 +69,10 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 
 ## Projektstruktur
 
-- `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), Navigation (`st.navigation`)
+- `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), `ui.apply_style()`, Navigation (`st.navigation`)
+- `ui.py` – Oberflächen-Bausteine im Fiori-Stil (bewusst außerhalb von `src/`): `page_header`, `tile`,
+  `illustration`, `illustrated_message`, `image_uri`; Farbvariablen je Hell/Dunkel in `COLORS`
+- `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Illustrationen, Piktogramme
 - `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`
 - `src/` – Logik ohne Streamlit:
   - Daten: `database.py` (Schema, `SCHEMA_VERSION`), `master_data.py`, `order_generator.py`,
@@ -85,7 +88,13 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `docs/ENTSCHEIDUNGEN.md` – Designentscheidungen mit Begründung (öffentlich)
 - Diagramm-Regeln: eine Akzentfarbe (`charts.PALETTES`, hell/dunkel), Tabellenansicht zu jedem
   Diagramm, keine zweite y-Achse; Theme-Farbe nur unter `[theme.light]`/`[theme.dark]`
-- Nach Änderungen in `src/` den Streamlit-Server neu starten (lädt Module nicht immer neu)
+- Nach Änderungen in `src/` oder `ui.py` den Streamlit-Server neu starten (lädt Module nicht immer neu)
+- Oberfläche angelehnt an **SAP Fiori (Horizon)** – eigenes Logo, keine SAP-Marken. Karten entstehen über
+  Container-Keys: `card-…`, `tile-…`, `page-header`, `message-bubble` (CSS über `st-key-<key>`-Klassen).
+- **`st.html` filtert `<style>` und `<svg>`** → eigenes HTML/CSS über `ui.raw_html` (`st.markdown` mit
+  `unsafe_allow_html`); SVGs als `<img>` über `ui.img`, das die Modus-Farben in ein CDATA-`<style>` im SVG schreibt.
+- Läuft auf Port 8501 schon ein manuell gestarteter Server, zum Testen die Konfiguration
+  `streamlit-test` (Port 8502) in `.claude/launch.json` nutzen.
 
 ## Befehle
 

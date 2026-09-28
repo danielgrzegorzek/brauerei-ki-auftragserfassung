@@ -71,7 +71,7 @@ im Dashboard.
 
 | Bereich | Werkzeuge |
 |---|---|
-| Oberfläche | Streamlit (mehrseitig), Plotly |
+| Oberfläche | Streamlit (mehrseitig), Plotly – Gestaltung angelehnt an die SAP-Fiori-Designrichtlinien (Launchpad, Object Page, Illustrated Message), eigene SVG-Illustrationen |
 | Daten | SQLite, pandas |
 | KI | Claude-API (Anthropic), austauschbar gebaut – *echter KI-Modus in Arbeit* |
 | Qualität | pytest (93 Tests), Plausibilitäts-Check der Daten |
@@ -83,7 +83,9 @@ steht in **[docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md)**.
 ## Projektstruktur
 
 ```
-app.py        Einstieg: Datenbank sicherstellen, Seitennavigation
+app.py        Einstieg: Datenbank sicherstellen, Gestaltung laden, Seitennavigation
+ui.py         Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Kacheln, Illustrationen)
+assets/       Logo, SVG-Illustrationen, Stylesheet
 pages/        Oberfläche: Start, Dashboard, KI-Auftragserfassung
 src/          Logik ohne Oberfläche: Datenmodell, Datengenerator, Auswertungen, Auftragserfassung
 tests/        automatische Tests
@@ -128,4 +130,6 @@ Tests: `pip install -r requirements-dev.txt`, dann `python -m pytest`.
 ## Hinweise
 
 - **Alle Firmen, Personen und Zahlen sind frei erfunden.**
+- Die Oberfläche ist an die SAP-Fiori-Designrichtlinien angelehnt; Logo und Illustrationen sind
+  eigene Entwürfe. Es handelt sich nicht um ein SAP-Produkt.
 - Entwickelt mit Claude Code als KI-Pair-Programming-Werkzeug.

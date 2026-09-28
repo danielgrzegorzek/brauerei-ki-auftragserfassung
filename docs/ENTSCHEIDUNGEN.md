@@ -6,7 +6,9 @@ Dieses Dokument hält fest, **welche Entscheidungen** in diesem Projekt getroffe
 ## Architektur im Überblick
 
 ```
-app.py                 Rahmen: Datenbank sicherstellen, Seitennavigation
+app.py                 Rahmen: Datenbank sicherstellen, Gestaltung laden, Seitennavigation
+ui.py                  Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Kacheln, Illustrationen)
+assets/                Logo, SVG-Illustrationen, Stylesheet
 pages/                 Oberfläche (Streamlit) – nur Anzeige und Eingaben
   home.py              Startseite mit Datenbasis und Plausibilitäts-Check
   dashboard.py         Vertriebs-Dashboard
@@ -131,7 +133,23 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | Versionsnummer in den Widget-Schlüsseln | Eine neue Auswertung bekommt frische Eingabefelder. | – |
 | In der Prüftabelle nur ein **kurzer Status**, vollständige Hinweise darunter | Lange Texte in Tabellenzellen werden abgeschnitten – Fehler müssen vollständig lesbar sein. | – |
 
-## 6. Betrieb
+## 6. Oberfläche im Fiori-Stil
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| Gestaltung **angelehnt an SAP Fiori (Horizon)**: Launchpad-Kacheln, Shell Bar, Object-Page-Kopf, Filter Bar, Liste/Detail-Layout, Illustrated Message | Vertraute Muster für Anwender aus dem SAP-Umfeld; ruhige, kartenbasierte Oberfläche. | Streamlit-Standardoptik. |
+| **Angelehnt, nicht kopiert:** eigenes Logo, eigene Farbwerte, keine SAP-Schrift, kein SAP-Logo | SAP ist eine geschützte Marke; die App soll nicht wie ein SAP-Produkt wirken. | – |
+| Farben, Schriftgröße (17 px) und Radien über die **Theme-Einstellungen** in `config.toml`, hell und dunkel | Offizieller, update-sicherer Weg; nur der Rest per CSS. | Alles per CSS. |
+| **Wenig CSS**, angesprochen über die von Streamlit dokumentierten Klassen `st-key-<key>` | Container mit `key` lassen sich gezielt gestalten; interne Klassennamen ändern sich bei Updates. | CSS kann bei Streamlit-Updates brechen – deshalb feste Paketversionen. |
+| Oberflächen-Bausteine in **`ui.py`** außerhalb von `src/` | `src/` bleibt frei von Streamlit und testbar; das Aussehen ist an einer Stelle definiert. | – |
+| **Eigene SVG-Illustrationen** statt Fotos | Keine Lizenzfragen, scharf in jeder Größe, passend zu hell und dunkel; Fiori selbst nutzt Illustrationen. | Lizenzfreie Fotos. |
+| SVGs als `<img>` mit **eingebetteten Farben des aktuellen Modus** | `st.html` filtert `<svg>` heraus; ins `<img>` wirkt das Stylesheet der Seite nicht – deshalb schreibt `ui.py` die Farben direkt ins SVG. | – |
+| Ganze Kachel klickbar („stretched link“) | Wie im Fiori-Launchpad; der Link bleibt ein normaler Streamlit-Seitenlink. | – |
+| Diagramme mit **transparentem Hintergrund** | Gehen nahtlos in die Karte über, auf der sie stehen. | – |
+| Heatmap **Blau ↔ Orange** | Rot ist bei Fiori für Fehler reserviert; ein Sommerhoch ist nichts Schlechtes. | Blau ↔ Rot. |
+| Kennzahlen unter 1100 px Breite kleiner (Media Query) | Fünf Kennzahlen passen auch auf kleine Laptops. | – |
+
+## 7. Betrieb
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
@@ -140,7 +158,7 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | **Python-Version** in der Cloud wie lokal (3.13), feste Paketversionen | Gleiche Umgebung wie in der Entwicklung – keine Überraschungen durch andere Versionen. | – |
 | **Keine Secrets** für den Demo-Modus | Die Demo funktioniert ohne API-Schlüssel; ein Schlüssel für den echten KI-Modus kommt ausschließlich in die Secrets-Verwaltung der Cloud, nie in den Code. | – |
 
-## 7. Bewusste Grenzen
+## 8. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).
