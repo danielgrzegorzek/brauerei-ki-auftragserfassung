@@ -65,6 +65,19 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - Simulierte Daten mit festem Zufalls-Seed erzeugen → reproduzierbar.
 - Oberfläche (`pages/`) und Logik (`src/`) trennen, damit die Logik testbar ist.
 
+## Projektstruktur
+
+- `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), Navigation (`st.navigation`)
+- `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`
+- `src/` – Logik ohne Streamlit:
+  - Daten: `database.py` (Schema, `SCHEMA_VERSION`), `master_data.py`, `order_generator.py`,
+    `empties_generator.py`, `data_setup.py`, `plausibility.py`
+  - Auswertung: `analytics.py` (SQL → DataFrame), `charts.py` (Plotly), `formatting.py` (deutsche Formate)
+- `tests/` – pytest; `conftest.py` baut einmal pro Lauf eine Test-Datenbank im Temp-Ordner
+- Diagramm-Regeln: eine Akzentfarbe (`charts.PALETTES`, hell/dunkel), Tabellenansicht zu jedem
+  Diagramm, keine zweite y-Achse; Theme-Farbe nur unter `[theme.light]`/`[theme.dark]`
+- Nach Änderungen in `src/` den Streamlit-Server neu starten (lädt Module nicht immer neu)
+
 ## Befehle
 
 ```powershell
@@ -88,7 +101,7 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 
 - [x] **Phase 0 – Setup:** Git, `.gitignore`, `.venv`, `requirements.txt`, Test-Startseite
 - [x] **Phase 1 – Datenbasis:** SQLite-Schema, Datengenerator (Saisonalität, Leergut), Plausibilitäts-Check
-- [ ] **Phase 2 – Dashboard:** KPIs, Umsatz nach Monat/Kundengruppe/Produkt, Saisonalität, Top-Kunden, Leergut
+- [x] **Phase 2 – Dashboard:** KPIs, Umsatz nach Monat/Kundengruppe/Produkt, Saisonalität, Top-Kunden, Leergut
 - [ ] **Phase 3 – Auftragserfassung (Demo-Modus):** Zielformat, Beispielnachrichten, Stammdatenabgleich, Human-in-the-Loop
 - [ ] **Phase 4 – Erste Veröffentlichung:** Git-E-Mail ändern (vorher!), GitHub, Streamlit Cloud, Basis-README
 - [ ] **Phase 5 – Echter KI-Modus:** Claude-API, strukturierte Ausgabe, austauschbarer Anbieter
