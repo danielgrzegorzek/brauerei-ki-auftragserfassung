@@ -166,7 +166,7 @@ def match_customer(name: str | None, customers: dict[str, dict]) -> tuple[str | 
     3. ähnlich geschriebener Name (Tippfehler)
     Unsichere Treffer immer mit Warnung; bei mehreren Kandidaten entscheidet der Mensch."""
     if not name:
-        return None, [Issue(WARNING, "Die KI hat keinen Kunden erkannt – bitte Kunden auswählen.")]
+        return None, [Issue(WARNING, "Die KI hat keinen Kunden erkannt – bitte Kunden auswählen.", "customer_missing")]
     ids_by_name = {customer["name"]: cid for cid, customer in customers.items()}
     for customer_name, cid in ids_by_name.items():
         if customer_name.casefold() == name.casefold():
@@ -177,17 +177,18 @@ def match_customer(name: str | None, customers: dict[str, dict]) -> tuple[str | 
     if len(candidates) == 1:
         found = customers[candidates[0]]["name"]
         return candidates[0], [Issue(WARNING, f"Kunde über Namensbestandteile zugeordnet: „{name}“ → „{found}“. "
-                                              "Bitte prüfen.")]
+                                              "Bitte prüfen.", "customer_tokens")]
 
     close = difflib.get_close_matches(name, list(ids_by_name), n=1, cutoff=CUSTOMER_MATCH_CUTOFF)
     if close:
         return ids_by_name[close[0]], [Issue(WARNING, f"Kunde nicht exakt erkannt: „{name}“ → „{close[0]}“ "
-                                                      "zugeordnet. Bitte prüfen.")]
+                                                      "zugeordnet. Bitte prüfen.", "customer_fuzzy")]
     if candidates:
         names = ", ".join(sorted(customers[cid]["name"] for cid in candidates))
-        return None, [Issue(WARNING, f"„{name}“ passt zu mehreren Kunden ({names}) – bitte Kunden auswählen.")]
+        return None, [Issue(WARNING, f"„{name}“ passt zu mehreren Kunden ({names}) – bitte Kunden auswählen.",
+                            "customer_ambiguous")]
     return None, [Issue(WARNING, f"„{name}“ ist nicht im Kundenstamm. Ein Neukunde muss zuerst angelegt werden "
-                                 "(in SAP: Geschäftspartner anlegen).")]
+                                 "(in SAP: Geschäftspartner anlegen).", "customer_unknown")]
 
 
 def match_product(item: ExtractedItem, products: dict[str, dict],

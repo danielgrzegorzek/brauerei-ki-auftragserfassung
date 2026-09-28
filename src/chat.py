@@ -1,27 +1,33 @@
 """Chat-Logik der Messenger-Ansicht – ohne Streamlit, vollständig testbar.
 
-Die Antwort der „Brauerei“ entsteht im Code aus dem Prüfergebnis: kein zweiter KI-Aufruf, also keine
-Zusatzkosten und keine erfundenen Zusagen. Sofort gibt es nur eine Eingangsbestätigung oder Rückfrage –
-die verbindliche Auftragsbestätigung folgt erst, wenn ein Mensch den Auftrag gespeichert hat.
-Rückfragen bekommen Schnellantwort-Knöpfe; ein Klick ergänzt den Auftrag per Code.
+Die Antwort der „Brauerei“ entsteht im Code aus Abgleich und Prüfung: kein zweiter KI-Aufruf, also keine
+Zusatzkosten und keine erfundenen Zusagen.
+- Sofort gibt es nur eine Eingangsbestätigung oder eine Rückfrage – die verbindliche Auftragsbestätigung
+  folgt erst, wenn ein Mensch den Auftrag gespeichert hat.
+- Rückfragen kommen einzeln und immer mit Schnellantwort-Knöpfen (Artikel, Menge, Liefertermin); ein Klick
+  ergänzt den Auftrag per Code. Was sich nicht per Knopf klären lässt, übernimmt der Innendienst – so gibt
+  es keine offene Frage, auf die man tippen müsste (eine getippte Nachricht ist eine neue Bestellung).
 """
 
 import re
 import sqlite3
 from dataclasses import dataclass, field, replace
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from src.extraction import WEEKDAYS
 from src.formatting import format_date, format_number
 from src.order_capture import (
-    INFO, CheckResult, Draft, DraftLine, Issue, check_order, load_customers, load_products, price_on,
+    INFO, CheckResult, Draft, DraftLine, Issue, check_order, customer_history, load_customers, load_products,
+    price_on,
 )
 from src.order_models import ExtractedItem, ExtractedOrder
 
 BERLIN = ZoneInfo("Europe/Berlin")
 CUSTOMER, BREWERY, NOTICE = "customer", "brewery", "notice"  # Wer „spricht“ im Chat
-MAX_OPTIONS = 4  # höchstens so viele Schnellantworten je Rückfrage
+MAX_OPTIONS = 4        # höchstens so viele Schnellantworten je Rückfrage
+DAYS_OFFERED = 3       # so viele Liefertage bietet die Terminfrage an
+STEM_LENGTH = 6        # Wortstamm für die Sortensuche: „Limonaden“ → „limona“
 
 # „Du schreibst als …“: Anzeige → Absender, wie er im Messenger erscheint (Kunden aus dem Demo-Stamm)
 PERSONAS = {
@@ -44,21 +50,30 @@ NO_ORDER_REPLY = ("Danke für Ihre Nachricht! Darin haben wir keine Bestellung g
                   "Menge, Sorte und Gebinde, zum Beispiel „5 Fass Helles“.")
 UNKNOWN_CUSTOMER_REPLY = ("Danke für Ihre Nachricht! Wir finden Sie noch nicht in unserer Kundenliste – unser "
                           "Innendienst meldet sich, um Sie als Kunden anzulegen.")
+ASSIGN_CUSTOMER_REPLY = ("Danke für Ihre Bestellung! Unser Innendienst ordnet sie gleich Ihrem Kundenkonto zu "
+                         "und meldet sich bei Ihnen.")
+CHECKING_REPLY = "Danke für Ihre Bestellung! Unser Innendienst prüft noch ein Detail und meldet sich gleich."
+NOTED_REPLY = ("Danke, notiert! Unser Innendienst stellt Ihren Auftrag gerade fertig und schickt Ihnen gleich "
+               "die Bestätigung.")
+REPLACED_NOTICE = "Neue Bestellung erkannt – der vorige, noch nicht bestätigte Auftrag wurde verworfen."
 DATE_QUESTIONS = {
     "no_date": "Für wann dürfen wir liefern?",
     "past_date": "Der Wunschtermin liegt in der Vergangenheit – für wann dürfen wir liefern?",
     "sunday": "Sonntags liefern wir leider nicht – passt Ihnen ein anderer Tag?",
 }
-# Wörter, die nur das Gebinde beschreiben – helfen nicht bei der Suche nach der Sorte
-UNIT_WORDS = {"kasten", "kästen", "kiste", "kisten", "kistn", "träger", "fass", "fässer", "fassl", "flaschen"}
+# Wörter, die bei der Sortensuche nicht helfen: Gebinde und zu allgemeine Begriffe („Bier“ passt auf vieles)
+IGNORED_WORDS = {"kasten", "kästen", "kiste", "kisten", "kistn", "träger", "fass", "fässer", "fassl", "flaschen",
+                 "bier", "biere", "getränk", "getränke", "sorte", "sorten", "gemischt"}
 
 
 @dataclass
 class QuickReply:
-    """Schnellantwort-Knopf unter einer Rückfrage: setzt bei Position line_index den Artikel product_id."""
+    """Schnellantwort-Knopf: setzt für eine Position den Artikel oder die Menge – oder den Liefertermin."""
     label: str
-    line_index: int
-    product_id: str
+    line_index: int | None = None       # None = betrifft den ganzen Auftrag (Liefertermin)
+    product_id: str | None = None
+    quantity: int | None = None
+    delivery_date: date | None = None
 
 
 @dataclass
@@ -85,25 +100,51 @@ def date_label(day: date) -> str:
     return f"{WEEKDAYS[day.weekday()]}, {format_date(day)}"
 
 
+def short_date(day: date) -> str:
+    """'Fr, 02.10.' – für Knöpfe"""
+    return f"{WEEKDAYS[day.weekday()][:2]}, {day.strftime('%d.%m.')}"
+
+
 def join_or(labels: list[str]) -> str:
     """['a', 'b', 'c'] → 'a, b oder c'"""
     return labels[0] if len(labels) == 1 else f"{', '.join(labels[:-1])} oder {labels[-1]}"
 
 
+def lines_summary(lines: list[tuple[str | None, int]], products: dict[str, dict]) -> str:
+    """'5 × Helles – Fass 50 l, 10 × Weißbier – Kasten 20 × 0,5 l'"""
+    return ", ".join(f"{format_number(quantity)} × {products[product_id]['name']}"
+                     for product_id, quantity in lines if product_id)
+
+
 # ---------- Rückfragen mit Schnellantworten ----------
+
+def word_stems(text: str) -> set[str]:
+    """Suchbegriffe einer Textstelle: Wort, Wort ohne Endung, Wortstamm – ohne Gebinde und allgemeine Wörter."""
+    stems = set()
+    for word in re.findall(r"[a-zäöüß]+", text.casefold()):
+        if len(word) < 4 or word in IGNORED_WORDS:
+            continue
+        stems.add(word)
+        if word.endswith(("s", "n", "e")) and len(word) > 4:
+            stems.add(word[:-1])             # „Limos“ → „limo“
+        if len(word) > STEM_LENGTH:
+            stems.add(word[:STEM_LENGTH])    # „Limonaden“ → „limona“
+    return stems
+
 
 def keyword_candidates(text: str, unit: str | None, products: dict[str, dict]) -> list[str]:
     """Artikel, deren Sorte oder Warengruppe zu einem Wort der Textstelle passt: 'Limo' → alle Limonaden."""
-    words = [word for word in re.findall(r"[a-zäöüß]+", text.casefold()) if len(word) >= 4 and word not in UNIT_WORDS]
+    stems = word_stems(text)
     return [pid for pid, product in products.items()
             if (unit is None or product["unit"] == unit)
-            and any(product["group"].casefold().startswith(word) or word in product["beverage"].casefold()
-                    for word in words)]
+            and any(product["group"].casefold().startswith(stem)
+                    or re.search(r"\b" + re.escape(stem), product["beverage"].casefold())  # nur Wortanfänge
+                    for stem in stems)]
 
 
-def question_for(index: int, item: ExtractedItem, line: DraftLine, products: dict[str, dict],
-                 allowed: set[str] | None) -> tuple[str | None, list[QuickReply]]:
-    """Rückfrage mit Schnellantworten für eine Position – oder (None, []), wenn es nichts zu fragen gibt.
+def product_question(index: int, item: ExtractedItem, line: DraftLine, products: dict[str, dict],
+                     allowed: set[str] | None) -> Reply | None:
+    """Rückfrage zum Artikel (Größe, Sorte, Gebinde oder Alternative) – oder None.
     allowed: Artikel mit Preis für die Kundengruppe (None = Kunde unbekannt, keine Einschränkung)."""
     codes = {hint.code for hint in line.hints}
     unit = products[line.product_id]["unit"] if line.product_id else item.unit
@@ -122,87 +163,157 @@ def question_for(index: int, item: ExtractedItem, line: DraftLine, products: dic
         kind = "alternative"
         candidates = [pid for pid, p in products.items() if p["beverage"] == item.beverage]
     else:
-        return None, []
+        return None
     if allowed is not None:
         candidates = [pid for pid in candidates if pid in allowed]
     minimum = 1 if kind == "alternative" else 2
     if not minimum <= len(candidates) <= MAX_OPTIONS:
-        return None, []
+        return None
 
-    # 2. Beschriftung der Knöpfe und Frage
+    # 2. Beschriftung der Knöpfe – eindeutig, sonst der volle Artikelname
     if kind == "size":
         candidates.sort(key=lambda pid: products[pid]["volume"])
         labels = [f"{format_number(products[pid]['volume'])} l" for pid in candidates]
-        size_word = "Fassgröße" if unit == "Fass" else "Größe"
-        question = f"Welche {size_word} meinen Sie bei „{item.original_text}“ – {join_or(labels)}?"
     elif kind == "beverage":
-        candidates.sort(key=lambda pid: products[pid]["beverage"])
+        candidates.sort(key=lambda pid: products[pid]["name"])
         labels = [products[pid]["beverage"] for pid in candidates]
-        question = f"Welche Sorte meinen Sie bei „{item.original_text}“ – {join_or(labels)}?"
     else:
         candidates.sort(key=lambda pid: products[pid]["name"])
         labels = [products[pid]["name"] for pid in candidates]
-        question = (f"Kasten oder Fass bei „{item.original_text}“?" if kind == "unit"
-                    else f"„{item.original_text}“ haben wir so nicht – passt {join_or(labels)}?")
-    return question, [QuickReply(label, index, pid) for label, pid in zip(labels, candidates)]
+    if len(set(labels)) < len(labels):
+        labels = [products[pid]["name"] for pid in candidates]
+
+    # 3. Frage
+    if kind == "size":
+        size_word = "Fassgröße" if unit == "Fass" else "Größe"
+        question = f"Welche {size_word} meinen Sie bei „{item.original_text}“ – {join_or(labels)}?"
+    elif kind == "beverage":
+        question = f"Welche Sorte meinen Sie bei „{item.original_text}“ – {join_or(labels)}?"
+    elif kind == "unit":
+        question = f"Kasten oder Fass bei „{item.original_text}“?"
+    else:
+        question = f"„{item.original_text}“ haben wir so nicht – passt {join_or(labels)}?"
+    return Reply(question, [QuickReply(label, index, product_id=pid) for label, pid in zip(labels, candidates)])
+
+
+def quantity_question(index: int, item: ExtractedItem, line: DraftLine, checked_codes: set[str],
+                      history: dict[str, tuple[int, int]]) -> Reply | None:
+    """Rückfrage zur Menge: ungewöhnlich hoch (Tippfehler?) oder fehlend – mit Knöpfen aus der Historie."""
+    usual = history.get(line.product_id, (0, 0))[1]  # größte bisherige Menge des Kunden für diesen Artikel
+    if "unusual_quantity" in checked_codes:
+        options = [QuickReply(f"Ja, {format_number(line.quantity)} stimmt", index, quantity=line.quantity)]
+        if usual:
+            options.append(QuickReply(f"Nein, wie sonst: {format_number(usual)}", index, quantity=usual))
+        return Reply(f"Nur zur Sicherheit: Stimmt die Menge bei „{item.original_text}“? "
+                     "Das ist deutlich mehr als sonst.", options)
+    if "zero_quantity" in checked_codes and usual:
+        return Reply(f"Wie viele dürfen es bei „{item.original_text}“ sein?",
+                     [QuickReply(f"Wie sonst: {format_number(usual)}", index, quantity=usual)])
+    return None
+
+
+def next_delivery_days(today: date, count: int = DAYS_OFFERED) -> list[date]:
+    """Die nächsten Liefertage nach heute – ohne Sonntag."""
+    days, day = [], today
+    while len(days) < count:
+        day += timedelta(days=1)
+        if day.weekday() != 6:
+            days.append(day)
+    return days
+
+
+def date_question(result: CheckResult, today: date) -> Reply | None:
+    codes = {issue.code for issue in result.issues}
+    code = next((code for code in DATE_QUESTIONS if code in codes), None)
+    if code is None:
+        return None
+    return Reply(DATE_QUESTIONS[code], [QuickReply(short_date(day), delivery_date=day)
+                                        for day in next_delivery_days(today)])
+
+
+def open_quick_replies(messages: list[ChatMessage]) -> list[QuickReply]:
+    """Knöpfe der letzten Brauerei-Nachricht – solange danach nur Hinweise kamen (keine neue Nachricht)."""
+    for message in reversed(messages):
+        if message.role != NOTICE:
+            return message.quick_replies if message.role == BREWERY else []
+    return []
 
 
 def apply_quick_reply(draft: Draft, choice: QuickReply) -> Draft:
-    """Setzt den gewählten Artikel in der Position – ohne KI, reine Datenänderung."""
+    """Setzt Artikel, Menge oder Liefertermin aus der Schnellantwort – ohne KI, reine Datenänderung."""
+    if choice.delivery_date is not None:
+        return replace(draft, delivery_date=choice.delivery_date)
     lines = list(draft.lines)
-    lines[choice.line_index] = replace(
-        lines[choice.line_index], product_id=choice.product_id,
-        hints=[Issue(INFO, f"Im Chat vom Kunden gewählt: „{choice.label}“.", "chosen_in_chat")])
+    line = lines[choice.line_index]
+    if choice.product_id is not None:
+        line = replace(line, product_id=choice.product_id,
+                       hints=[Issue(INFO, f"Im Chat vom Kunden gewählt: „{choice.label}“.", "chosen_in_chat")])
+    if choice.quantity is not None:
+        line = replace(line, quantity=choice.quantity,
+                       hints=line.hints + [Issue(INFO, f"Menge im Chat geklärt: {format_number(choice.quantity)}.",
+                                                 "chosen_in_chat")])
+    lines[choice.line_index] = line
     return replace(draft, lines=lines)
 
 
 # ---------- Antwort der Brauerei ----------
 
-def order_summary(draft: Draft, products: dict[str, dict]) -> str:
-    return ", ".join(f"{format_number(line.quantity)} × {products[line.product_id]['name']}"
-                     for line in draft.lines if line.product_id)
+def not_available_text(item: ExtractedItem, line: DraftLine) -> str:
+    """Position ohne Artikel und ohne mögliche Rückfrage – nur „nicht im Sortiment“, wenn das feststeht."""
+    codes = {hint.code for hint in line.hints}
+    if "not_in_assortment" in codes or "sortiment" in (item.note or "").casefold():
+        return f"„{item.original_text}“ haben wir leider nicht im Sortiment."
+    return f"Bei „{item.original_text}“ sind wir nicht sicher, welchen Artikel Sie meinen – unser Innendienst meldet sich kurz."
 
 
 def compose_reply(extracted: ExtractedOrder, draft: Draft, result: CheckResult, products: dict[str, dict],
-                  allowed: set[str] | None, answered: set[int] = frozenset(),
-                  safety_issues: list[Issue] = ()) -> Reply:
-    """Eingangsbestätigung oder Rückfrage – aus Abgleich (draft) und Prüfung (result) abgeleitet.
+                  allowed: set[str] | None, history: dict[str, tuple[int, int]], today: date,
+                  answered: set[int] = frozenset(), safety_issues: list[Issue] = ()) -> Reply:
+    """Eingangsbestätigung oder EINE Rückfrage mit Knöpfen – aus Abgleich (draft) und Prüfung (result).
     answered: Positionen, deren Rückfrage der Kunde schon per Schnellantwort beantwortet hat."""
     if safety_issues:
         return Reply(SAFETY_REPLY)
     if not draft.lines:
         return Reply(NO_ORDER_REPLY)
 
-    questions, problems, options = [], [], []
+    questions, problems = [], []
     for index, (item, line, checked) in enumerate(zip(extracted.items, draft.lines, result.lines)):
+        codes = {issue.code for issue in checked.issues}
         if index not in answered:
-            question, choices = question_for(index, item, line, products, allowed)
+            question = (product_question(index, item, line, products, allowed)
+                        or quantity_question(index, item, line, codes, history))
             if question:
                 questions.append(question)
-                options += choices
                 continue
-        codes = {issue.code for issue in checked.issues}
         if line.product_id is None:
-            problems.append(f"„{item.original_text}“ haben wir leider nicht im Sortiment.")
+            problems.append(not_available_text(item, line))
         elif "not_released" in codes:
             problems.append(f"„{item.original_text}“ können wir Ihnen leider nicht liefern.")
         elif "hard_limit" in codes:
             problems.append(f"„{item.original_text}“ ist mehr, als wir auf einmal liefern können – "
                             "wir melden uns wegen der Menge.")
-        elif "unusual_quantity" in codes:
-            questions.append(f"Nur zur Sicherheit: Stimmt die Menge bei „{item.original_text}“? "
-                             "Das ist deutlich mehr als sonst.")
+        elif "zero_quantity" in codes:
+            problems.append(f"Die Menge bei „{item.original_text}“ klärt unser Innendienst kurz mit Ihnen.")
 
-    if draft.customer_id is None:  # Neukunde: erst anlegen – Details klärt der Innendienst
-        return Reply(" ".join([UNKNOWN_CUSTOMER_REPLY] + problems))
+    if draft.customer_id is None:  # Kunde erst zuordnen bzw. anlegen – Details klärt der Innendienst
+        codes = {hint.code for hint in draft.customer_hints}
+        first = UNKNOWN_CUSTOMER_REPLY if "customer_unknown" in codes else ASSIGN_CUSTOMER_REPLY
+        return Reply(" ".join([first] + problems))
 
-    order_codes = {issue.code for issue in result.issues}
-    date_questions = [text for code, text in DATE_QUESTIONS.items() if code in order_codes]
-    if not questions and not problems and not date_questions:
-        return Reply(f"Danke, Ihre Bestellung ist eingegangen: {order_summary(draft, products)} – "
-                     f"Lieferung am {date_label(draft.delivery_date)}. Wir prüfen kurz und schicken Ihnen "
-                     "gleich die Bestätigung.")
-    return Reply(" ".join(["Danke für Ihre Bestellung!"] + problems + questions + date_questions), options)
+    asked_date = date_question(result, today)
+    if asked_date:
+        questions.append(asked_date)
+    if questions:  # immer nur eine Frage – die Knöpfe gehören eindeutig zu ihr
+        more = " Danach hätten wir noch eine kurze Frage." if len(questions) > 1 else ""
+        return Reply(" ".join(["Danke für Ihre Bestellung!"] + problems + [questions[0].text + more]),
+                     questions[0].quick_replies)
+    if problems:
+        return Reply(" ".join(["Danke für Ihre Bestellung!"] + problems))
+    if result.has_errors:  # Sicherheitsnetz: nie eine Eingangsbestätigung für einen fehlerhaften Auftrag
+        return Reply(CHECKING_REPLY)
+    summary = lines_summary([(line.product_id, line.quantity) for line in draft.lines], products)
+    return Reply(f"Danke, Ihre Bestellung ist eingegangen: {summary} – Lieferung am {date_label(draft.delivery_date)}. "
+                 "Wir prüfen kurz und schicken Ihnen gleich die Bestätigung.")
 
 
 def reply_for_draft(conn: sqlite3.Connection, extracted: ExtractedOrder, draft: Draft, today: date,
@@ -211,14 +322,15 @@ def reply_for_draft(conn: sqlite3.Connection, extracted: ExtractedOrder, draft: 
     result = check_order(conn, draft.customer_id, draft.delivery_date,
                          [(line.product_id, line.quantity) for line in draft.lines], today)
     products = load_products(conn)
-    allowed = None
+    allowed, history = None, {}
     if draft.customer_id:
         group = load_customers(conn)[draft.customer_id]["group"]
         allowed = {pid for pid in products if price_on(conn, pid, group, today) is not None}
-    return compose_reply(extracted, draft, result, products, allowed, answered, safety_issues)
+        history = customer_history(conn, draft.customer_id)
+    return compose_reply(extracted, draft, result, products, allowed, history, today, answered, safety_issues)
 
 
-def confirmation_text(order_id: int, delivery_date: date) -> str:
-    """Verbindliche Auftragsbestätigung – erst nach der Freigabe durch den Menschen."""
-    return (f"✅ Ihr Auftrag {order_id} ist bestätigt – Lieferung am {date_label(delivery_date)}. "
+def confirmation_text(order_id: int, delivery_date: date, summary: str) -> str:
+    """Verbindliche Auftragsbestätigung – erst nach der Freigabe durch den Menschen, mit dem gespeicherten Stand."""
+    return (f"✅ Ihr Auftrag {order_id} ist bestätigt: {summary} – Lieferung am {date_label(delivery_date)}. "
             "Vielen Dank und bis bald!")

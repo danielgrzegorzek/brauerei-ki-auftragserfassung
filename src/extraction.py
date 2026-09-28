@@ -69,6 +69,10 @@ class ExtractionError(Exception):
     """Auswertung fehlgeschlagen – mit verständlicher Meldung für die Oberfläche."""
 
 
+class RefusalError(ExtractionError):
+    """Die KI hat die Auswertung abgelehnt – anders als ein technischer Fehler (Netz, Schlüssel, Auslastung)."""
+
+
 class OrderExtractor(Protocol):
     """Vertrag für jeden Extraktor: Nachricht + heutiges Datum → Ergebnis im Zielformat."""
 
@@ -215,7 +219,7 @@ class ClaudeExtractor:
             raise ExtractionError("Die KI-Antwort hatte ein unerwartetes Format. Bitte erneut versuchen.") from error
 
         if response.stop_reason == "refusal":
-            raise ExtractionError("Die KI hat die Auswertung dieser Nachricht abgelehnt.")
+            raise RefusalError("Die KI hat die Auswertung dieser Nachricht abgelehnt.")
         if response.stop_reason == "max_tokens" or response.parsed_output is None:
             raise ExtractionError("Die KI-Antwort war unvollständig. Bitte erneut versuchen.")
 

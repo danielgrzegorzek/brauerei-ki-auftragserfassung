@@ -45,7 +45,7 @@ def inbox_extract(extractor: OrderExtractor, message: IncomingMessage, source_ke
     st.session_state.inbox_capture = capture_ui.new_capture(result, message, source_key)
 
 
-def inbox_saved(order_id: int, customer_name: str, delivery_date: date, net_total: float) -> None:
+def inbox_saved(order_id: int, customer_name: str, delivery_date: date, net_total: float, lines: list) -> None:
     st.session_state.inbox_capture = None
     st.session_state.inbox_saved = (
         f"Auftrag **{order_id}** für **{customer_name}** gespeichert – {format_eur(net_total)} netto, "

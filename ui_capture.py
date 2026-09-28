@@ -21,7 +21,7 @@ from src.chat import now_berlin
 from src.database import get_connection
 from src.extraction import ExtractionResult, IncomingMessage
 from src.formatting import format_eur, format_number
-from src.message_safety import instruction_warnings
+from src.message_safety import safety_warnings
 from src.order_capture import (
     ERROR, INFO, WARNING, CheckResult, Draft, Issue, build_draft, check_order, load_customers, load_products,
     save_order,
@@ -98,6 +98,11 @@ def lines_table(draft: Draft) -> pd.DataFrame:
     })
 
 
+def table_rows(table: pd.DataFrame) -> list[tuple]:
+    """Tabelleninhalt vergleichbar machen (mit Zeilennummer; leere Zellen einheitlich als None)."""
+    return [tuple(None if pd.isna(value) else value for value in row) for row in table.itertuples(index=True)]
+
+
 def next_version() -> int:
     """Neue Versionsnummer → neue Widget-Schlüssel → frische Eingabefelder."""
     st.session_state.capture_version = st.session_state.get("capture_version", 0) + 1
@@ -113,7 +118,8 @@ def new_capture(result: ExtractionResult, message: IncomingMessage, source_key: 
         "result": result,
         "extracted": result.order,
         "message": message,
-        "safety": instruction_warnings(message.text),  # Prüfung auf Anweisungen – unabhängig von der KI
+        # Anweisungen an das System? Code-Prüfung des Textes, zusätzlich der Hinweis der KI
+        "safety": safety_warnings(message.text, result.order.note),
         "draft": draft,
         "version": next_version(),
         "lines_df": lines_table(draft),
@@ -179,7 +185,7 @@ def show_steps(placeholder, steps: list[tuple[str, str, str]], animate: bool = F
 
 
 def show_proposal(capture: dict, key_prefix: str,
-                  on_saved: Callable[[int, str, date, float], None]) -> tuple[str | None, CheckResult]:
+                  on_saved: Callable[[int, str, date, float, list], None]) -> tuple[str | None, CheckResult]:
     """Auftragsvorschlag: KI-Ergebnis, änderbare Felder, Prüfung und Bestätigung.
     Gibt den aktuell gewählten Kunden und das Prüfergebnis zurück (für „Auftrag entsteht“)."""
     customers, products = master_data()
@@ -307,6 +313,6 @@ def show_proposal(capture: dict, key_prefix: str,
         with closing(get_connection()) as conn:
             order_id = save_order(conn, customer_id, delivery_date, capture["message"].channel, lines, today())
         st.cache_data.clear()  # Dashboard und Startseite sollen den neuen Auftrag sofort zeigen
-        on_saved(order_id, customers[customer_id]["name"], delivery_date, checked.net_total)
+        on_saved(order_id, customers[customer_id]["name"], delivery_date, checked.net_total, lines)
         st.rerun()
     return customer_id, checked

@@ -19,14 +19,18 @@ from src.order_capture import WARNING, Issue
 STRONG_PATTERNS = {
     "„ignoriere …“": r"\bignor(ier|e\b)",
     "„Anweisungen“": r"anweisung|\binstructions?\b",           # auch „Systemanweisung“
-    "„vergiss die Regeln“": r"\bvergiss\b.{0,30}\b(regeln|anweisungen|vorgaben)",
-    "Admin-/System-Modus": r"\b(admin|system)[- ]?(modus|mode|hinweis|prompt)|\bdu bist (jetzt|ab sofort)\b",
+    "„vergiss die Regeln“": r"\bvergiss\b.{0,30}\b(regeln|anweisungen|vorgaben)|\bvergiss alles\b",
+    "Admin-/System-Modus": r"\b(admin|system)[- ]?(modus|mode|hinweis|prompt)|\bdu bist (jetzt|nun|ab sofort)\b",
+    "„Preis auf 0“": r"\bpreis\w*\s+(auf|von)\s+0\b",
     "„ohne Prüfung“": r"\bohne (prüfung|kontrolle|freigabe)\b",
     "Steuerzeichen „<nachricht>“": r"</?\s*nachricht",           # Versuch, die Abgrenzung im Prompt zu schließen
 }
 WEAK_PATTERNS = {
     "„gratis“": r"\b(gratis|kostenlos|umsonst|for free)\b",
+    "„Rabatt“": r"\brabatt",
 }
+# Meldet die KI selbst einen Manipulationsversuch (in ihrem Hinweis „note“)? – zweite, unabhängige Quelle
+AI_NOTE_PATTERN = r"manipul|ignor|anweisung\w* (an|für) (das|dich|den)|nicht (befolgt|ausgeführt)|prompt.?injection"
 
 
 def instruction_phrases(text: str) -> list[str]:
@@ -36,6 +40,20 @@ def instruction_phrases(text: str) -> list[str]:
     if not strong:
         return []
     return strong + [label for label, pattern in WEAK_PATTERNS.items() if re.search(pattern, lowered)]
+
+
+def ai_reported_instructions(note: str | None) -> bool:
+    """Hat die KI in ihrem Hinweis einen Manipulationsversuch gemeldet?"""
+    return bool(note) and re.search(AI_NOTE_PATTERN, note.casefold()) is not None
+
+
+def safety_warnings(text: str, ai_note: str | None = None) -> list[Issue]:
+    """Warnung aus der Code-Prüfung des Textes – oder, falls die nichts findet, aus dem Hinweis der KI."""
+    warnings = instruction_warnings(text)
+    if not warnings and ai_reported_instructions(ai_note):
+        warnings = [Issue(WARNING, "Die KI meldet Anweisungen an das System in dieser Nachricht. Sie werden nicht "
+                                   "ausgeführt – bitte den Auftrag genau prüfen.", "instructions")]
+    return warnings
 
 
 def instruction_warnings(text: str) -> list[Issue]:

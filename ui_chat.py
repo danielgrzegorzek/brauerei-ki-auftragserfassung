@@ -90,28 +90,42 @@ def send() -> None:
 
 
 def choose(choice: QuickReply) -> None:
-    """Schnellantwort: Artikel im Entwurf setzen (ohne KI) und neu antworten."""
+    """Schnellantwort: Artikel, Menge oder Liefertermin im Entwurf setzen (ohne KI) und neu antworten."""
     add(CUSTOMER, choice.label)
     capture = st.session_state.chat_capture
     _, products = capture_ui.master_data()
     # Auf dem aktuellen Stand aufbauen – Änderungen des Menschen im Formular bleiben erhalten
     table = capture.get("current_df", capture["lines_df"]).copy()
-    if choice.line_index in table.index:
-        table.loc[choice.line_index, "Artikel"] = products[choice.product_id]["name"]
-    draft = chat.apply_quick_reply(capture["draft"], choice)
+    human_edited = capture_ui.table_rows(table) != capture_ui.table_rows(capture["lines_df"])
+    draft = capture["draft"]
     customer_id = capture.get("current_customer", draft.customer_id)
     draft = replace(draft, customer_id=customer_id,
                     delivery_date=capture.get("current_date", draft.delivery_date),
                     customer_hints=draft.customer_hints if customer_id == draft.customer_id else [])
-    capture.update(draft=draft, lines_df=table, version=capture_ui.next_version(),
-                   answered=capture["answered"] | {choice.line_index})
-    reply = brewery_reply(capture)
-    add(BREWERY, reply.text, reply.quick_replies)
+    draft = chat.apply_quick_reply(draft, choice)
+    row_missing = choice.line_index is not None and choice.line_index not in table.index
+    if choice.line_index is not None and not row_missing:
+        if choice.product_id is not None:
+            table.loc[choice.line_index, "Artikel"] = products[choice.product_id]["name"]
+        if choice.quantity is not None:
+            table.loc[choice.line_index, "Menge"] = choice.quantity
+    answered = capture["answered"] | ({choice.line_index} if choice.line_index is not None else set())
+    capture.update(draft=draft, lines_df=table, version=capture_ui.next_version(), answered=answered)
+    capture.pop("current_df", None)
+    if human_edited or row_missing:
+        # Der Innendienst hat das Formular schon geändert – keine Positionsliste wiederholen, die nicht mehr
+        # stimmt. Die verbindliche Bestätigung nennt später den gespeicherten Stand.
+        add(BREWERY, chat.NOTED_REPLY)
+    else:
+        reply = brewery_reply(capture)
+        add(BREWERY, reply.text, reply.quick_replies)
 
 
-def order_saved(order_id: int, customer_name: str, delivery_date: date, net_total: float) -> None:
+def order_saved(order_id: int, customer_name: str, delivery_date: date, net_total: float,
+                lines: list[tuple[str, int]]) -> None:
     """Erst jetzt – nach der Freigabe durch den Menschen – bestätigt die Brauerei verbindlich."""
-    add(BREWERY, chat.confirmation_text(order_id, delivery_date))
+    _, products = capture_ui.master_data()
+    add(BREWERY, chat.confirmation_text(order_id, delivery_date, chat.lines_summary(lines, products)))
     st.session_state.chat_capture = None
     st.session_state.chat_saved = (
         f"Auftrag **{order_id}** für **{customer_name}** gespeichert – {format_eur(net_total)} netto, "
@@ -143,6 +157,8 @@ def process(message: IncomingMessage, live: bool) -> None:
         else:
             add(NOTICE, chat.DEMO_ONLY_NOTICE)
     if result is not None:
+        if st.session_state.get("chat_capture") is not None:  # offener Auftrag wird ersetzt – sichtbar machen
+            add(NOTICE, chat.REPLACED_NOTICE)
         capture = capture_ui.new_capture(result, message)
         capture["animate"] = True
         st.session_state.chat_capture = capture
@@ -221,15 +237,18 @@ def chat_view() -> None:
             if pending is not None:
                 process(pending, live)
                 st.rerun()  # neu zeichnen: Antwort im Chat, Auftrag rechts
-            last = st.session_state.chat[-1]
-            if last.role == BREWERY and last.quick_replies and st.session_state.get("chat_capture"):
+            open_replies = chat.open_quick_replies(st.session_state.chat) if st.session_state.get("chat_capture") else []
+            if open_replies:
                 with st.container(horizontal=True, key="quick-replies"):
-                    for number, choice in enumerate(last.quick_replies):
+                    for number, choice in enumerate(open_replies):
                         st.button(choice.label, key=f"quick_{len(st.session_state.chat)}_{number}",
                                   on_click=choose, args=(choice,))
             st.chat_input("Nachricht schreiben …", key="chat_input", max_chars=ai_usage.MAX_MESSAGE_LENGTH,
                           on_submit=send)
 
+        if open_replies:
+            st.caption("Tipp: Rückfragen bitte über die Knöpfe beantworten – eine neue Nachricht gilt als "
+                       "neue Bestellung.")
         if live:
             st.caption(f"Kostenschutz: in diesem Besuch noch {session_left}, heute insgesamt noch {day_left} "
                        "Live-Auswertungen. Eine Auswertung kostet weniger als 1 US-Cent.")
