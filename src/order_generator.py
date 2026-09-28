@@ -202,7 +202,8 @@ def event_orders(profile, price_list, rng) -> list[Order]:
     orders = []
     for year in (2025, 2026):
         for month in profile.event_months:
-            event_day = date(year, month, rng.randint(1, 22))
+            # Frühestens am 3., damit die Lieferung (1–2 Tage vorher) noch im selben Monat liegt
+            event_day = date(year, month, rng.randint(3, 22))
             while event_day.weekday() != 5:  # Feste beginnen an einem Samstag
                 event_day += timedelta(days=1)
             order_date = event_day - timedelta(days=rng.randint(14, 28))
