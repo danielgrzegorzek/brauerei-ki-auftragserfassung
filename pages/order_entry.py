@@ -6,6 +6,7 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
+import ui
 from src.database import get_connection
 from src.demo_messages import DEMO_MESSAGES, DemoMessage
 from src.formatting import format_date, format_eur
@@ -128,6 +129,9 @@ def show_proposal(capture: dict, message: DemoMessage) -> None:
         pd.DataFrame([
             {
                 "Pos.": position * 10,
+                # Kleines Symbol: Kasten oder Fass (leer, solange kein Artikel gewählt ist)
+                "Gebinde": ui.image_uri("crate" if products[line.product_id]["unit"] == "Kasten" else "keg")
+                           if line.product_id else None,
                 "Artikel": product_names.get(line.product_id, "–"),
                 "Menge": line.quantity,
                 "Einzelpreis": line.unit_price,
@@ -139,7 +143,8 @@ def show_proposal(capture: dict, message: DemoMessage) -> None:
             for position, line in enumerate(result.lines, start=1)
         ]),
         hide_index=True,
-        column_config={"Einzelpreis": EURO, "Summe": EURO},
+        column_config={"Einzelpreis": EURO, "Summe": EURO,
+                       "Gebinde": st.column_config.ImageColumn(width="small")},
     )
     line_issues = [Issue(issue.level, f"Pos. {position * 10}: {issue.text}")
                    for position, line in enumerate(result.lines, start=1) for issue in line.issues]
@@ -173,19 +178,21 @@ def show_proposal(capture: dict, message: DemoMessage) -> None:
 
 # ================= Seitenaufbau =================
 
-st.title("KI-Auftragserfassung")
-st.caption("Freitext rein, sauberer Auftrag raus – die KI schlägt vor, der Mensch prüft und bestätigt.")
+ui.page_header("KI-Auftragserfassung",
+               "Freitext rein, sauberer Auftrag raus – die KI schlägt vor, der Mensch prüft und bestätigt.",
+               "message")
 
-left, right = st.columns([2, 3], gap="large")
+# Zwei Karten nebeneinander: Liste links, Details rechts (Fiori „Flexible Column Layout“)
+left, right = st.columns([2, 3], gap="medium")
 
-with left:
+with left, st.container(key="card-inbox"):
     st.subheader("Posteingang")
     index = st.radio(
         "Nachricht auswählen", range(len(DEMO_MESSAGES)),
         format_func=lambda i: f"{CHANNEL_ICONS[DEMO_MESSAGES[i].channel]} {DEMO_MESSAGES[i].title}",
     )
     message = DEMO_MESSAGES[index]
-    with st.container(border=True):
+    with st.container(key="message-bubble"):  # Nachricht als Sprechblase
         st.markdown(f"{CHANNEL_ICONS[message.channel]} **{message.channel}** · {message.sender}")
         st.markdown(message.text.replace("\n", "  \n"))  # Zeilenumbrüche der Nachricht erhalten
     st.caption(f"**Das zeigt dieses Beispiel:** {message.shows}")
@@ -197,32 +204,34 @@ with left:
         "beliebige Nachrichten aus."
     )
 
-with right:
+with right, st.container(key="card-proposal"):
     st.subheader("Auftragsvorschlag")
     saved = st.session_state.pop("last_saved", None)
     if saved:
         st.success(saved, icon=":material/check_circle:")
     capture = st.session_state.get("capture")
     if capture is None or capture["message_index"] != index:
-        st.info("Links eine Nachricht auswählen und auf **Mit KI auswerten** klicken.", icon=":material/arrow_back:")
+        # Leerzustand wie die Fiori-„Illustrated Message“
+        ui.illustrated_message("empty_inbox", "Noch keine Nachricht ausgewertet",
+                               "Wähle links eine Nachricht und klicke auf „Mit KI auswerten“.")
     else:
         show_proposal(capture, message)
 
-st.divider()
-st.subheader("Erfasste Aufträge")
-with closing(get_connection()) as conn:
-    saved_orders = captured_orders(conn)
-if saved_orders:
-    table = pd.DataFrame(saved_orders, columns=["Auftrag", "Kunde", "Liefertermin", "Kanal", "Positionen", "Netto"])
-    table["Liefertermin"] = [format_date(date.fromisoformat(day)) for day in table["Liefertermin"]]
-    st.dataframe(table, hide_index=True,
-                 column_config={"Netto": EURO, "Auftrag": st.column_config.NumberColumn(format="%d")})
-    if st.button("Demo zurücksetzen", icon=":material/restart_alt:",
-                 help="Löscht alle hier erfassten Aufträge. Die simulierte Historie bleibt erhalten."):
-        with closing(get_connection()) as conn:
-            delete_captured_orders(conn)
-        st.cache_data.clear()
-        st.rerun()
-else:
-    st.caption("Noch keine Aufträge erfasst.")
-st.caption("In der Online-Demo werden erfasste Aufträge beim Neustart der App zurückgesetzt.")
+with st.container(key="card-captured"):
+    st.subheader("Erfasste Aufträge")
+    with closing(get_connection()) as conn:
+        saved_orders = captured_orders(conn)
+    if saved_orders:
+        table = pd.DataFrame(saved_orders, columns=["Auftrag", "Kunde", "Liefertermin", "Kanal", "Positionen", "Netto"])
+        table["Liefertermin"] = [format_date(date.fromisoformat(day)) for day in table["Liefertermin"]]
+        st.dataframe(table, hide_index=True,
+                     column_config={"Netto": EURO, "Auftrag": st.column_config.NumberColumn(format="%d")})
+        if st.button("Demo zurücksetzen", icon=":material/restart_alt:",
+                     help="Löscht alle hier erfassten Aufträge. Die simulierte Historie bleibt erhalten."):
+            with closing(get_connection()) as conn:
+                delete_captured_orders(conn)
+            st.cache_data.clear()
+            st.rerun()
+    else:
+        st.caption("Noch keine Aufträge erfasst.")
+    st.caption("In der Online-Demo werden erfasste Aufträge beim Neustart der App zurückgesetzt.")
