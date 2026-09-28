@@ -45,7 +45,15 @@ Kundengruppe und Artikel; Saisonalität je Warengruppe; Entwicklung der Bestellk
 Top-Kunden und offenes Leergut je Kunde. Jedes Diagramm hat eine Tabellenansicht und eine
 automatisch berechnete Kernaussage.
 
-**3. Datenbasis**
+**3. Business Case**
+
+Was bringt das im Jahr? Die Seite **Business Case** rechnet vorher (Abtippen) gegen nachher (KI-gestützt) –
+mit der Auftragsmenge aus der (simulierten) Datenbank (3.258 Aufträge per WhatsApp und E-Mail in 12 Monaten), den
+**gemessenen** KI-Kosten aus der Evaluation und vorsichtigen Annahmen, die jeder per Schieberegler ändern
+kann. Mit den Standardwerten: **rund 217 Stunden und 8.300 € pro Jahr**, 33 vermiedene Fehler – nach Abzug
+von KI-Kosten sowie Betrieb und Wartung. Rechenweg aufklappbar, jede Annahme mit Begründung.
+
+**4. Datenbasis**
 
 Zwei Jahre simulierte Aufträge mit Saisonalität, Preiserhöhung, Leergut-Kreislauf und
 steigendem WhatsApp-Anteil – reproduzierbar erzeugt und durch 13 fachliche
@@ -110,7 +118,7 @@ bestehen den Sicherheitstest: Der Angriff wird blockiert und von der KI selbst g
 | Oberfläche | Streamlit (mehrseitig), Plotly – Gestaltung angelehnt an die SAP-Fiori-Designrichtlinien (Launchpad, Object Page, Illustrated Message), eigene SVG-Illustrationen |
 | Daten | SQLite, pandas |
 | KI | Claude Sonnet 5 über die Claude-API (offizielles `anthropic`-Paket, strukturierte Ausgabe), Anbieter austauschbar |
-| Qualität | pytest (179 Tests, KI-Aufrufe mit Schein-Client), Plausibilitäts-Check der Daten, Live-Evaluation mit Modellvergleich und Sicherheitstest, Code-Review mit Gegenprüfung |
+| Qualität | pytest (205 Tests, KI-Aufrufe mit Schein-Client), Plausibilitäts-Check der Daten, Live-Evaluation mit Modellvergleich und Sicherheitstest, Code-Review mit Gegenprüfung |
 | Sprache | Python 3.13 |
 
 Warum welche Entscheidung getroffen wurde – mit Begründung und verworfener Alternative –
@@ -124,7 +132,7 @@ ui.py         Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Kacheln, Illustr
 ui_capture.py Bausteine der Auftragserfassung (Auftragsvorschlag, „Auftrag entsteht“)
 ui_chat.py    Messenger-Ansicht mit Live-KI und Demo-Rückfall
 assets/       Logo, SVG-Illustrationen, Stylesheet
-pages/        Oberfläche: Start, Dashboard, KI-Auftragserfassung
+pages/        Oberfläche: Start, Dashboard, KI-Auftragserfassung, Business Case
 src/          Logik ohne Oberfläche: Datenmodell, Datengenerator, Auswertungen, Auftragserfassung,
               KI-Anbindung, Chat-Antworten, Schutz vor Prompt-Injection
 tests/        automatische Tests
@@ -170,6 +178,7 @@ Ohne Schlüssel läuft die App vollständig im Demo-Modus. Evaluation:
 - [x] KI-Auftragserfassung im Demo-Modus
 - [x] Echter KI-Modus mit der Claude-API, Kostenschutz und Evaluation
 - [x] Live-Chat im Messenger-Stil, sichtbarer Prompt-Injection-Test, Modellvergleich
+- [x] Business Case mit Auftragszahlen aus der Datenbank, gemessenen KI-Kosten und Schiebereglern
 - [ ] Prozessseite: Ist- vs. Soll-Prozess und Übergabe an SAP S/4HANA
 - [ ] Regelbasierter Parser als Vergleich „Regeln vs. KI“
 

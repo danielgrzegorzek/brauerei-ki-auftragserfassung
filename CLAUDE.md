@@ -80,7 +80,7 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `ui_chat.py` – Messenger-Ansicht (`chat_view`): Callbacks `use_example`, `send`, `choose`, `order_saved`;
   `process` (Live-KI, sonst Demo-Rückfall); Chat-HTML immer über `html.escape`
 - `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Illustrationen, Piktogramme
-- `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`
+- `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`, `business_case.py`
   (Reiter „Live-Chat“ = `ui_chat.chat_view`, Reiter „Posteingang“ = 7 Beispiele)
 - `src/` – Logik ohne Streamlit:
   - Daten: `database.py` (Schema, `SCHEMA_VERSION`), `master_data.py`, `order_generator.py`,
@@ -92,6 +92,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
     `OrderExtractor`; `DemoExtractor` (auch `CHAT_EXAMPLES`), `ClaudeExtractor`; `SYSTEM_PROMPT`,
     `calendar_hint`, Antwortschema `OrderSchema`), `ai_usage.py` (Kostenschutz: 1.000 Zeichen,
     5 Aufrufe je Besuch, 30 je Tag; Tabelle `ai_usage`)
+  - Business Case: `business_case.py` (`ASSUMPTIONS` mit Standardwert + Begründung, `calculate`,
+    `calculation_steps`, Auftragsmenge `orders_last_12_months`, KI-Kosten `measured_ai_cost` aus
+    `docs/evaluation.json`); Diagramm `charts.cost_comparison_chart` + HTML-Legende `ui.chart_legend`
   - Chat & Sicherheit: `chat.py` (Antwort der Brauerei aus dem Prüfergebnis; immer nur EINE Rückfrage,
     immer mit Knöpfen – `QuickReply` setzt Artikel, Menge oder Liefertermin; `open_quick_replies`,
     `PERSONAS`, `now_berlin`), `message_safety.py` (starke/schwache Signale im Text + Hinweis der KI →
@@ -162,7 +165,7 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,
-  Modellvergleich (Sonnet 5 bleibt) · Teil 2 [ ] Business Case · Teil 3 [ ] geführte Tour, README, Video
+  Modellvergleich (Sonnet 5 bleibt) · Teil 2 [x] Business Case · Teil 3 [ ] geführte Tour, README, Video
 - [ ] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess, Übergabe an SAP S/4HANA (JSON + Feld-Mapping)
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video

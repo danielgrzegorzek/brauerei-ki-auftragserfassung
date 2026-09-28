@@ -15,6 +15,7 @@ pages/                 Oberfläche (Streamlit) – nur Anzeige und Eingaben
   home.py              Startseite mit Datenbasis und Plausibilitäts-Check
   dashboard.py         Vertriebs-Dashboard
   order_entry.py       KI-Auftragserfassung mit Bestätigung durch den Menschen
+  business_case.py     Business Case: vorher/nachher mit Schiebereglern
 src/                   Logik ohne Streamlit – vollständig testbar
   database.py          Schema, Verbindung, Schemaversion
   master_data.py       Stammdaten: Artikel, Leergut, Preise, Kunden
@@ -30,6 +31,7 @@ src/                   Logik ohne Streamlit – vollständig testbar
   ai_usage.py          Kostenschutz: Grenzen je Nachricht, Besuch und Tag
   message_safety.py    erkennt Anweisungen an das System in Nachrichten (Prompt-Injection)
   chat.py              Antworten der Brauerei und Schnellantworten – aus dem Prüfergebnis
+  business_case.py     Rechnung vorher/nachher: Daten, gemessene KI-Kosten, Annahmen
   order_capture.py     Abgleich → Prüfung → Speichern
 tests/                 automatische Tests (pytest)
 tools/                 Evaluation der KI-Auswertung (docs/evaluation.json → docs/EVALUATION.md)
@@ -187,7 +189,28 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | **Code-Review mit Gegenprüfung** vor der Veröffentlichung: drei unabhängige Prüfer (Streamlit-Ablauf, Sicherheit, Fachlogik), jeder Fund von einem zweiten Prüfer bestätigt oder verworfen | 11 bestätigte Funde behoben (u. a. der zu schwache Sicherheitstest, Fehlalarme, doppelte Knöpfe, Fragen ohne Knöpfe), 2 verworfen und trotzdem gehärtet. | – |
 | Nachrichtentexte im Chat werden **maskiert** (`html.escape`) | Der Chat wird als eigenes HTML gezeichnet – fremder Text darf nie als HTML wirken (Schutz vor XSS). | – |
 
-## 8. Oberfläche im Fiori-Stil
+## 8. Business Case
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| **Auftragsmenge aus den Daten** (letzte 12 Monate je Kanal, nur die Historie) | Keine geschätzte Zahl: 3.258 Aufträge über WhatsApp und E-Mail. Erfasste Demo-Aufträge zählen nicht mit. | Die Daten sind simuliert – im Echtbetrieb kämen sie aus dem ERP. |
+| Standard nur **WhatsApp + E-Mail**, Telefon zuschaltbar – dann mit **eigenen Minuten** (4 statt 2 mit KI) und **ohne geringere Fehlerquote** | Beim Anruf schreibt weiterhin jemand mit – dort spart die KI weniger. Mit Telefon: rund 276 h und 10.600 € statt 217 h und 8.300 €. | Telefon mit denselben Werten: +67 % Ersparnis – vom Review als widersprüchlich erkannt. |
+| **KI-Kosten gemessen** (letzter Evaluationslauf des App-Modells), Umrechnung vorsichtig 1 US-$ = 1 € | Keine geschätzten API-Kosten; wechselt das Modell, rechnet der Business Case automatisch mit dessen Messung. | – |
+| **Vorsichtige Standardwerte**, jeder mit einem Satz Begründung (Fragezeichen am Regler): 6 → 2 min je Auftrag, 40 €/h, Fehlerquote 2 % → 1 %, 50 € je Fehler | Die Rechnung soll auch einer skeptischen Prüfung standhalten; jede Annahme ist ein Regler. Ergebnis mit diesen Werten: rund 217 Stunden und 8.300 € pro Jahr, 33 vermiedene Fehler. | Optimistische Werte (z. B. 10 min, 60 €/h): größere Zahlen, aber unglaubwürdig. |
+| **Betrieb & Wartung** (2.000 €/Jahr) wird abgezogen – über den Auftrag hinaus ergänzt | Nur die KI-Aufrufe abzuziehen würde die Ersparnis schönrechnen: Hosting, Updates und die regelmäßige Kontrolle der KI-Qualität kosten auch. | Das einmalige Einführungsprojekt ist bewusst nicht enthalten (projektabhängig) – im Rechenweg genannt. |
+| **Negative Ergebnisse werden gezeigt** | Glaubwürdigkeit: Mit ungünstigen Annahmen zeigt der Rechner ehrlich einen Verlust. | – |
+| **Ergebnis zuerst** (drei Kennzahlen und ein Satz), darunter Annahmen, Vergleich und Rechenweg | Wer die Seite 30 Sekunden ansieht, soll das Ergebnis sehen – auch auf dem Handy ganz oben. | – |
+| **Rechenweg aufklappbar**, jede Zeile mit den aktuellen, **ungerundeten** Zwischenwerten (325,8 h × 40 € = 13.032 €) | Nachvollziehbar statt Blackbox – jede Zeile muss beim Nachrechnen aufgehen. Der Satz unter den Kennzahlen rechnet ebenfalls auf: Zeit + Fehler − KI − Betrieb = Ergebnis. | Gerundete Zwischenwerte: gehen nicht auf (vom Review gefunden). |
+| Rechenlogik in **`src/business_case.py`**, getestet mit einem von Hand nachgerechneten Beispiel | Die Seite zeigt nur an; jede Zahl ist im Test nachvollziehbar. | – |
+| Vergleich als **gestapelte waagrechte Balken** (vorher/mit KI) mit Blau/Orange/Aqua, mit dem Prüfskript für hell und dunkel validiert | Zeigt Gesamtkosten und Zusammensetzung auf einen Blick. Grau fiel als Kategoriefarbe durch (zu farblos, zu wenig Kontrast), das helle Orange im Dunkelmodus. | Zwei getrennte Diagramme: schwerer zu vergleichen. |
+| Summe unter dem Balkennamen, Werte im Segment (nie gedreht, Schwarz oder Weiß nach Kontrast), **Legende als HTML** über dem Diagramm | Auf dem Handy überdeckte die Plotly-Legende die Balken; die HTML-Legende bricht sauber um. Farbe ist nie das einzige Merkmal; dazu die Tabellenansicht. | – |
+| **Nutzen ohne Euro** mit Zahlen aus den Daten (stärkster vs. ruhigster Monat, **alle Kanäle**) | „Entlastung in der Hochsaison“ wird greifbar: im September 36 % mehr Bestellungen als im Februar. Nur WhatsApp + E-Mail hätten 60 % ergeben – verzerrt, weil deren Anteil über die Zeit wächst. | – |
+| **Ehrliche Sprache:** „Auftragszahlen aus der Datenbank (simuliert)“, „gemessen“ nur für echte Messungen, sonst „angenommen“ | Eine Seite, die auf Ehrlichkeit setzt, darf simulierte Daten nicht „echt“ nennen. Fehlgeschlagene Messläufe zählen nicht als Messung. | – |
+| Reglerwerte bleiben beim **Seitenwechsel** erhalten (`persist_state="session"`) | Wer zwischendurch ins Dashboard schaut, verliert seine Annahmen nicht. | – |
+| **Code-Review mit Gegenprüfung** (Rechnung, Streamlit, Diagramm/Barrierefreiheit), jeder Fund gegengeprüft | Unter anderem gefunden: Telefon-Widerspruch, Rechenweg ging nicht auf, zu wenig Kontrast der Zahlen im Diagramm (jetzt schwarz/weiß nach WCAG ≥ 4,5:1). | – |
+| Reglerwerte im **deutschen Zahlenformat** (`select_slider` mit Formatfunktion) | Einheitlich mit der übrigen App. | `st.slider`: nur englisches Zahlenformat. |
+
+## 9. Oberfläche im Fiori-Stil
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
@@ -203,7 +226,7 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | Heatmap **Blau ↔ Orange** | Rot ist bei Fiori für Fehler reserviert; ein Sommerhoch ist nichts Schlechtes. | Blau ↔ Rot. |
 | Kennzahlen unter 1100 px Breite kleiner (Media Query) | Fünf Kennzahlen passen auch auf kleine Laptops. | – |
 
-## 9. Betrieb
+## 10. Betrieb
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
@@ -213,7 +236,7 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | **API-Schlüssel nur in den Secrets** (lokal `.streamlit/secrets.toml` in der `.gitignore`, in der Cloud die Secrets-Verwaltung) | Nie im Code oder in Git. Fehlt der Schlüssel, läuft die App vollständig im Demo-Modus. | – |
 | **Ein API-Client für alle Besucher** (`st.cache_resource`) | Verbindungen werden wiederverwendet; der Schlüssel liegt nur im Serverprozess. | – |
 
-## 10. Bewusste Grenzen
+## 11. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).
@@ -222,6 +245,8 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 - **Kostenschutz ohne Anmeldung:** Die Grenze je Besuch lässt sich durch Neuladen umgehen, und der
   Tageszähler liegt in derselben flüchtigen Datenbank. Die verlässliche Obergrenze ist deshalb das
   Ausgabenlimit in der Anthropic Console.
+- **Business Case:** Minuten je Auftrag, Stundensatz und Fehlerquoten sind Annahmen, keine Messungen im
+  Betrieb; die Auftragsdaten sind simuliert. Gemessen sind nur die KI-Kosten.
 - **Chat ohne Gesprächsgedächtnis:** Jede frei getippte Nachricht ist eine neue Bestellung (der Chat zeigt
   an, wenn sie einen offenen Auftrag ersetzt); Rückfragen werden über Knöpfe beantwortet.
 - **Erkennung von Angriffsformulierungen über eine Wortliste** – findet typische Muster, nicht jede
