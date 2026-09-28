@@ -251,6 +251,7 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | Datenbank wird **beim Start erzeugt**, nicht im Repository mitgeliefert | Keine Binärdatei in Git; dank festem Seed entstehen lokal (Windows) und in der Cloud (Linux) identische Daten. | Erster Start dauert etwas länger. |
 | **Python-Version** in der Cloud wie lokal (3.13), feste Paketversionen | Gleiche Umgebung wie in der Entwicklung – keine Überraschungen durch andere Versionen. | – |
 | **API-Schlüssel nur in den Secrets** (lokal `.streamlit/secrets.toml` in der `.gitignore`, in der Cloud die Secrets-Verwaltung) | Nie im Code oder in Git. Fehlt der Schlüssel, läuft die App vollständig im Demo-Modus. | – |
+| Zwischenspeicher (`st.cache_data`) enthalten **nur einfache Daten**, keine Objekte eigener Klassen | Nach einem Code-Update lädt Streamlit Cloud geänderte Module neu; zwischengespeicherte Objekte der alten Klasse lassen sich dann nicht mehr speichern – in der Live-App bei der Tour aufgetreten. | – |
 | **Ein API-Client für alle Besucher** (`st.cache_resource`) | Verbindungen werden wiederverwendet; der Schlüssel liegt nur im Serverprozess. | – |
 
 ## 12. Bewusste Grenzen

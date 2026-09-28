@@ -128,6 +128,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   Zähler in `ai_usage` vorher/nachher vergleichen.
 - `AppTest` übernimmt einen Seitenwechsel per `st.switch_page` nicht in den nächsten `run()` (die Tour
   scheint dann auf die Startseite zu springen) – Seitenwechsel im Browser prüfen.
+- **`st.cache_data` nur einfache Daten zurückgeben** (Zahlen, Texte, Tupel, Dicts, DataFrames) – keine
+  Objekte eigener Klassen: Nach einem Code-Update lädt die Cloud geänderte Module neu, und Pickle lehnt
+  Objekte der alten Klasse ab (`UnserializableReturnValueError`).
 
 ## Befehle
 
