@@ -10,7 +10,7 @@ DB_PATH = Path(__file__).resolve().parent.parent / "data" / "brauerei.db"
 
 # Versionsnummer des Schemas. Bei jeder Schemaänderung erhöhen –
 # dann wird eine vorhandene alte Datenbank beim nächsten Start neu aufgebaut.
-SCHEMA_VERSION = 2  # 2: Spalte orders.source (Historie / KI-Erfassung)
+SCHEMA_VERSION = 3  # 2: Spalte orders.source · 3: Tabelle ai_usage (Kostenschutz)
 
 # Tabellenschema. Reihenfolge: erst Stammdaten, dann Bewegungsdaten.
 # STRICT = SQLite prüft Datentypen streng (sonst würde z. B. Text in einer Zahlenspalte akzeptiert).
@@ -85,6 +85,14 @@ CREATE TABLE empties_movements (
     empties_type_id TEXT NOT NULL REFERENCES empties_types (empties_type_id),
     quantity        INTEGER NOT NULL CHECK (quantity <> 0),
     order_id        INTEGER REFERENCES orders (order_id)       -- optional: zugehöriger Auftrag
+) STRICT;
+
+-- ===== Betrieb =====
+
+-- Anzahl echter KI-Aufrufe je Tag – Kostenschutz für die öffentliche Live-App
+CREATE TABLE ai_usage (
+    day   TEXT PRIMARY KEY,                                    -- Datum als 'JJJJ-MM-TT'
+    calls INTEGER NOT NULL CHECK (calls >= 0)
 ) STRICT;
 """
 

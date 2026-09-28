@@ -25,7 +25,7 @@ def empty_db(tmp_path):
 def test_schema_creates_all_tables(empty_db):
     tables = {row[0] for row in empty_db.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert tables == {"empties_types", "products", "prices", "customers",
-                      "orders", "order_items", "empties_movements"}
+                      "orders", "order_items", "empties_movements", "ai_usage"}
 
 
 def test_schema_version_is_stored(empty_db):
