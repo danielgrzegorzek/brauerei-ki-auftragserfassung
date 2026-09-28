@@ -264,6 +264,8 @@ with left, st.container(key="card-inbox"):
         sender_col, channel_col = st.columns([3, 2])
         sender = sender_col.text_input("Absender", placeholder="z. B. Gasthof Huber")
         channel = channel_col.selectbox("Kanal", ORDER_CHANNELS, index=ORDER_CHANNELS.index("WhatsApp"))
+        st.caption(":material/shield: Der Text wird zur Auswertung an Anthropic (Claude-API) übertragen – "
+                   "bitte keine echten Namen, Telefonnummern oder anderen personenbezogenen Daten eingeben.")
         message = IncomingMessage(text, sender, channel)
     else:
         demo = DEMO_MESSAGES[choice]
