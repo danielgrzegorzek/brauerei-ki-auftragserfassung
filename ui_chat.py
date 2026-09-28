@@ -127,6 +127,7 @@ def order_saved(order_id: int, customer_name: str, delivery_date: date, net_tota
     _, products = capture_ui.master_data()
     add(BREWERY, chat.confirmation_text(order_id, delivery_date, chat.lines_summary(lines, products)))
     st.session_state.chat_capture = None
+    st.session_state.sap_order_id = order_id  # Prozessseite zeigt dann gleich diesen Auftrag
     st.session_state.chat_saved = (
         f"Auftrag **{order_id}** für **{customer_name}** gespeichert – {format_eur(net_total)} netto, "
         f"Lieferung am {format_date(delivery_date)}. Die Bestätigung steht im Chat, der Auftrag im Dashboard."
@@ -259,6 +260,7 @@ def chat_view() -> None:
         saved = st.session_state.pop("chat_saved", None)
         if saved:
             st.success(saved, icon=":material/check_circle:")
+            st.page_link("pages/process.py", label="So sähe die Übergabe an SAP aus", icon=":material/send:")
         capture = st.session_state.get("chat_capture")
         if capture is None:
             ui.illustrated_message("empty_inbox", "Noch keine Bestellung im Chat",

@@ -47,6 +47,7 @@ def inbox_extract(extractor: OrderExtractor, message: IncomingMessage, source_ke
 
 def inbox_saved(order_id: int, customer_name: str, delivery_date: date, net_total: float, lines: list) -> None:
     st.session_state.inbox_capture = None
+    st.session_state.sap_order_id = order_id  # Prozessseite zeigt dann gleich diesen Auftrag
     st.session_state.inbox_saved = (
         f"Auftrag **{order_id}** für **{customer_name}** gespeichert – {format_eur(net_total)} netto, "
         f"Lieferung am {format_date(delivery_date)}. Er erscheint jetzt auch im Dashboard."
@@ -124,6 +125,7 @@ def inbox_view() -> None:
         saved = st.session_state.pop("inbox_saved", None)
         if saved:
             st.success(saved, icon=":material/check_circle:")
+            st.page_link("pages/process.py", label="So sähe die Übergabe an SAP aus", icon=":material/send:")
         error = st.session_state.pop("inbox_error", None)
         if error:
             st.error(error, icon=":material/error:")

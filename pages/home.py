@@ -7,7 +7,7 @@ import streamlit as st
 
 import ui
 import ui_tour
-from src import analytics
+from src import analytics, process
 from src.analytics import Filters
 from src.business_case import default_result, measured_ai_cost
 from src.database import get_connection
@@ -87,8 +87,9 @@ with columns[2]:
             value=format_number(overview["revenue_12m"] / 1_000_000, 2), unit="Mio. €",
             page="pages/dashboard.py")
 with columns[3]:
-    ui.tile("soon", "Prozess & SAP-Übergabe", "Ist/Soll, Übergabe an S/4HANA", "process",
-            unit="Demnächst")
+    ui.tile("process", "Prozess & SAP-Übergabe", "Ist/Soll, Übergabe an S/4HANA", "process",
+            value=f"{process.figures(process.AS_IS).manual_steps} → {process.figures(process.TO_BE).manual_steps}",
+            unit="manuelle Schritte je Auftrag", page="pages/process.py")
 
 # ---------- Datenbasis ----------
 st.subheader("Datenbasis")

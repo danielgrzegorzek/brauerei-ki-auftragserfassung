@@ -27,6 +27,7 @@ pages = {  # Schlüssel = Dateiname – so verweist auch die Tour (src/tour.py) 
     "home": st.Page("pages/home.py", title="Start", icon=":material/home:", default=True),
     "dashboard": st.Page("pages/dashboard.py", title="Dashboard", icon=":material/bar_chart:"),
     "order_entry": st.Page("pages/order_entry.py", title="KI-Auftragserfassung", icon=":material/smart_toy:"),
+    "process": st.Page("pages/process.py", title="Prozess & SAP", icon=":material/account_tree:"),
     "business_case": st.Page("pages/business_case.py", title="Business Case", icon=":material/savings:"),
 }
 page = st.navigation(list(pages.values()), position="top")
