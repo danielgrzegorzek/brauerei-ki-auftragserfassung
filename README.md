@@ -2,7 +2,8 @@
 
 KI-gestützte Auftragserfassung und Vertriebsanalyse für eine fiktive Familienbrauerei in Niederbayern.
 
-**▶ Live-Demo:** *Link folgt* – kostenlos testbar, kein API-Schlüssel nötig.
+**▶ Live-Demo: [braeu-am-stein.streamlit.app](https://braeu-am-stein.streamlit.app/)** – kostenlos testbar, kein API-Schlüssel nötig.
+*(Nach längerer Pause „schläft“ die App – dann einmal auf „Yes, get this app back up“ klicken und kurz warten.)*
 
 ---
 

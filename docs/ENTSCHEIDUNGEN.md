@@ -131,7 +131,16 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | Versionsnummer in den Widget-Schlüsseln | Eine neue Auswertung bekommt frische Eingabefelder. | – |
 | In der Prüftabelle nur ein **kurzer Status**, vollständige Hinweise darunter | Lange Texte in Tabellenzellen werden abgeschnitten – Fehler müssen vollständig lesbar sein. | – |
 
-## 6. Bewusste Grenzen
+## 6. Betrieb
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| Hosting auf **Streamlit Community Cloud**, direkt aus dem GitHub-Repository | Kostenlos und öffentlich erreichbar; jeder Push auf `main` aktualisiert die App automatisch. | Die App „schläft“ nach längerer Inaktivität und braucht beim Aufwecken einen Moment. |
+| Datenbank wird **beim Start erzeugt**, nicht im Repository mitgeliefert | Keine Binärdatei in Git; dank festem Seed entstehen lokal (Windows) und in der Cloud (Linux) identische Daten. | Erster Start dauert etwas länger. |
+| **Python-Version** in der Cloud wie lokal (3.13), feste Paketversionen | Gleiche Umgebung wie in der Entwicklung – keine Überraschungen durch andere Versionen. | – |
+| **Keine Secrets** für den Demo-Modus | Die Demo funktioniert ohne API-Schlüssel; ein Schlüssel für den echten KI-Modus kommt ausschließlich in die Secrets-Verwaltung der Cloud, nie in den Code. | – |
+
+## 7. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).
