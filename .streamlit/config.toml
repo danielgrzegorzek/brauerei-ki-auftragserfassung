@@ -1,0 +1,7 @@
+[theme]
+# Akzentfarbe für Buttons und Auswahlfelder – dasselbe Blau wie in den Diagrammen
+primaryColor = "#2a78d6"
+
+[browser]
+# Keine Nutzungsstatistik an Streamlit senden
+gatherUsageStats = false

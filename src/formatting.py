@@ -1,4 +1,11 @@
-"""Deutsche Zahlenformate: Tausenderpunkt, Dezimalkomma, Euro."""
+"""Deutsche Zahlen- und Datumsformate: Tausenderpunkt, Dezimalkomma, Euro, TT.MM.JJJJ."""
+
+from datetime import date
+
+
+def format_date(day: date) -> str:
+    """date(2026, 9, 28) → '28.09.2026'."""
+    return day.strftime("%d.%m.%Y")
 
 
 def format_number(value: float, decimals: int = 0) -> str:
