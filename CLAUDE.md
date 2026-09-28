@@ -156,6 +156,9 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Phase 4 – Erste Veröffentlichung:** GitHub, Streamlit Cloud, Basis-README
   - Live: https://braeu-am-stein.streamlit.app · Repo: https://github.com/danig204/brauerei-ki-auftragserfassung
   - **Jeder Push auf `main` aktualisiert die Live-App automatisch** → vor dem Push Tests laufen lassen.
+  - Achtung: Die Cloud behält beim Update bereits geladene Module im Speicher. Kommen neue Namen in
+    bestehende Module (z. B. neue Konstante in `src/…`), entsteht ein `ImportError` → App in Streamlit
+    Cloud neu starten (Manage app → ⋮ → Reboot app; nur über Daniels Konto). Nach jedem Push die Live-App prüfen.
 - [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,
