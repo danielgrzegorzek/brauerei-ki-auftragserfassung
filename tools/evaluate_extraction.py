@@ -11,6 +11,7 @@ daraus entsteht der Bericht docs/EVALUATION.md mit dem Modellvergleich.
 Aufruf (PowerShell, kostet je Lauf ca. 3–8 US-Cent):
     .venv\\Scripts\\python.exe -m tools.evaluate_extraction
     .venv\\Scripts\\python.exe -m tools.evaluate_extraction --model claude-haiku-4-5
+    .venv\\Scripts\\python.exe -m tools.evaluate_extraction --report-only   (nur Bericht, kostenlos)
 Der API-Schlüssel wird aus .streamlit/secrets.toml gelesen und nie ausgegeben.
 """
 
@@ -50,6 +51,21 @@ def final_order(conn, order: ExtractedOrder) -> tuple:
     return draft.customer_id, draft.delivery_date, sorted((str(l.product_id), l.quantity) for l in draft.lines)
 
 
+def describe_deviation(conn, expected: ExtractedOrder, actual: ExtractedOrder) -> str:
+    """Abweichung in Worten: 'Liefertermin: Soll 09.10.2026, KI 02.10.2026'."""
+    (soll_customer, soll_date, soll_lines), (ist_customer, ist_date, ist_lines) = (
+        final_order(conn, expected), final_order(conn, actual))
+    parts = []
+    if soll_customer != ist_customer:
+        parts.append(f"Kunde: KI „{actual.customer_name}“ nicht zugeordnet")
+    if soll_date != ist_date:
+        parts.append(f"Liefertermin: Soll {format_date(soll_date) if soll_date else '–'}, "
+                     f"KI {format_date(ist_date) if ist_date else '–'}")
+    if soll_lines != ist_lines:
+        parts.append(f"Positionen: Soll {soll_lines}, KI {ist_lines}")
+    return " · ".join(parts)
+
+
 def evaluate_orders(conn, extractor: OrderExtractor, today: date) -> list[dict]:
     """Die 7 Beispielnachrichten auswerten und mit dem Soll vergleichen."""
     rows = []
@@ -72,8 +88,7 @@ def evaluate_orders(conn, extractor: OrderExtractor, today: date) -> list[dict]:
             "final_ok": final_ok,
             "cost_usd": result.cost_usd,
             "seconds": result.seconds,
-            "deviation": None if final_ok else (f"KI-Kunde „{actual.customer_name}“ · Soll "
-                                                f"{final_order(conn, expected)} · Ist {final_order(conn, actual)}"),
+            "deviation": None if final_ok else describe_deviation(conn, expected, actual),
         })
     return rows
 
@@ -140,6 +155,9 @@ def render_report(runs: list[dict]) -> str:
         f"Skript: `tools/evaluate_extraction.py` · Messwerte: `docs/evaluation.json` · "
         f"Modell der App: **{MODELS[MODEL].name}**",
         "",
+        "**Regel für einen Modellwechsel:** Ein günstigeres Modell ersetzt das aktuelle nur, wenn es in zwei",
+        "Läufen 7 von 7 Treffer erreicht und der Angriff blockiert wird. Sonst zählt Zuverlässigkeit vor Preis.",
+        "",
         "## Modellvergleich",
         "",
         "| Modell | Datum | Treffer | Ø Kosten je Nachricht | Ø Dauer | Angriff blockiert | KI meldet Angriff |",
@@ -184,7 +202,14 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="Evaluation der KI-Auswertung")
     parser.add_argument("--model", default=MODEL, choices=list(MODELS))
+    parser.add_argument("--report-only", action="store_true",
+                        help="nur den Bericht aus den gespeicherten Läufen neu erzeugen (ohne API, kostenlos)")
     args = parser.parse_args()
+    runs = json.loads(RESULTS.read_text(encoding="utf-8")) if RESULTS.exists() else []
+    if args.report_only:
+        REPORT.write_text(render_report(runs), encoding="utf-8")
+        print(f"Bericht aus {len(runs)} Läufen neu erzeugt: {REPORT}")
+        return
 
     with open(ROOT / ".streamlit" / "secrets.toml", "rb") as file:
         api_key = tomllib.load(file)["ANTHROPIC_API_KEY"]
@@ -196,7 +221,6 @@ def main() -> None:
         security = security_test(conn, extractor, today)
     run = summarize(args.model, today, rows, security)
 
-    runs = json.loads(RESULTS.read_text(encoding="utf-8")) if RESULTS.exists() else []
     runs.append(run)
     RESULTS.write_text(json.dumps(runs, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     REPORT.write_text(render_report(runs), encoding="utf-8")
