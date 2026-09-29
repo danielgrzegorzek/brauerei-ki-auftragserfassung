@@ -48,8 +48,8 @@
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] span {
   color: var(--fiori-accent); text-decoration: underline; text-underline-offset: 0.18em;
 }
-/* Trennpunkt vor jedem Stück außer dem ersten */
-.st-key-portfolio-note > [data-testid="stElementContainer"]:not(:first-child) p::before,
+/* Trennpunkt vor jedem Stück außer dem ersten (zweites Stück: Text, danach: Links) */
+.st-key-portfolio-note > [data-testid="stElementContainer"]:nth-child(2) p::before,
 .st-key-portfolio-note [data-testid="stPageLink"]::before { content: "·"; color: var(--fiori-label); margin-right: 0.55rem; }
 .st-key-portfolio-note [data-testid="stPageLink"] { display: flex; align-items: center; }
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] { gap: 0 !important; }
@@ -61,12 +61,15 @@
   .st-key-portfolio-note > [data-testid="stElementContainer"]:nth-child(2) p::before { content: none; }
 }
 
-/* ---------- Titelbanner der Startseite: ruhigerer Titel als Streamlits Standard ---------- */
-.st-key-card-hero h1 { font-size: 2.3rem; line-height: 1.2; padding-top: 0.25rem; }
-/* Auf dem Handy ohne Illustration – so stehen die Kennzahlen direkt unter dem Satz */
+/* ---------- Startseite: Titel, ein Satz, Tour-Knopf – viel Luft, schmale Textspalte ---------- */
+/* stMarkdown: nur der Satz – nicht die Beschriftung des Knopfs */
+.st-key-home-hero { max-width: 52rem; padding: 1.75rem 0 1.25rem; }
+.st-key-home-hero h1 { font-size: 2.5rem; line-height: 1.15; padding: 0 0 0.35rem; }
+.st-key-home-hero [data-testid="stMarkdown"] p { font-size: 1.12rem; color: var(--fiori-label); }
 @media (max-width: 640px) {
-  .st-key-card-hero [data-testid="stColumn"]:has(.fiori-illustration) { display: none; }
-  .st-key-card-hero h1 { font-size: 1.8rem; }
+  .st-key-home-hero { padding: 0.75rem 0 0.5rem; }
+  .st-key-home-hero h1 { font-size: 1.8rem; }
+  .st-key-home-hero [data-testid="stMarkdown"] p { font-size: 1rem; }
 }
 
 /* ---------- Seitenkopf: Piktogramm, Titel und ein Satz – ohne Karte, direkt auf dem Hintergrund ---------- */
@@ -89,31 +92,52 @@
   .fiori-pictogram img { width: 2.25rem; height: 2.25rem; }
 }
 
-/* ---------- Launchpad-Kacheln ---------- */
+/* ---------- Launchpad-Kacheln (Fiori „Generic Tile“): feste Größe, Titel oben, Kennzahl unten ---------- */
+.st-key-launchpad { gap: 1rem !important; }
+/* Streamlit legt um jede Kachel eine Hülle, die sich sonst auf die ganze Breite dehnt – sie bestimmt die Größe,
+   die Kachel füllt sie aus (Streamlit gibt ihr flex: 1) */
+.st-key-launchpad > [data-testid="stLayoutWrapper"] { flex: 0 0 11rem !important; width: 11rem !important; height: 11rem; }
 [class*="st-key-tile-"] {
   position: relative;
-  min-height: 13rem;
-  justify-content: space-between;   /* alle Kacheln gleich hoch, „Öffnen“ immer unten */
-  padding: 1.1rem 1.25rem;
+  justify-content: space-between;   /* Titel oben, Kennzahl immer unten */
+  gap: 0 !important;
+  padding: 1rem 1rem 0.9rem;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 [class*="st-key-tile-"]:hover { box-shadow: var(--fiori-shadow-hover); transform: translateY(-2px); }
-.fiori-tile-title { font-size: 1.15rem; font-weight: 700; color: var(--fiori-text); }
-.fiori-tile-subtitle { font-size: 0.92rem; color: var(--fiori-label); margin-top: 0.2rem; }
-.fiori-tile-footer {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  gap: 0.75rem; margin-top: 1.6rem;
+/* Der Titel ist ein Seitenlink – hier ohne Symbol und ohne Link-Optik */
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] {
+  padding: 0 !important; min-height: 0 !important; background: none !important; gap: 0 !important;
 }
-.fiori-tile-footer img { width: 2.75rem; height: 2.75rem; display: block; flex-shrink: 0; }
-.fiori-tile-kpi { text-align: right; }
-.fiori-tile-kpi .value { font-size: 2.4rem; line-height: 1; color: var(--fiori-accent); }
-.fiori-tile-kpi .unit { display: block; font-size: 0.82rem; color: var(--fiori-label); margin-top: 0.3rem; }
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] > span:has([data-testid="stIconMaterial"]) { display: none; }
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] p {
+  font-size: 1rem; font-weight: 700; line-height: 1.3; color: var(--fiori-text); white-space: normal;
+}
 /* Ganze Kachel klickbar: Der Link spannt eine unsichtbare Fläche über die Kachel („stretched link“) */
 [class*="st-key-tile-"] [data-testid="stElementContainer"],
 [class*="st-key-tile-"] [data-testid="stPageLink"],
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] { position: static; }
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]::after {
   content: ""; position: absolute; inset: 0; border-radius: 0.75rem;
+}
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]:focus-visible { outline: none; }
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]:focus-visible::after {
+  outline: 2px solid var(--fiori-accent); outline-offset: 2px;
+}
+/* Streamlit gibt Markdown-Blöcken einen negativen Rand unten – in der Kachel ragte die Kennzahl sonst aus dem Innenabstand */
+[class*="st-key-tile-"] [data-testid="stMarkdownContainer"] { margin-bottom: 0 !important; }
+.tile-content { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.5rem; }
+.tile-content img { width: 2.5rem; height: 2.5rem; display: block; flex-shrink: 0; }
+.tile-kpi { text-align: right; min-width: 0; }
+.tile-value { display: block; font-size: 2rem; line-height: 1; color: var(--fiori-accent); white-space: nowrap; }
+.tile-unit { display: block; font-size: 0.75rem; line-height: 1.25; color: var(--fiori-label); margin-top: 0.3rem; }
+/* Handy: zwei Kacheln pro Reihe, wie das Launchpad auf dem Telefon */
+@media (max-width: 640px) {
+  .st-key-launchpad { gap: 0.75rem !important; }
+  .st-key-launchpad > [data-testid="stLayoutWrapper"] {
+    flex-basis: calc(50% - 0.375rem) !important; width: calc(50% - 0.375rem) !important; height: 10rem;
+  }
+  .tile-value { font-size: 1.7rem; }
 }
 
 /* ---------- Nachricht als Sprechblase ---------- */
@@ -123,8 +147,7 @@
   padding: 0.9rem 1.1rem;
 }
 
-/* ---------- Illustrationen und „Illustrated Message“ (Leerzustand) ---------- */
-.fiori-illustration img { width: 100%; height: auto; display: block; }
+/* ---------- „Illustrated Message“ (Leerzustand) ---------- */
 .fiori-illustrated-message { text-align: center; padding: 1.5rem 1rem 1rem; }
 .fiori-illustrated-message img { width: 15rem; max-width: 100%; height: auto; }
 .fiori-illustrated-message .title { font-size: 1.2rem; font-weight: 700; color: var(--fiori-text); margin-top: 0.75rem; }

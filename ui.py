@@ -112,32 +112,13 @@ def img(name: str, alt: str = "") -> str:
     return f'<img src="{svg_uri(name)}" alt="{html.escape(alt)}">'
 
 
-def illustration(name: str, alt: str) -> None:
-    raw_html(f'<div class="fiori-illustration">{img(name, alt)}</div>')
-
-
 def page_header(title: str, subtitle: str, pictogram: str) -> None:
-    """Seitenkopf wie die Fiori-„Object Page“: Piktogramm, Titel, Untertitel auf einer Karte."""
+    """Seitenkopf: Piktogramm, Titel und ein Satz – direkt auf dem Seitenhintergrund."""
     with st.container(key="page-header"):
         raw_html(
             f'<div class="fiori-page-header"><div class="fiori-pictogram">{img("pict_" + pictogram)}</div>'
             f"<div><h1>{html.escape(title)}</h1><p>{html.escape(subtitle)}</p></div></div>"
         )
-
-
-def tile(key: str, title: str, subtitle: str, pictogram: str,
-         value: str | None = None, unit: str = "", page: str | None = None) -> None:
-    """Launchpad-Kachel: Titel, Untertitel, Piktogramm und Kennzahl. Mit page ist die ganze Kachel ein Link."""
-    value_html = f'<span class="value">{html.escape(value)}</span>' if value else ""
-    with st.container(key=f"tile-{key}"):
-        raw_html(
-            f'<div class="fiori-tile-title">{html.escape(title)}</div>'
-            f'<div class="fiori-tile-subtitle">{html.escape(subtitle)}</div>'
-            f'<div class="fiori-tile-footer">{img("pict_" + pictogram)}'
-            f'<div class="fiori-tile-kpi">{value_html}<span class="unit">{html.escape(unit)}</span></div></div>'
-        )
-        if page:
-            st.page_link(page, label="Öffnen", icon=":material/arrow_forward:")
 
 
 def illustrated_message(name: str, title: str, text: str) -> None:
