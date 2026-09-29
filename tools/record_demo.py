@@ -19,8 +19,7 @@ from pathlib import Path
 import imageio_ffmpeg
 from playwright.sync_api import Locator, Page, sync_playwright
 
-VIEWPORT = {"width": 1280, "height": 720}
-VIDEO_SIZE = {"width": 1920, "height": 1080}  # 1,5-fache Pixeldichte → scharfe Schrift im Video
+VIEWPORT = {"width": 1280, "height": 720}  # = Videogröße: Playwright nimmt in Seitengröße auf und vergrößert nicht
 TITLE = ("Bräu am Stein", "KI-gestützte Auftragserfassung · ein Portfolio-Projekt von Daniel Grzegorzek")
 CLOSING = ("Die KI versteht.\nDer Code entscheidet.\nDer Mensch bestätigt.",
            "Selbst ausprobieren: braeu-am-stein-ki.streamlit.app")
@@ -248,9 +247,9 @@ def main() -> None:
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(channel="msedge")
-        context = browser.new_context(viewport=VIEWPORT, device_scale_factor=1.5, color_scheme="light",
-                                      locale="de-DE", timezone_id="Europe/Berlin",
-                                      record_video_dir=str(args.out), record_video_size=VIDEO_SIZE)
+        context = browser.new_context(viewport=VIEWPORT, color_scheme="light", locale="de-DE",
+                                      timezone_id="Europe/Berlin",
+                                      record_video_dir=str(args.out), record_video_size=VIEWPORT)
         context.add_init_script(f"({OVERLAY_JS})({json.dumps(list(TITLE))})")
         page = context.new_page()  # ab hier läuft die Aufnahme
         video_start = time.monotonic()
