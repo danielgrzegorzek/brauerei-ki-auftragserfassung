@@ -328,6 +328,18 @@ Funktionen und ohne Änderung an der Logik in `src/` (dort änderten sich nur Te
 | Streamlits **Hülle um Container** (`stLayoutWrapper`) trägt Größe und `sticky` | Streamlit gibt dem Container selbst `flex: 1` und legt eine Hülle darum – Breite, Höhe und die klebende Fußleiste wirken nur an der Hülle (im Browser und in der Gegenprüfung gefunden). | CSS hängt an Streamlit-Interna – feste Paketversion 1.64. |
 | **Prüfung je Seite** im Browser (hell, dunkel, 1280 px, 390 px, höchstens zwei Nachbesserungsrunden) und **Code-Review mit Gegenprüfung** in zwei Durchgängen | Gefunden und behoben u. a.: Kachelgrößen, abgeschnittene Beschriftungen, Fußleiste klebte nicht, Tooltip verschwand beim Darüberfahren, Kontrast des Status „Bereit zur Übergabe“ (jetzt mindestens 4,5 : 1), veralteter Status nach neu vergebener Auftragsnummer, „Annahmen anpassen“ klappte zu, sobald das Ergebnis negativ wurde (Bereiche haben jetzt feste Schlüssel), abgeschnittene Zahlen zwischen 641 und 1100 px, die Tour nannte simulierte Daten „echt“. | – |
 
+**Kompakter, zentrierter Aufbau** (Nachtrag zur Überarbeitung):
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| **Zentrierter Inhaltsbereich mit begrenzter Breite:** 1200 px für normale Seiten, 1400 px für Dashboard und Auftragserfassung; links und rechts gleich viel Rand | Auf großen Monitoren (1920 und 2560 px) zog sich die App in die Breite – Karten, Tabellen und Diagramme wurden lang und flach, der Blick musste weit wandern. Dashboard und Auftragserfassung bekommen mehr Platz, weil dort Diagramme bzw. Chat und Auftrag nebeneinanderstehen. | Volle Breite (bis dahin): auf breiten Bildschirmen unruhig. Eine Breite für alle Seiten: Dashboard und Chat wären gedrängt. |
+| **Eine Regel zentral im CSS:** Variable `--content-max`, die breiten Seiten erkennt das CSS an ihrer Filterleiste bzw. am Chat (`body:has(…)`) | Einheitlich auf allen Seiten, keine Breite im Python-Code je Seite; Hinweiszeile, Seitenkopf und Inhalt stehen automatisch im selben Bereich und haben dieselbe linke Kante. | Breite je Seite im Code setzen: verstreut, leicht uneinheitlich. |
+| **Kopfleiste über die volle Breite**, Logo und Menü an den Rändern des Inhalts; Inhalt und Kopfleiste halten beide Platz für einen Scrollbalken frei (`scrollbar-gutter`) | Nur der Inhalt scrollt – ohne diese Reserve stand er um die halbe Scrollbalkenbreite neben dem Logo (im Browser gemessen). | – |
+| **Lesebreite** für Absätze und Listen: höchstens 70ch (rund 75 Zeichen) | Lange Zeilen lesen sich schlecht; Karten, Tabellen und Diagramme nutzen trotzdem die ganze Breite. | – |
+| **Startseite ab Tablet-Breite als zentrierter Block** (Titel, Satz, Tour-Knopf, Kacheln) | Wirkt wie ein zusammenhängender Einstieg statt einer linksbündigen Liste. | – |
+| **Auf kleinen Bildschirmen unverändert:** Die Regeln greifen erst, wenn der Platz über die Inhaltsbreite hinausgeht bzw. ab 641 px | Auf dem Handy bleibt die volle Breite mit 1rem Rand. | – |
+| **Browser-Prüfung** seit dieser Änderung immer bei 390, 1280, 1920 und 2560 px, hell und dunkel | Große Monitore fielen vorher nicht auf, weil nur bis 1280 px geprüft wurde. | – |
+
 ## 16. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele

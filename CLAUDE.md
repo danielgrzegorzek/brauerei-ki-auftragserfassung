@@ -150,6 +150,10 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - **Streamlit legt um jeden Container eine Hülle** (`[data-testid="stLayoutWrapper"]`) und gibt dem Container
   `flex: 1` – feste Größen und `position: sticky` gehören an die Hülle (`…:has(> .st-key-…)`).
   Markdown-Blöcke haben unten einen negativen Rand; Kennzahl-Beschriftungen kürzt Streamlit mit „…“.
+- **Layout:** zentrierter Inhaltsbereich, eine Regel in `assets/style.css` (`--content-max`: 1200 px, Dashboard und
+  Auftragserfassung 1400 px, erkannt an `card-filters` bzw. `card-chat`); Kopfleiste an denselben Rändern,
+  `scrollbar-gutter` in Inhalt und Kopfleiste; Lesebreite 70ch; auf dem Handy unverändert.
+  **Browser-Prüfung immer bei 390, 1280, 1920 und 2560 px, hell und dunkel.**
 - **`st.fragment`** für Business Case, Dashboard und SAP-Übergabe (nur dieser Teil lädt neu); in Fragmenten
   `return` statt `st.stop()`. Nicht in der Auftragserfassung (Chat, Vorschlag und Tabelle eng gekoppelt).
 - **`st.html` filtert `<style>` und `<svg>`** → eigenes HTML/CSS über `ui.raw_html` (`st.markdown` mit
