@@ -129,10 +129,12 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `tools/evaluate_extraction.py` – 7 Demo-Nachrichten + Sicherheitstest (Prompt-Injection) an Claude,
   Vergleich mit dem Soll; hängt jeden Lauf an `docs/evaluation.json` an und erzeugt daraus
   `docs/EVALUATION.md` (Modellvergleich). Kosten je Lauf ca. 3–8 US-Cent; `--report-only` kostenlos
-- `tools/record_demo.py` – Demo-Video (ca. 90 s, stumm mit Untertiteln): Playwright steuert Edge durch die laufende
-  App (Dialekt → Auftrag → Freigabe → Angriff → SAP), ffmpeg macht MP4 + Vorschaubild in `data/demo/`.
-  Live-KI ca. 2 US-Cent (prüft das Kennzeichen, bricht sonst ab), `--demo` kostenlos. Aufnahme zu jeder Uhrzeit
-  (nach 14 Uhr zeigt sie den verschobenen Termin). Fertiges Video liegt im Portfolio-Repo unter `assets/demo.mp4`
+- `tools/record_demo.py` – Demo-Video (ca. 45 s, stumm, 1920 × 1080, 30 fps, Zoom 125 %): Playwright steuert Edge
+  durch die Live-App (Start → Dialekt-Chat → Auftrag → SAP-Übergabe → Business Case → Making-of), Einblendungen und
+  Mauszeiger per `evaluate` im App-iframe, Bilder per CDP-Screencast, ffmpeg macht MP4 (< 8 MB), Vorschaubild,
+  README-GIF und Prüfbilder je Szene in `data/demo/`. Live-KI ca. 1 US-Cent (prüft das Kennzeichen, bricht sonst ab),
+  `--demo` kostenlos, `--url` für lokal. Aufnahme zu jeder Uhrzeit (nach 14 Uhr zeigt sie den verschobenen Termin).
+  Fertiges Video liegt im Portfolio-Repo unter `assets/demo.mp4`
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
   Abgleich (`build_draft`) gibt nur Hinweise (Warnung/Info); blockierende Fehler kommen nur aus
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,
@@ -193,9 +195,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 .venv\Scripts\python.exe -m tools.evaluate_extraction --model claude-haiku-4-5
 .venv\Scripts\python.exe -m tools.evaluate_extraction --report-only   # nur Bericht, ohne API
 
-# Demo-Video aufnehmen (App muss laufen; einmalig vorher: python -m playwright install ffmpeg)
-.venv\Scripts\python.exe -m tools.record_demo --url http://localhost:8502          # Live-KI, ca. 2 US-Cent
-.venv\Scripts\python.exe -m tools.record_demo --url http://localhost:8502 --demo   # kostenlos
+# Demo-Video aufnehmen (Standard: Live-App; Ergebnis in data/demo/)
+.venv\Scripts\python.exe -m tools.record_demo                                       # Live-KI, ca. 1 US-Cent
+.venv\Scripts\python.exe -m tools.record_demo --url http://localhost:8502 --demo   # lokaler Probelauf, kostenlos
 ```
 
 Der API-Schlüssel steht nur in `.streamlit/secrets.toml` (lokal) bzw. in den Secrets der

@@ -1,272 +1,414 @@
-"""Demo-Video der App automatisch aufnehmen: Dialekt-Bestellung → geprüfter Auftrag → Angriff → Übergabe an SAP.
+"""Demo-Video der App automatisch aufnehmen: ca. 45 Sekunden, stumm, 1920 × 1080, 30 fps – Drehbuch in record().
 
-Ein ferngesteuerter Browser (Playwright mit dem installierten Microsoft Edge) klickt sich durch die laufende App und
-nimmt dabei ein Video auf. Untertitel, Titelkarten und ein sichtbarer Mauszeiger werden in die Seite eingeblendet –
-die App selbst bleibt unverändert. Am Ende wandelt ffmpeg das Video in MP4 um (läuft in jedem Browser).
+Ein ferngesteuerter Browser (Playwright mit dem installierten Microsoft Edge) klickt sich durch die App wie ein
+Mensch: sichtbarer Mauszeiger mit Klick-Hervorhebung, ruhige Bewegungen, weiches Scrollen, Pausen zum Mitlesen.
+Einblendungen und Mauszeiger werden in die Seite eingefügt – die App selbst bleibt unverändert.
 
-Vorher: App starten (z. B. Port 8501) und einmalig `python -m playwright install ffmpeg`.
-Aufruf:  python -m tools.record_demo                  # Live-KI, kostet ca. 2 US-Cent (zwei Auswertungen)
-         python -m tools.record_demo --demo           # Demo-Modus, kostenlos (vorbereitete KI-Ergebnisse)
-Achtung: nach 14 Uhr warnt die App beim Dialekt-Beispiel („bis morgn“) vor dem Bestellschluss.
+Aufgenommen wird Bild für Bild über das Chrome-DevTools-Protokoll (Screencast in voller Auflösung). Chrome liefert
+nur dann ein Bild, wenn sich etwas ändert – ffmpeg macht daraus ein MP4 mit gleichmäßigen 30 fps, dazu ein
+Vorschaubild, ein kurzes GIF (Chat → Auftrag) fürs README und ein Prüfbild je Szene.
+
+Aufruf:  python -m tools.record_demo                                  # Live-App mit Live-KI, ca. 1 US-Cent
+         python -m tools.record_demo --demo                           # Live-App im Demo-Modus, kostenlos
+         python -m tools.record_demo --url http://localhost:8502 --demo  # lokaler Probelauf, kostenlos
+Nach 14 Uhr zeigt das Dialekt-Beispiel („bis morgn“) den Bestellschluss: Lieferung übermorgen, mit Hinweis.
 """
 
 import argparse
-import json
+import base64
+import shutil
 import subprocess
 import time
 from pathlib import Path
 
 import imageio_ffmpeg
-from playwright.sync_api import Locator, Page, sync_playwright
+from playwright.sync_api import Frame, Locator, Page, sync_playwright
 
-VIEWPORT = {"width": 1280, "height": 720}  # = Videogröße: Playwright nimmt in Seitengröße auf und vergrößert nicht
-TITLE = ("Bräu am Stein", "KI-gestützte Auftragserfassung · ein Portfolio-Projekt von Daniel Grzegorzek")
-CLOSING = ("Die KI versteht.\nDer Code entscheidet.\nDer Mensch bestätigt.",
-           "Selbst ausprobieren: braeu-am-stein-ki.streamlit.app")
+LIVE_URL = "https://braeu-am-stein-ki.streamlit.app"
+VIEWPORT = {"width": 1536, "height": 864}  # CSS-Pixel – mit Browser-Zoom 125 % ergibt das 1920 × 1080 Bildpunkte
+ZOOM = 1.25
+SIZE = (1920, 1080)
+FPS = 30
+MAX_MB = 8            # Zielgröße des MP4
+HEADER = 80           # so viele CSS-Pixel oben verdeckt die feste Kopfleiste der App
 
-# Untertitel, Titelkarte und Mauszeiger – wird vor jedem Laden der Seite eingefügt (Playwright: add_init_script)
+# Streamlit Cloud: Die App steckt in einem iframe (Pfad /~/+/), die äußere Seite zeigt nur Plaketten –
+# die gehören nicht ins Video
+SHELL_JS = """
+() => document.head.insertAdjacentHTML("beforeend", `<style>
+  [class*="_viewerBadge"], [class*="_profileContainer"], iframe[src*="statuspage"] { display: none !important; }
+</style>`)
+"""
+
+# Einblendungen, Mauszeiger und Klick-Ring – wird nach dem Laden in den Rahmen der App eingesetzt.
+# Streamlit wechselt die Seiten ohne Neuladen, deshalb bleibt es die ganze Aufnahme über erhalten.
 OVERLAY_JS = """
-([title, subtitle]) => {
-  const style = `
-    #demo-card { position: fixed; inset: 0; z-index: 2147483645; display: grid; place-content: center; gap: 16px;
-      text-align: center; background: #f5f6f7; color: #1d2d3e; font-family: "Segoe UI", system-ui, sans-serif;
-      transition: opacity .6s; pointer-events: none; }
-    #demo-card.hidden { opacity: 0; }
-    #demo-card .accent { width: 72px; height: 5px; margin: 0 auto 6px; border-radius: 3px; background: #0070f2; }
-    #demo-card h1 { margin: 0; font-size: 52px; font-weight: 700; letter-spacing: -0.02em; white-space: pre-line; }
-    #demo-card p { margin: 0; font-size: 24px; color: #556b82; }
-    #demo-caption { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 2147483646;
-      max-width: 960px; padding: 14px 28px; border-radius: 14px; background: rgba(18, 24, 33, .88); color: #fff;
-      font: 600 25px/1.35 "Segoe UI", system-ui, sans-serif; text-align: center; pointer-events: none;
-      opacity: 0; transition: opacity .35s; }
-    /* Entwickler-Knöpfe von Streamlit (Deploy, Stop, Menü) gehören nicht ins Video */
-    [data-testid="stAppDeployButton"], [data-testid="stStatusWidget"], [data-testid="stMainMenu"] {
-      visibility: hidden !important; }
+() => {
+  const appStyle = `
+    #demo-caption { position: fixed; left: 50%; bottom: 30px; z-index: 2147483646; max-width: 1000px;
+      transform: translateX(-50%); padding: 12px 28px; border-radius: 14px; background: rgba(18, 24, 33, .78);
+      color: #fff; font: 600 24px/1.35 "Segoe UI", system-ui, sans-serif; text-align: center;
+      pointer-events: none; opacity: 0; transition: opacity .3s ease; }
     #demo-caption.visible { opacity: 1; }
-    #demo-cursor { position: fixed; left: -4px; top: -2px; z-index: 2147483647; width: 26px; height: 26px;
+    #demo-cursor { position: fixed; left: -3px; top: -2px; z-index: 2147483647; width: 24px; height: 24px;
       pointer-events: none; transform: translate(-100px, -100px); }
-    .demo-ripple { position: fixed; z-index: 2147483646; width: 44px; height: 44px; margin: -22px 0 0 -22px;
-      border-radius: 50%; border: 3px solid #0070f2; pointer-events: none; animation: demo-ripple .5s ease-out forwards; }
-    @keyframes demo-ripple { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.2); opacity: 0; } }`;
+    .demo-ripple { position: fixed; z-index: 2147483646; width: 40px; height: 40px; margin: -20px 0 0 -20px;
+      border-radius: 50%; background: rgba(0, 112, 242, .18); border: 3px solid #0070f2; pointer-events: none;
+      animation: demo-ripple .55s ease-out forwards; }
+    @keyframes demo-ripple { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.25); opacity: 0; } }
+    /* Entwickler- und Cloud-Knöpfe (Deploy, Fork, GitHub, Menü) gehören nicht ins Video */
+    [data-testid="stAppDeployButton"], [data-testid="stStatusWidget"], [data-testid="stMainMenu"],
+    [data-testid="stToolbarActions"] { visibility: hidden !important; }`;
   const cursorSvg = "data:image/svg+xml," + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 2v18l5-5 3.5 7 3-1.5-3.5-7H19z" ' +
     'fill="#111" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg>');
 
-  document.addEventListener("DOMContentLoaded", () => {
-    document.head.insertAdjacentHTML("beforeend", `<style>${style}</style>`);
-    document.body.insertAdjacentHTML("beforeend",
-      `<div id="demo-card"><div class="accent"></div><h1></h1><p></p></div>` +
-      `<div id="demo-caption"></div><img id="demo-cursor" src="${cursorSvg}" alt="">`);
-    const card = document.getElementById("demo-card");
-    const caption = document.getElementById("demo-caption");
-    const cursor = document.getElementById("demo-cursor");
-    window.demo = {
-      card(heading, text) {
-        card.querySelector("h1").textContent = heading;
-        card.querySelector("p").textContent = text;
-        card.classList.remove("hidden");
-        cursor.style.visibility = "hidden";  // auf Titel- und Schlusskarte kein Mauszeiger
-      },
-      hideCard() {
-        card.classList.add("hidden");
-        cursor.style.visibility = "visible";
-      },
-      caption(text) {
-        if (text) caption.textContent = text;
-        caption.classList.toggle("visible", Boolean(text));
-      },
-    };
-    window.demo.card(title, subtitle);  // Titelkarte von Anfang an – verdeckt das Laden der App
-    document.addEventListener("mousemove", (event) => {
-      cursor.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
-    }, true);
-    document.addEventListener("mousedown", (event) => {
-      const ripple = document.createElement("div");
-      ripple.className = "demo-ripple";
-      ripple.style.left = `${event.clientX}px`;
-      ripple.style.top = `${event.clientY}px`;
-      document.body.append(ripple);
-      setTimeout(() => ripple.remove(), 600);
-    }, true);
-  });
+  document.head.insertAdjacentHTML("beforeend", `<style>${appStyle}</style>`);
+  document.body.insertAdjacentHTML("beforeend",
+    `<div id="demo-caption"></div><img id="demo-cursor" src="${cursorSvg}" alt="">`);
+  const caption = document.getElementById("demo-caption");
+  const cursor = document.getElementById("demo-cursor");
+  window.demo = {
+    caption(text) {  // neuer Text: kurz ausblenden, tauschen, wieder einblenden
+      const show = () => { caption.textContent = text; caption.classList.add("visible"); };
+      if (!text) { caption.classList.remove("visible"); return; }
+      if (caption.classList.contains("visible")) { caption.classList.remove("visible"); setTimeout(show, 300); }
+      else { show(); }
+    },
+  };
+  document.addEventListener("mousemove", (event) => {
+    cursor.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+  }, true);
+  document.addEventListener("mousedown", (event) => {
+    const ripple = document.createElement("div");
+    ripple.className = "demo-ripple";
+    ripple.style.left = `${event.clientX}px`;
+    ripple.style.top = `${event.clientY}px`;
+    document.body.append(ripple);
+    setTimeout(() => ripple.remove(), 650);
+  }, true);
 }
 """
 
-
-# ---------- Bausteine für die Aufnahme ----------
-
-def pause(page: Page, seconds: float) -> None:
-    page.wait_for_timeout(seconds * 1000)
-
-
-def caption(page: Page, text: str | None) -> None:
-    """Untertitel einblenden – None blendet ihn aus."""
-    page.evaluate("text => window.demo.caption(text)", text)
-
-
-def scroll_to(page: Page, target: Locator, block: str = "center") -> None:
-    """Sanft zu einem Element scrollen (wie ein Mensch, nicht springend)."""
-    target.evaluate("(element, block) => element.scrollIntoView({behavior: 'smooth', block})", block)
-    pause(page, 1.2)
-
-
-def click(page: Page, target: Locator) -> None:
-    """Mauszeiger sichtbar zum Element bewegen und klicken."""
-    target.scroll_into_view_if_needed()
-    box = target.bounding_box()
-    x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
-    page.mouse.move(x, y, steps=30)
-    pause(page, 0.4)
-    page.mouse.click(x, y)
+# Weiches Scrollen im Inhaltsbereich der App (dort scrollt Streamlit, nicht das Fenster)
+SCROLL_JS = """
+([y, ms]) => new Promise(resolve => {
+  const main = document.querySelector('[data-testid="stMain"]');
+  const start = main.scrollTop, target = Math.max(0, Math.min(y, main.scrollHeight - main.clientHeight));
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const t0 = performance.now();
+  const step = now => {
+    const t = Math.min(1, (now - t0) / ms);
+    main.scrollTop = start + (target - start) * ease(t);
+    t < 1 ? requestAnimationFrame(step) : resolve();
+  };
+  requestAnimationFrame(step);
+})
+"""
 
 
-def save_button(page: Page) -> Locator:
-    return page.locator("button", has_text="Auftrag bestätigen & speichern")
+# ---------- Aufnahme: Einzelbilder über das Chrome-DevTools-Protokoll ----------
+
+class Screencast:
+    """Sammelt die Bilder, die Chrome bei jeder Änderung der Seite schickt – mit Zeitstempel."""
+
+    def __init__(self, page: Page, folder: Path):
+        self.folder, self.frames = folder, []
+        self.cdp = page.context.new_cdp_session(page)
+        self.cdp.on("Page.screencastFrame", self.on_frame)
+
+    def start(self) -> None:
+        self.cdp.send("Page.startScreencast", {"format": "jpeg", "quality": 92, "maxWidth": SIZE[0],
+                                               "maxHeight": SIZE[1], "everyNthFrame": 1})
+
+    def on_frame(self, event: dict) -> None:
+        path = self.folder / f"{len(self.frames):05d}.jpg"
+        path.write_bytes(base64.b64decode(event["data"]))
+        self.frames.append((event["metadata"]["timestamp"], path))
+        self.cdp.send("Page.screencastFrameAck", {"sessionId": event["sessionId"]})  # sonst kommt kein weiteres Bild
+
+    def stop(self) -> float:
+        """Beendet die Aufnahme und gibt die Endzeit zurück (Zeitstempel wie bei den Bildern)."""
+        end = time.time()
+        self.cdp.send("Page.stopScreencast")
+        return end
 
 
-def send_example(page: Page, key: str) -> None:
-    """Beispielvorschlag antippen (Text landet im Eingabefeld), dann absenden."""
-    click(page, page.locator(f".st-key-example_{key} button"))
-    pause(page, 1.8)
-    click(page, page.locator('[data-testid="stChatInputSubmitButton"]'))
+# ---------- Regie: Uhr, Maus, Scrollen, Einblendungen ----------
+
+class Director:
+    def __init__(self, page: Page, app: Frame):
+        self.page, self.app = page, app
+        self.x, self.y = VIEWPORT["width"] / 2, VIEWPORT["height"] * 0.6
+        self.start = time.monotonic()
+        self.wall_start = time.time()  # dieselbe Uhr wie die Zeitstempel der Bilder – für die Umrechnung der Marken
+
+    def now(self) -> float:
+        return time.monotonic() - self.start
+
+    def until(self, second: float) -> None:
+        """Warten, bis die Szenen-Uhr diese Sekunde erreicht – ist sie schon vorbei, geht es gleich weiter."""
+        remaining = second - self.now()
+        if remaining > 0:
+            self.page.wait_for_timeout(remaining * 1000)
+
+    def pause(self, seconds: float) -> None:
+        self.page.wait_for_timeout(seconds * 1000)
+
+    def caption(self, text: str | None) -> None:
+        print(f"{self.now():5.1f} s  {text}")  # Protokoll: wann welche Einblendung kommt
+        self.app.evaluate("text => window.demo.caption(text)", text)
+
+    def glide(self, x: float, y: float, seconds: float = 0.8) -> None:
+        """Mauszeiger ruhig zum Ziel bewegen – langsam anfahren, langsam abbremsen.
+        Die Position richtet sich nach der echten Uhr: So dauert die Bewegung wirklich `seconds`."""
+        x0, y0, start = self.x, self.y, time.monotonic()
+        while True:
+            t = min(1.0, (time.monotonic() - start) / seconds)
+            eased = 4 * t ** 3 if t < 0.5 else 1 - (-2 * t + 2) ** 3 / 2
+            self.page.mouse.move(x0 + (x - x0) * eased, y0 + (y - y0) * eased)
+            if t >= 1.0:
+                break
+            self.page.wait_for_timeout(12)
+        self.x, self.y = x, y
+
+    def click(self, target: Locator, seconds: float = 0.8) -> None:
+        """Zum Element gleiten, kurz verweilen, klicken (der Klick-Ring zeigt, wo)."""
+        box = target.bounding_box()
+        self.glide(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2, seconds)
+        self.pause(0.25)
+        self.page.mouse.down()
+        self.pause(0.08)
+        self.page.mouse.up()
+
+    def hover(self, target: Locator, seconds: float = 0.8) -> None:
+        box = target.bounding_box()
+        self.glide(box["x"] + box["width"] * 0.35, box["y"] + box["height"] / 2, seconds)
+
+    def scroll_to(self, target: Locator, offset: int = HEADER + 16, seconds: float = 1.0) -> None:
+        """Weich so weit scrollen, dass das Element knapp unter der Kopfleiste steht."""
+        y = target.evaluate("(e, off) => document.querySelector('[data-testid=\"stMain\"]').scrollTop"
+                            " + e.getBoundingClientRect().top - off", offset)
+        self.app.evaluate(SCROLL_JS, [y, int(seconds * 1000)])
+
+    def scroll_bottom_to(self, target: Locator, margin: int = 24, seconds: float = 1.0) -> None:
+        """Weich so weit scrollen, dass das Element unten im Bild steht."""
+        y = target.evaluate("(e, m) => { const main = document.querySelector('[data-testid=\"stMain\"]');"
+                            " return main.scrollTop + e.getBoundingClientRect().bottom - main.clientHeight + m; }",
+                            margin)
+        self.app.evaluate(SCROLL_JS, [y, int(seconds * 1000)])
 
 
-def use_live_ai(page: Page, live: bool) -> None:
+def app_frame(page: Page, timeout: float = 120) -> Frame:
+    """Der Rahmen mit der Streamlit-App: in der Cloud das iframe unter /~/+/ (erscheint erst nach dem Laden bzw.
+    Aufwecken der App), lokal die Seite selbst."""
+    if not page.url.split("/")[2].endswith(".streamlit.app"):
+        return page.main_frame
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        frame = next((frame for frame in page.frames if "/~/+/" in frame.url), None)
+        if frame:
+            return frame
+        page.wait_for_timeout(500)
+    raise SystemExit("Die App ist in Streamlit Cloud nicht geladen – später noch einmal versuchen.")
+
+
+def use_live_ai(app: Frame, live: bool) -> None:
     """Schalter „Live-KI verwenden“ passend stellen und am Kennzeichen prüfen – kein Aufruf kostet unbemerkt."""
-    switch = page.get_by_role("checkbox", name="Live-KI verwenden")
-    if switch.count():
+    switch = app.locator('input[aria-label="Live-KI verwenden"]')  # Rolle „switch“, technisch ein Kästchen
+    try:  # erscheint nach dem Seitenwechsel etwas später als die Beispiel-Knöpfe; ohne Schlüssel gibt es ihn nicht
+        switch.wait_for(state="attached", timeout=15_000)
         switch.set_checked(live, force=True)  # das echte Kästchen ist unsichtbar, Streamlit zeigt einen Schalter
-    badge = page.locator(".st-key-card-chat").get_by_text("Live-KI · " if live else "Demo-Modus").first
+    except Exception:
+        pass
+    badge = app.locator(".st-key-card-chat .stMarkdownBadge", has_text="Live-KI · " if live else "Demo-Modus")
     try:
-        badge.wait_for(timeout=5_000)
+        badge.wait_for(timeout=10_000)
     except Exception:
         raise SystemExit("Live-KI nicht verfügbar (Schlüssel oder Kontingent fehlt) – mit --demo aufnehmen."
                          if live else "Demo-Modus ließ sich nicht einschalten – Abbruch, damit nichts kostet.")
 
 
-# ---------- Das Drehbuch ----------
+# ---------- Das Drehbuch (Sekunde | Bild | Einblendung) ----------
 
-def record(page: Page, live: bool) -> float:
-    """Spielt die Szenen ab und gibt den Zeitpunkt (time.monotonic) für das Vorschaubild zurück."""
-    nav = page.locator('a[data-testid="stTopNavLink"]')  # Navigation oben (ab ca. 1000 px Breite)
-    nav.first.wait_for()
-    pause(page, 2.5)
+def record(d: Director, live: bool) -> dict[str, float]:
+    """Spielt die Szenen ab und gibt Zeitmarken für Vorschaubild, GIF und Prüfbilder zurück."""
+    app = d.app
+    nav = app.locator('a[data-testid="stTopNavLink"]')
+    marks = {}
 
-    # Unter der Titelkarte: zur Auftragserfassung wechseln und die KI einstellen
-    nav.filter(has_text="KI-Auftragserfassung").click()
-    page.locator(".st-key-example_Dialekt button").wait_for()
-    use_live_ai(page, live)
-    page.mouse.move(640, 420)
-    page.evaluate("window.demo.hideCard()")
-    pause(page, 1.2)
+    # 0–5 s: Startseite mit Kacheln
+    d.caption("Bräu am Stein – KI-gestützte Auftragserfassung")
+    marks["start"] = d.now() + 1.5
+    d.until(1.6)
+    tile = app.locator(".st-key-tile-message")
+    d.hover(tile, seconds=1.2)
+    d.until(3.6)
+    d.click(tile, seconds=0.3)
 
-    order_card = page.locator(".st-key-card-chat-order")
-    phone = page.locator(".st-key-phone")
+    # 5–10 s: KI-Auftragserfassung, Handy-Chat sichtbar
+    example = app.locator(".st-key-example_Dialekt button")
+    example.wait_for(timeout=30_000)
+    use_live_ai(app, live)
+    d.until(5.0)
+    d.caption("Bestellungen per WhatsApp – oft im Dialekt")
+    marks["chat"] = d.now() + 2.0
+    d.pause(0.8)
+    d.hover(example, seconds=1.0)
+    d.until(8.8)
+    d.click(example, seconds=0.35)
+    d.pause(0.7)  # der Text landet im Eingabefeld, darüber erscheint eine Erklärzeile – das Layout setzt sich
 
-    # 1. Dialekt-Bestellung: links die Antwort im Chat, dann rechts der fertige Auftragsvorschlag
-    caption(page, "Bestellungen kommen per WhatsApp – als Freitext, oft im Dialekt.")
-    send_example(page, "Dialekt")
-    caption(page, "Die KI liest mit und macht daraus einen Auftragsvorschlag …")
-    save_button(page).wait_for(timeout=90_000)
-    scroll_to(page, phone, block="end")
-    pause(page, 2.5)
-    scroll_to(page, order_card, block="start")
-    caption(page, "Rechts entsteht der Auftrag: Kunde, Artikel, Mengen, Liefertermin, Pfand.")
-    poster_at = time.monotonic()
-    pause(page, 4.5)
+    # 10–22 s: absenden, die KI liest, rechts entsteht der Auftrag
+    d.until(9.8)
+    d.caption("KI erkennt Kunde, Artikel, Termin")
+    send = app.locator('[data-testid="stChatInputSubmitButton"]')
+    d.scroll_bottom_to(send, margin=150, seconds=0.9)  # Senden-Knopf über der Einblendung
+    marks["gif_start"] = d.now()
+    d.click(send, seconds=0.7)
+    order_card = app.locator(".st-key-card-chat-order")
+    d.pause(0.4)
+    d.scroll_to(order_card, seconds=1.0)  # rechts oben mitverfolgen, wie der Auftrag entsteht
+    save = app.locator("button", has_text="Auftrag bestätigen & speichern")
+    save.wait_for(timeout=90_000)          # Live-KI: meist 3–5 Sekunden, danach Schritt für Schritt
+    try:  # die Positionen-Tabelle zeichnet der Browser etwas später (in der Cloud spürbar)
+        order_card.locator('[data-testid="stDataFrame"] canvas').first.wait_for(timeout=10_000)
+    except Exception:
+        pass
+    d.pause(0.6)
+    marks["order"] = d.now() + 0.4
+    d.until(max(d.now() + 0.8, 18.8))
+    d.caption("Regeln prüfen, Mensch bestätigt")
+    d.hover(app.locator('[data-testid="stDateInput"]').first, seconds=0.9)
+    marks["gif_end"] = d.now() + 0.5
+    d.until(max(d.now() + 1.0, 21.2))
 
-    # 2. Prüfung durch Code, Freigabe durch den Menschen
-    scroll_to(page, save_button(page), block="end")
-    caption(page, "Preise und Regeln prüft normaler Code – nicht die KI.")
-    pause(page, 3.5)
-    caption(page, "Gespeichert wird erst, wenn ein Mensch bestätigt.")
-    pause(page, 1.5)
-    click(page, save_button(page))
-    page.locator(".chat-bubble", has_text="ist bestätigt").wait_for(timeout=30_000)
-    scroll_to(page, phone, block="end")
-    caption(page, "Erst dann bestätigt die Brauerei den Auftrag im Chat.")
-    pause(page, 4)
+    # 22–32 s: bestätigen & speichern, Link zur SAP-Übergabe, Object Page, „Übergabe simulieren“
+    d.scroll_bottom_to(save, margin=140, seconds=0.8)
+    d.click(save, seconds=0.6)
+    d.caption("Kundenauftrag für SAP S/4HANA")
+    link = app.locator("a", has_text="So sähe die Übergabe an SAP aus")
+    link.wait_for(timeout=30_000)
+    d.scroll_to(order_card, seconds=0.8)
+    d.click(link, seconds=0.6)
+    sap_card = app.locator(".st-key-card-sap")
+    sap_card.wait_for(timeout=30_000)
+    d.pause(0.4)
+    d.scroll_to(sap_card, offset=HEADER + 150, seconds=1.0)  # mit Überschrift und Auftragsauswahl
+    marks["sap"] = d.now() + 0.3
+    d.pause(0.6)
+    d.click(sap_card.get_by_role("button", name="Übergabe simulieren"), seconds=0.7)
+    sap_card.get_by_text("Übergabe simuliert").first.wait_for(timeout=20_000)
+    d.until(max(d.now() + 1.2, 31.4))
 
-    # 3. Angriff per Prompt-Injection: Hinweise oben im Auftrag, dann die gesperrte Prüfung
-    caption(page, "Und wenn jemand versucht, die KI auszutricksen?")
-    send_example(page, "Angriff--Prompt-Injection-")
-    save_button(page).wait_for(timeout=90_000)
-    scroll_to(page, phone, block="end")
-    pause(page, 2.5)
-    scroll_to(page, order_card, block="start")
-    caption(page, "Die App erkennt den Angriff – die Anweisungen werden nicht ausgeführt.")
-    pause(page, 5)
-    scroll_to(page, save_button(page), block="end")
-    caption(page, "Und die Prüfung sperrt das Speichern.")
-    pause(page, 3.5)
+    # 32–38 s: Business Case mit den drei Kennzahlen
+    d.click(nav.filter(has_text="Business Case"), seconds=0.6)
+    kpis = app.locator(".st-key-bc-kpis")
+    kpis.wait_for(timeout=30_000)
+    app.locator('[data-testid="stPlotlyChart"] .main-svg').first.wait_for(timeout=30_000)  # Diagramm gezeichnet
+    d.caption("Business Case: Zeitersparnis pro Jahr")
+    shown = d.now()
+    marks["business_case"] = shown + 1.8
+    d.pause(0.6)
+    d.hover(kpis.locator('[data-testid="stMetricValue"]').first, seconds=0.9)
+    d.until(max(shown + 4.5, 37.4))  # mindestens 4,5 s zum Lesen, auch wenn die Cloud langsamer lädt
 
-    # 4. Übergabe an SAP S/4HANA (der eben gespeicherte Auftrag ist vorausgewählt)
-    caption(page, "Nach der Freigabe geht der Auftrag an SAP S/4HANA.")
-    scroll_to(page, page.locator(".st-key-card-chat"), block="start")
-    click(page, nav.filter(has_text="Prozess & SAP"))
-    sap_card = page.locator(".st-key-card-sap")
-    sap_card.wait_for()
-    pause(page, 1)
-    scroll_to(page, sap_card, block="start")
-    caption(page, "Als Kundenauftrag über die Standard-API – Preise und Leergut ermittelt SAP selbst.")
-    pause(page, 4)
-    click(page, sap_card.get_by_role("tab", name="Nutzdaten (JSON)"))  # der JSON-Code steckt in einem Reiter
-    scroll_to(page, sap_card.locator('[data-testid="stCode"]').first)
-    caption(page, "Simulation: Der Aufruf wird gezeigt, aber nicht gesendet.")
-    pause(page, 2.5)
-    click(page, sap_card.get_by_role("button", name="Übergabe simulieren"))
-    sap_card.get_by_text("Übergabe simuliert").first.wait_for()
-    pause(page, 3)
-
-    # Schlusskarte
-    caption(page, None)
-    page.evaluate("([heading, text]) => window.demo.card(heading, text)", list(CLOSING))
-    pause(page, 4.5)
-    return poster_at
+    # 38–45 s: Making-of
+    d.click(nav.filter(has_text="Making-of"), seconds=0.6)
+    app.locator(".st-key-card-making-of-role").wait_for(timeout=30_000)
+    d.caption("Konzipiert von Daniel Grzegorzek")
+    shown = d.now()
+    marks["making_of"] = shown + 2.0
+    d.pause(0.8)
+    d.hover(app.locator(".st-key-card-making-of-role [data-testid='stMarkdown']").first, seconds=1.0)
+    d.until(max(shown + 5.5, 45.0))
+    print(f"{d.now():5.1f} s  Ende")
+    return marks
 
 
-def to_mp4(webm: Path, out_dir: Path, trim: float, poster_second: float) -> Path:
-    """WebM (Aufnahme) → MP4 (H.264, läuft überall) plus Vorschaubild als JPEG.
+# ---------- Schnitt: Einzelbilder → MP4, Vorschaubild, GIF, Prüfbilder ----------
 
-    trim: so viele Sekunden am Anfang abschneiden (leere Seite vor dem Laden der App).
-    poster_second: Zeitpunkt des Vorschaubilds im fertigen Video.
-    """
-    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+def ffmpeg(*arguments: str) -> None:
+    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-loglevel", "error", "-y", *arguments], check=True)
+
+
+def encode(frames: list[tuple[float, Path]], end: float, out_dir: Path) -> Path:
+    """Einzelbilder mit ihrer Anzeigedauer → MP4 (H.264) mit gleichmäßigen 30 fps, ohne Tonspur, unter MAX_MB."""
+    playlist = out_dir / "frames.ffconcat"
+    lines = ["ffconcat version 1.0"]
+    for (stamp, path), (next_stamp, _) in zip(frames, frames[1:] + [(end, None)]):
+        lines += [f"file '{path.resolve().as_posix()}'", f"duration {max(next_stamp - stamp, 0.001):.4f}"]
+    lines.append(f"file '{frames[-1][1].resolve().as_posix()}'")  # letztes Bild: sonst gilt seine Dauer nicht
+    playlist.write_text("\n".join(lines), encoding="utf-8")
     mp4 = out_dir / "demo.mp4"
-    subprocess.run([ffmpeg, "-loglevel", "error", "-y", "-ss", f"{trim:.2f}", "-i", str(webm),
-                    "-c:v", "libx264", "-preset", "slow", "-crf", "22", "-pix_fmt", "yuv420p",
-                    "-movflags", "+faststart", "-an", str(mp4)], check=True)
-    subprocess.run([ffmpeg, "-loglevel", "error", "-y", "-ss", f"{poster_second:.2f}", "-i", str(mp4),
-                    "-frames:v", "1", "-q:v", "3", str(out_dir / "demo-poster.jpg")], check=True)
+    for crf in (23, 26, 29, 32):  # so gut wie möglich, aber unter MAX_MB
+        ffmpeg("-f", "concat", "-safe", "0", "-i", str(playlist),
+               "-vf", f"fps={FPS},scale={SIZE[0]}:{SIZE[1]}:flags=lanczos,format=yuv420p",
+               "-c:v", "libx264", "-preset", "slow", "-crf", str(crf), "-movflags", "+faststart", "-an", str(mp4))
+        if mp4.stat().st_size <= MAX_MB * 1_000_000:
+            break
     return mp4
+
+
+def extras(mp4: Path, marks: dict[str, float], out_dir: Path) -> None:
+    """Vorschaubild (1280 px breit), GIF fürs README (800 px, 12 fps) und ein Prüfbild je Szene."""
+    ffmpeg("-ss", f"{marks['order']:.2f}", "-i", str(mp4), "-frames:v", "1", "-vf", "scale=1280:-2",
+           "-q:v", "3", str(out_dir / "demo-poster.jpg"))
+    start, length = marks["gif_start"], min(10.0, marks["gif_end"] - marks["gif_start"])
+    ffmpeg("-ss", f"{start:.2f}", "-t", f"{length:.2f}", "-i", str(mp4), "-vf",
+           "fps=12,scale=800:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];"
+           "[b][p]paletteuse=dither=bayer:bayer_scale=4", "-loop", "0", str(out_dir / "demo-chat.gif"))
+    check = out_dir / "check"
+    check.mkdir(exist_ok=True)
+    for name in ("start", "chat", "order", "sap", "business_case", "making_of"):
+        ffmpeg("-ss", f"{marks[name]:.2f}", "-i", str(mp4), "-frames:v", "1", "-vf", "scale=960:-2",
+               "-q:v", "4", str(check / f"{name}.jpg"))
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Demo-Video der App aufnehmen")
-    parser.add_argument("--url", default="http://localhost:8501", help="Adresse der laufenden App")
+    parser.add_argument("--url", default=LIVE_URL, help="Adresse der App (Standard: Live-App)")
     parser.add_argument("--demo", action="store_true", help="Demo-Modus statt Live-KI (kostenlos)")
     parser.add_argument("--out", type=Path, default=Path("data/demo"), help="Zielordner")
     args = parser.parse_args()
-    args.out.mkdir(parents=True, exist_ok=True)
+    frames_dir = args.out / "frames"
+    shutil.rmtree(frames_dir, ignore_errors=True)
+    frames_dir.mkdir(parents=True)
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(channel="msedge")
-        context = browser.new_context(viewport=VIEWPORT, color_scheme="light", locale="de-DE",
-                                      timezone_id="Europe/Berlin",
-                                      record_video_dir=str(args.out), record_video_size=VIEWPORT)
-        context.add_init_script(f"({OVERLAY_JS})({json.dumps(list(TITLE))})")
-        page = context.new_page()  # ab hier läuft die Aufnahme
-        video_start = time.monotonic()
-        page.goto(args.url, wait_until="domcontentloaded")  # ab jetzt ist die Titelkarte zu sehen
-        trim = time.monotonic() - video_start + 0.2
-        poster_at = record(page, live=not args.demo)
-        webm = Path(page.video.path())
+        context = browser.new_context(viewport=VIEWPORT, device_scale_factor=ZOOM, color_scheme="light",
+                                      locale="de-DE", timezone_id="Europe/Berlin")
+        page = context.new_page()
+        page.goto(args.url, wait_until="domcontentloaded")
+        app = app_frame(page)
+        app.locator(".st-key-launchpad").wait_for(timeout=120_000)  # App ist fertig geladen (auch nach Aufwecken)
+        if app != page.main_frame:
+            page.evaluate(SHELL_JS)
+        app.evaluate(OVERLAY_JS)
+        page.wait_for_timeout(2000)
+        page.mouse.move(VIEWPORT["width"] / 2, VIEWPORT["height"] * 0.6)
+
+        screencast = Screencast(page, frames_dir)
+        screencast.start()
+        director = Director(page, app)
+        try:
+            marks = record(director, live=not args.demo)
+        except Exception:
+            page.screenshot(path=str(args.out / "fehler.png"))  # zeigt, wo das Drehbuch hängen geblieben ist
+            raise
+        end = screencast.stop()
+        page.wait_for_timeout(500)
         context.close()
         browser.close()
 
-    mp4 = to_mp4(webm, args.out, trim, poster_at - video_start - trim)
-    webm.unlink()
-    print(f"Fertig: {mp4} ({mp4.stat().st_size / 1_000_000:.1f} MB) und {args.out / 'demo-poster.jpg'}")
+    first = screencast.frames[0][0]  # Zeitstempel des ersten Bildes = Sekunde 0 im Video
+    marks = {name: second + director.wall_start - first for name, second in marks.items()}
+    mp4 = encode(screencast.frames, end, args.out)
+    extras(mp4, marks, args.out)
+    shutil.rmtree(frames_dir)
+    print(f"Fertig: {mp4} ({mp4.stat().st_size / 1_000_000:.1f} MB), {len(screencast.frames)} Einzelbilder, "
+          f"Dauer ca. {end - first:.1f} s – dazu demo-poster.jpg, demo-chat.gif und Prüfbilder in {args.out / 'check'}")
 
 
 if __name__ == "__main__":
