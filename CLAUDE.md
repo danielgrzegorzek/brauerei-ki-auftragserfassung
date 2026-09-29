@@ -70,7 +70,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 
 ## Projektstruktur
 
-- `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), `ui.apply_style()`, Navigation (`st.navigation`)
+- `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), `ui.apply_style()`, Navigation (`st.navigation`),
+  Hinweiszeile „Ein Portfolio-Projekt von …“ (Container `portfolio-note`) über jeder Seite
 - `ui.py` – Oberflächen-Bausteine im Fiori-Stil (bewusst außerhalb von `src/`): `page_header`, `tile`,
   `illustration`, `illustrated_message`, `image_uri`; Farbvariablen je Hell/Dunkel in `COLORS`
   (auch `--chat-*` für den Messenger und `--step-*` für „Auftrag entsteht“)
@@ -83,6 +84,7 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   `process` (Live-KI, sonst Demo-Rückfall); Chat-HTML immer über `html.escape`
 - `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Illustrationen, Piktogramme
 - `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`, `business_case.py`,
+  `making_of.py` (Rolle, Zeitleiste, Evaluation 4/7 → 7/7, Gelerntes, Kennzahlen, Links),
   `process.py` (Schwimmbahnen Ist/Soll + SAP-Übergabe; Vorauswahl über `st.session_state.sap_order_id`,
   das beide Speicher-Callbacks setzen)
   (Reiter „Live-Chat“ = `ui_chat.chat_view`, Reiter „Posteingang“ = 7 Beispiele)
@@ -97,6 +99,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
     `calendar_hint`, Antwortschema `OrderSchema`), `ai_usage.py` (Kostenschutz: 1.000 Zeichen,
     5 Aufrufe je Besuch, 30 je Tag; Tabelle `ai_usage`)
   - Tour: `tour.py` (`tour_steps` – sechs Schritte mit Seitenschlüssel aus `app.py`, Zahlen aus den Daten)
+  - Making-of: `making_of.py` (Texte, `DECISIONS` – nur Entscheidungen, die Daniel getroffen hat –,
+    `EVALUATION_STEPS`, `LEARNINGS`, Links; `TESTS`/`COMMITS` mit `FIGURES_AS_OF` von Hand nachziehen)
   - Prozess & SAP: `process.py` (`AS_IS`/`TO_BE` als `ProcessStep`, `figures` – Minuten = Business-Case-
     Annahmen, per Test gekoppelt), `sap_mapping.py` (`OrderForSap`, `sales_order_payload` für OData
     `API_SALES_ORDER_SRV`, `missing_fields`, `field_mapping`, `http_request`; ohne Preise und Leergut –
@@ -116,7 +120,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
   Abgleich (`build_draft`) gibt nur Hinweise (Warnung/Info); blockierende Fehler kommen nur aus
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,
-  kein Leergut bis zur Lieferung.
+  kein Leergut bis zur Lieferung. **Bestellschluss** `ORDER_CUTOFF` = 14 Uhr (deutsche Zeit): danach für den
+  nächsten Liefertag → Warnung `after_cutoff`; die Oberfläche übergibt `after_cutoff()` aus `ui_capture`.
 - `tests/` – pytest; `conftest.py` baut einmal pro Lauf eine Test-Datenbank im Temp-Ordner;
   KI-Aufrufe nur mit Schein-Client (`FakeClient`), nie mit der echten API
 - `docs/ENTSCHEIDUNGEN.md` – Designentscheidungen mit Begründung (öffentlich)
@@ -179,12 +184,18 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
   - Achtung: Die Cloud behält beim Update bereits geladene Module im Speicher. Kommen neue Namen in
     bestehende Module (z. B. neue Konstante in `src/…`), entsteht ein `ImportError` → App in Streamlit
     Cloud neu starten (Manage app → ⋮ → Reboot app; nur über Daniels Konto). Nach jedem Push die Live-App prüfen.
+    Deshalb neuen Code möglichst in **neue Module**; frisch geladene Dateien (`app.py`, `pages/`, neue Module)
+    importieren keine neuen Namen aus bestehenden Modulen.
+  - GitHub-Name seit 29.09.2026 `danielgrzegorzek` (vorher `danig204`). Die Cloud-App war noch auf die alten
+    Koordinaten registriert und übernahm Pushes nicht mehr → Neu-Bereitstellung durch Daniel nötig.
 - [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,
   Modellvergleich (Sonnet 5 bleibt) · Teil 2 [x] Business Case · Teil 3 [x] geführte Tour, Startseite, README
 - [x] **Phase 6 – Prozess & ERP:** Ist/Soll-Prozess als Schwimmbahnen, Übergabe an SAP S/4HANA als
   Kundenauftrag für die OData-API (JSON + Feld-Mapping, Simulation), 6. Tour-Schritt
+- [x] **Making-of:** Seite „Making-of“, Hinweiszeile auf jeder Seite, Bestellschluss 14 Uhr;
+  dazu Daniels Portfolio-Seite im eigenen Repo `danielgrzegorzek.github.io` (statisches HTML/CSS)
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video
 

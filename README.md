@@ -7,6 +7,10 @@ und Regeln, und ein Mensch bestätigt.
 
 **▶ Live-App: [braeu-am-stein.streamlit.app](https://braeu-am-stein.streamlit.app/)** – ohne Anmeldung.
 Auf der Startseite führt **„In 60 Sekunden durch die App“** durch alles Wichtige.
+
+Ein Portfolio-Projekt von **Daniel Grzegorzek** ([Portfolio](https://danielgrzegorzek.github.io)): Szenario,
+Anforderungen, Geschäftsregeln und die Abnahme jeder Phase kommen von mir, programmiert hat Claude Code unter
+meiner Steuerung. Wer was entschieden hat, zeigt die Seite **Making-of** in der App.
 *(Nach längerer Pause „schläft“ die App – dann einmal auf „Yes, get this app back up“ klicken und kurz warten.)*
 
 <!-- Sobald aufgenommen, einfügen:
@@ -54,6 +58,8 @@ Nachricht ─► KI versteht (festes Format) ─► Code ordnet zu und prüft �
 - **Prozess & SAP** zeigt den Ablauf heute und mit KI und wie der bestätigte Auftrag an SAP S/4HANA geht.
 - **Business Case** und **Vertriebs-Dashboard** zeigen, was das im Jahr bringt und was die Daten über das
   Geschäft verraten.
+- **Making-of** erzählt, wie die App entstanden ist: meine Rolle, meine Entscheidungen als Zeitleiste und wie
+  die Evaluation von 4 auf 7 von 7 kam.
 
 ## KI-Einsatz
 
@@ -130,7 +136,7 @@ ERP kommt:
 
 ```
 app.py         Rahmen: Datenbank sicherstellen, Gestaltung, Navigation, geführte Tour
-pages/         Seiten: Start, Dashboard, KI-Auftragserfassung, Prozess & SAP, Business Case (nur Anzeige und Eingaben)
+pages/         Seiten: Start, Dashboard, KI-Auftragserfassung, Prozess & SAP, Business Case, Making-of (nur Anzeige und Eingaben)
 ui*.py         Oberflächen-Bausteine: Fiori-Stil (ui), Auftragserfassung (ui_capture), Chat (ui_chat), Tour (ui_tour)
 src/           Logik ohne Oberfläche – vollständig testbar:
   extraction.py     KI-Anbindung (Demo und Claude, Prompt, Antwortschema, Modelle)
@@ -142,7 +148,7 @@ src/           Logik ohne Oberfläche – vollständig testbar:
   sap_mapping.py    Übergabe an SAP S/4HANA: Kundenauftrag, Feld-Mapping, Vollständigkeit
   analytics.py, charts.py, database.py, Datengenerator, Plausibilitäts-Check …
 tools/         Evaluation der KI (→ docs/evaluation.json, docs/EVALUATION.md)
-tests/         pytest – 232 Tests, KI-Aufrufe nur mit Schein-Client
+tests/         pytest – 249 Tests, KI-Aufrufe nur mit Schein-Client
 docs/          Designentscheidungen und Evaluationsbericht
 ```
 
@@ -152,7 +158,7 @@ docs/          Designentscheidungen und Evaluationsbericht
 | Daten | SQLite (Schema mit Schlüsseln und Prüfregeln), pandas |
 | KI | Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter |
 | ERP | SAP S/4HANA: Kundenauftrag für die OData-API `API_SALES_ORDER_SRV` (Simulation) |
-| Qualität | 232 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
+| Qualität | 249 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
 | Sprache | Python 3.13 |
 
 Jede Entscheidung mit Begründung und verworfener Alternative: **[docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md)**.
@@ -195,6 +201,7 @@ vollständig im Demo-Modus. Evaluation: `python -m tools.evaluate_extraction` (k
 - [x] Business Case mit Daten aus der Datenbank, gemessenen KI-Kosten und Schiebereglern
 - [x] Geführte Tour „In 60 Sekunden durch die App“
 - [x] Prozessseite: Ist- vs. Soll-Prozess und Übergabe an SAP S/4HANA (simuliert)
+- [x] Making-of-Seite und Bestellschluss 14 Uhr als Geschäftsregel
 - [ ] Regelbasierter Parser als Vergleich „Regeln vs. KI“
 
 ## Hinweise
@@ -204,4 +211,5 @@ vollständig im Demo-Modus. Evaluation: `python -m tools.evaluate_extraction` (k
   personenbezogenen Daten eingeben.
 - Die Oberfläche ist an die SAP-Fiori-Designrichtlinien angelehnt; Logo und Illustrationen sind eigene
   Entwürfe. Es handelt sich nicht um ein SAP-Produkt.
-- Entwickelt mit Claude Code als KI-Pair-Programming-Werkzeug.
+- Konzipiert und gesteuert von Daniel Grzegorzek, programmiert mit Claude Code – Details auf der Seite
+  Making-of.

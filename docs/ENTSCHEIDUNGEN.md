@@ -18,6 +18,7 @@ pages/                 Oberfläche (Streamlit) – nur Anzeige und Eingaben
   order_entry.py       KI-Auftragserfassung mit Bestätigung durch den Menschen
   business_case.py     Business Case: vorher/nachher mit Schiebereglern
   process.py           Prozess & SAP-Übergabe: Ist/Soll als Schwimmbahnen, Kundenauftrag für SAP S/4HANA
+  making_of.py         Making-of: Rolle, Entscheidungen als Zeitleiste, Evaluation, Gelerntes, Kennzahlen
 src/                   Logik ohne Streamlit – vollständig testbar
   database.py          Schema, Verbindung, Schemaversion
   master_data.py       Stammdaten: Artikel, Leergut, Preise, Kunden
@@ -37,6 +38,7 @@ src/                   Logik ohne Streamlit – vollständig testbar
   tour.py              Inhalt der geführten Tour (sechs Schritte, Zahlen aus den Daten)
   process.py           Ist- und Soll-Prozess als Daten, Kennzahlen (manuelle Schritte, Minuten, Medienbrüche)
   sap_mapping.py       Übergabe an SAP S/4HANA: Kundenauftrag (OData), Vollständigkeit, Feld-Mapping
+  making_of.py         Inhalt der Making-of-Seite (Zeitleiste, Evaluationsverlauf, Kennzahlen)
   order_capture.py     Abgleich → Prüfung → Speichern
 tests/                 automatische Tests (pytest)
 tools/                 Evaluation der KI-Auswertung (docs/evaluation.json → docs/EVALUATION.md)
@@ -282,7 +284,17 @@ Gastronomie, Großhandel); die **Sparte** der Produktbereich. Alle drei zusammen
 | Feld-Mapping als **statische Tabelle** (`st.table`) | Lange Werte werden umgebrochen statt abgeschnitten – im Browser aufgefallen. | `st.dataframe`: sortierbar, kürzt aber lange Texte. |
 | **Code-Review mit Gegenprüfung** (SAP-Fachlichkeit, Oberfläche, Tests) | Gefunden und behoben: Der Soll-Prozess nannte auch Anrufe (Widerspruch zum Business Case), die Demo bestätigt früher als der beschriebene Soll-Prozess (jetzt offen benannt), englische Kürzel „OR“/„PC“ ohne Sprachangabe im Aufruf, fehlende Cookies beim CSRF-Ablauf, „1 Positionen“, Pfeil nach oben bei „statt Stunden“, seitliches Scrollen zwischen 641 und 1100 px. Zwei Funde wurden bei der Gegenprüfung verworfen. | – |
 
-## 13. Bewusste Grenzen
+## 13. Making-of und Hinweis auf den Autor
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| Zeile **„Ein Portfolio-Projekt von …“ oben auf jeder Seite**, mit Links zu Making-of und Portfolio | Wer über einen Link direkt auf eine Unterseite kommt, sieht sofort, von wem die App ist. Eine dezente Zeile, damit sie die Fachseiten nicht überlagert; auf dem Handy stehen die Links in einer eigenen Zeile. | Nur auf der Startseite: Besucher von Unterseiten sähen ihn nicht. |
+| **Making-of** als eigene Seite mit ehrlicher Rollenverteilung: Szenario, Anforderungen, Geschäftsregeln, Prüfung und Entscheidungen vom Autor, der Code von Claude Code | Der KI-Einsatz ist Teil des Projekts – offen benannt ist er glaubwürdiger als verschwiegen. | – |
+| Zeitleiste nur mit Entscheidungen, die **nachweislich vom Autor** stammen; Inhalt in `src/making_of.py`, Tests koppeln ihn an Code und Messung (14-Uhr-Regel, 7 von 7 aus `docs/evaluation.json`) | Die Seite darf nichts behaupten, was die App nicht tut. Beim Schreiben fiel so auf, dass der Bestellschluss noch fehlte – er wurde daraufhin eingebaut. | Freier Text in der Seite: veraltet unbemerkt. |
+| Tests und Commits als **Zahlen mit Stand-Datum**; die Entscheidungen werden beim Aufruf aus dieser Datei gezählt | In der Cloud gibt es weder einen Testlauf noch die Git-Historie; diese Datei liegt dagegen mit im Repository. | – |
+| Neuer Code als **neue Module** (`src/making_of.py`, Seite, Piktogramme); frisch geladene Dateien importieren keine neuen Namen aus bestehenden Modulen | Streamlit Cloud behält bereits geladene Module nach einem Update im Speicher – so entsteht kein `ImportError`, auch ohne Neustart der App. | Neustart nach jedem Update: nur über das Konto des Besitzers möglich. |
+
+## 14. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).
