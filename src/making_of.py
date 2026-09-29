@@ -25,8 +25,9 @@ BRIDGE = [
     ("ERP", "Der bestätigte Auftrag geht als Kundenauftrag an SAP S/4HANA.", "erp"),
 ]
 
-ROLE_INTRO = ("Diese App ist mit KI-Unterstützung entstanden – und genau das gehört zum Projekt: "
-              "Programmiert hat Claude Code, ein KI-Werkzeug von Anthropic, unter meiner Steuerung.")
+ROLE_INTRO = ("Szenario, Anforderungen und Geschäftsregeln habe ich festgelegt und jede Phase im Browser, an Tests "
+              "und an Messwerten abgenommen. Programmiert hat Claude Code, ein KI-Werkzeug von Anthropic, unter "
+              "meiner Steuerung.")
 MY_PART = [
     "Szenario, Anforderungen und Geschäftsregeln festgelegt – von der Brauerei über den Demo-Modus bis zum "
     "Bestellschluss.",

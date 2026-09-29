@@ -297,43 +297,24 @@
   .st-key-process-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 0.75rem) !important; min-width: calc(50% - 0.75rem) !important; }
 }
 
-/* ---------- Making-of: Brücke Prozess – KI – ERP, Zeitleiste, Messläufe ---------- */
-.making-of-bridge { display: flex; gap: 0.8rem; align-items: flex-start; }
-.making-of-bridge img { width: 2.75rem; height: 2.75rem; flex-shrink: 0; display: block; }
-.making-of-bridge strong { color: var(--fiori-text); }
-.making-of-bridge p { margin: 0.15rem 0 0; color: var(--fiori-label); font-size: 0.92rem; }
-
-/* Senkrechte Linie mit Punkten; die Phase steht als Etikett über dem Titel */
-.making-of-timeline { list-style: none; margin: 0.4rem 0 0; padding: 0; }
+/* ---------- Making-of: Zeitleiste – senkrechte Linie mit Punkten, je Entscheidung eine Zeile (Phase · Titel) ---------- */
+.making-of-timeline { list-style: none; margin: 0.25rem 0 0; padding: 0; }
 .making-of-timeline li {
-  position: relative; margin: 0; padding: 0 0 1.05rem 1.6rem;
-  border-left: 2px solid var(--fiori-border); margin-left: 0.45rem;
+  position: relative; margin: 0 0 0 0.45rem; padding: 0 0 0.8rem 1.4rem;
+  border-left: 2px solid var(--fiori-border);
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.75rem;
 }
 .making-of-timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
 .making-of-timeline li::before {
-  content: ""; position: absolute; left: -0.45rem; top: 0.15rem;
+  content: ""; position: absolute; left: -0.45rem; top: 0.2rem;
   width: 0.8rem; height: 0.8rem; border-radius: 50%;
   background: var(--fiori-card); border: 2px solid var(--fiori-accent);
 }
 .making-of-phase {
-  display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  flex: 0 0 6rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--fiori-accent);
 }
-.making-of-timeline strong { display: block; color: var(--fiori-text); line-height: 1.3; }
-.making-of-timeline p { margin: 0.15rem 0 0; color: var(--fiori-label); font-size: 0.93rem; max-width: 52rem; }
-
-.making-of-runs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin: 0.5rem 0 0.9rem; }
-.making-of-run {
-  padding: 0.8rem 0.9rem; border-radius: 0.6rem;
-  background: var(--fiori-accent-soft); border-top: 3px solid var(--step-warn);
-}
-.making-of-run.done { border-top-color: var(--step-ok); }
-.making-of-run-label { display: block; font-size: 0.78rem; color: var(--fiori-label); }
-.making-of-run-score { display: block; font-size: 1.9rem; font-weight: 700; line-height: 1.2; color: var(--fiori-text); }
-.making-of-run p { margin: 0.35rem 0 0; font-size: 0.88rem; line-height: 1.4; color: var(--fiori-text); }
-@media (max-width: 800px) {
-  .making-of-runs { grid-template-columns: 1fr; }
-}
+.making-of-timeline strong { flex: 1 1 14rem; font-weight: 600; line-height: 1.35; color: var(--fiori-text); }
 
 /* ---------- Prozess als Schwimmbahnen: Rollen als Zeilen, Schritte von links nach rechts ---------- */
 .swimlane {
