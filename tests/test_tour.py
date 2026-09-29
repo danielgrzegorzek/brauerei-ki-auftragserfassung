@@ -30,10 +30,10 @@ def test_tour_pages_match_the_navigation_in_app_py():
     assert set(PAGES) <= {key for key, _ in pairs}
 
 
-def test_every_text_has_one_or_two_sentences():
+def test_every_text_is_exactly_one_sentence():
     for step in STEPS:
         sentences = [part for part in re.split(r"(?<=[.!?])\s+", step.text) if part]
-        assert 1 <= len(sentences) <= 2, step.title
+        assert len(sentences) == 1, step.title
 
 
 def test_numbers_come_from_the_data_in_german_format():
