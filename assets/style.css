@@ -329,6 +329,12 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
   .st-key-dashboard-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 0.75rem) !important; min-width: calc(50% - 0.75rem) !important; }
 }
 
+/* ---------- Making-of: Demo-Video neben „Meine Rolle“ (16 : 9, Platz schon vor dem Laden reserviert) ---------- */
+.making-of-video {
+  display: block; width: 100%; height: auto; aspect-ratio: 16 / 9;
+  border-radius: 0.75rem; border: 1px solid var(--fiori-border); background: #1b1f1d;
+}
+
 /* ---------- Making-of: Zeitleiste – senkrechte Linie mit Punkten, je Entscheidung eine Zeile (Phase · Titel) ---------- */
 .making-of-timeline { list-style: none; margin: 0.25rem 0 0; padding: 0; }
 .making-of-timeline li {

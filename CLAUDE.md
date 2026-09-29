@@ -98,7 +98,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
     als Object Page im Fragment `sap_handover()` (Kopf, Reiter, Fußleiste mit Message Strip und
     „Übergabe simulieren“; `sap_simulated` = (Auswahl, JSON)); Vorauswahl über
     `st.session_state.sap_order_id`, das beide Speicher-Callbacks setzen
-  - `making_of.py` – Rolle (zwei Sätze), Zeitleiste (eine Zeile je Entscheidung), vier Links
+  - `making_of.py` – Rolle (zwei Sätze) mit Demo-Video daneben (Datei der Portfolio-Seite, nicht im Repo),
+    Zeitleiste (eine Zeile je Entscheidung), vier Links
 - `src/` – Logik ohne Streamlit:
   - Daten: `database.py` (Schema, `SCHEMA_VERSION`), `master_data.py`, `order_generator.py`,
     `empties_generator.py`, `data_setup.py`, `plausibility.py` (prüft nur `source = 'Historie'`)
@@ -134,7 +135,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   Mauszeiger per `evaluate` im App-iframe, Bilder per CDP-Screencast, ffmpeg macht MP4 (< 8 MB), Vorschaubild,
   README-GIF und Prüfbilder je Szene in `data/demo/`. Live-KI ca. 1 US-Cent (prüft das Kennzeichen, bricht sonst ab),
   `--demo` kostenlos, `--url` für lokal. Aufnahme zu jeder Uhrzeit (nach 14 Uhr zeigt sie den verschobenen Termin).
-  Fertiges Video liegt im Portfolio-Repo unter `assets/demo.mp4`
+  Fertiges Video und Vorschaubild liegen im Portfolio-Repo (`assets/demo.mp4`, `assets/demo-poster.jpg`), das GIF
+  fürs README als `docs/demo.gif` hier im Repo
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
   Abgleich (`build_draft`) gibt nur Hinweise (Warnung/Info); blockierende Fehler kommen nur aus
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,

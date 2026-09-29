@@ -13,12 +13,10 @@ Anforderungen, Geschäftsregeln und die Abnahme jeder Phase kommen von mir, prog
 meiner Steuerung. Wer was entschieden hat, zeigt die Seite **Making-of** in der App.
 *(Nach längerer Pause „schläft“ die App – dann einmal auf „Yes, get this app back up“ klicken und kurz warten.)*
 
-<!-- Sobald aufgenommen, einfügen:
-![Eine Dialekt-Nachricht wird im Live-Chat zum geprüften Auftrag](docs/demo.gif)
--->
-*🎞️ Animation (GIF) folgt: Eine Dialekt-Nachricht wird im Live-Chat zum geprüften Auftrag.*
-*🎬 [Demo-Video (90 Sekunden, ohne Ton)](https://danielgrzegorzek.github.io/assets/demo.mp4): Dialekt-Bestellung →
-geprüfter Auftrag → Freigabe → abgewehrter Angriff → Übergabe an SAP.*
+[![Eine Dialekt-Nachricht wird im Live-Chat zum geprüften Auftrag](docs/demo.gif)](https://danielgrzegorzek.github.io/#projekte)
+
+*🎬 [Vollständiges Demo-Video (45 Sekunden, ohne Ton) auf meinem Portfolio](https://danielgrzegorzek.github.io/#projekte):
+Dialekt-Bestellung → geprüfter Auftrag → Kundenauftrag für SAP S/4HANA → Business Case → Making-of.*
 
 | Auf einen Blick | |
 |---|---|
