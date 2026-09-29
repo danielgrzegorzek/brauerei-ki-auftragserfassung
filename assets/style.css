@@ -363,9 +363,11 @@
   padding: 0.45rem 0.6rem; border-radius: 0.5rem;
   background: var(--fiori-text); color: var(--fiori-card); box-shadow: var(--fiori-shadow-hover);
   font-size: 0.78rem; font-weight: 400; line-height: 1.35;
-  opacity: 0; pointer-events: none; transition: opacity 0.12s ease;   /* unsichtbar, aber für Screenreader da */
+  opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
 }
-.step-issue:hover .step-issue-tip, .step-issue:focus .step-issue-tip { opacity: 1; }
+/* Unsichtbare Brücke über die Lücke zum Symbol: Die Maus darf auf den Tooltip wandern, ohne dass er verschwindet */
+.step-issue-tip::before { content: ""; position: absolute; left: 0; right: 0; top: -0.45rem; height: 0.45rem; }
+.step-issue:hover .step-issue-tip, .step-issue:focus .step-issue-tip { opacity: 1; pointer-events: auto; }
 /* Die Rolle steht am Desktop in der Bahn – für Screenreader trotzdem an jedem Schritt */
 .step-lane { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* Schmale Fenster und Handy: nummerierte Liste, die Rolle als Etikett am Schritt */
@@ -388,7 +390,8 @@
 .sap-op-subtitle { color: var(--fiori-label); margin-top: 0.1rem; }
 /* Status wie der Fiori-„Object Status“: Farbe plus Text – nie nur Farbe */
 .sap-status { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 1rem; font-size: 0.88rem; font-weight: 700; white-space: nowrap; }
-.sap-status.info { color: var(--fiori-accent); background: var(--fiori-accent-soft); }
+/* Info-Blau etwas zum Text hin gemischt: mindestens 4,5 : 1 Kontrast auf dem hellblauen Grund (hell und dunkel) */
+.sap-status.info { color: color-mix(in srgb, var(--fiori-accent) 75%, var(--fiori-text)); background: var(--fiori-accent-soft); }
 .sap-status.success { color: var(--step-ok); background: color-mix(in srgb, var(--step-ok) 14%, transparent); }
 .sap-status.error { color: var(--step-error); background: color-mix(in srgb, var(--step-error) 14%, transparent); }
 /* Schlüsselwerte im Kopf und Felder im Formular: Bezeichnung klein und grau, Wert darunter */
@@ -400,9 +403,10 @@
 .sap-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.25rem 2rem; margin: 0.35rem 0 0.5rem; }
 .sap-form-title { font-weight: 700; color: var(--fiori-text); margin-bottom: 0.5rem; }
 .sap-form-fields { display: flex; flex-direction: column; gap: 0.6rem; }
-/* Fußleiste: bleibt beim Scrollen durch die Object Page unten sichtbar (am Handy normal im Fluss) */
+/* Fußleiste: bleibt beim Scrollen durch die Object Page unten sichtbar (am Handy normal im Fluss).
+   sticky gehört an Streamlits Hülle um den Container – der Container selbst ist genau so hoch wie sie */
+[data-testid="stLayoutWrapper"]:has(> .st-key-sap-footer) { position: sticky; bottom: 0.75rem; z-index: 5; }
 .st-key-sap-footer {
-  position: sticky; bottom: 0.75rem; z-index: 5;
   gap: 0.5rem 0.75rem !important; margin-top: 0.25rem; padding: 0.5rem 0.6rem;
   background: var(--fiori-card); border: 1px solid var(--fiori-border); border-radius: 0.75rem;
   box-shadow: var(--fiori-shadow-hover);
@@ -411,7 +415,7 @@
 .st-key-sap-footer > [data-testid="stElementContainer"]:first-child { flex: 1 1 0 !important; min-width: 16rem; }
 .st-key-sap-footer [data-testid="stAlertContainer"] { padding: 0.5rem 0.75rem; }
 @media (max-width: 640px) {
-  .st-key-sap-footer { position: static; }
+  [data-testid="stLayoutWrapper"]:has(> .st-key-sap-footer) { position: static; }
   .sap-op-attributes { gap: 0.6rem 1.5rem; }
   .sap-op-title { font-size: 1.25rem; }
 }

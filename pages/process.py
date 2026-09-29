@@ -45,10 +45,12 @@ def swimlane(steps: list[process.ProcessStep], show_issues: bool = False) -> str
             + (["Medienbruch"] if step.media_break else [])
         issue = ""
         if show_issues and step.note:
-            # tabindex: Tooltip auch per Tastatur und durch Antippen auf dem Handy. Der Text steht immer im HTML
-            # (nur durchsichtig) – so lesen Screenreader ihn mit.
-            issue = (f'<span class="step-issue" tabindex="0"><span class="step-issue-icon" aria-hidden="true">!</span>'
-                     f'<span class="step-issue-tip">Schwachstelle: {html.escape(step.note)}</span></span>')
+            # tabindex: Tooltip auch per Tastatur und durch Antippen auf dem Handy.
+            # Screenreader lesen den Text über aria-label; der sichtbare Tooltip ist für sie ausgeblendet.
+            text = html.escape(f"Schwachstelle: {step.note}")
+            issue = (f'<span class="step-issue" tabindex="0" role="img" aria-label="{text}">'
+                     f'<span class="step-issue-icon" aria-hidden="true">!</span>'
+                     f'<span class="step-issue-tip" aria-hidden="true">{text}</span></span>')
         parts.append(
             f'<div class="step {KIND_CLASSES[step.kind]}" role="listitem" '
             f'style="grid-row: {process.LANES.index(step.lane) + 1}; grid-column: {number + 1}">'
@@ -111,9 +113,9 @@ def object_header(order: sap_mapping.OrderForSap, payload: dict, status: str) ->
     )
 
 
-def simulate(choice) -> None:
-    """„Übergabe simulieren“: nur merken, für welchen Auftrag – gesendet wird nichts."""
-    st.session_state.sap_simulated = choice
+def simulate(handover: tuple) -> None:
+    """„Übergabe simulieren“: nur merken, welcher Auftrag mit welchem Inhalt – gesendet wird nichts."""
+    st.session_state.sap_simulated = handover
 
 
 @st.fragment
@@ -136,8 +138,12 @@ def sap_handover() -> None:
                  else sap_mapping.load_order(conn, choice))
     payload = sap_mapping.sales_order_payload(order)
     missing = sap_mapping.missing_fields(payload)
+    json_text = json.dumps(payload, ensure_ascii=False, indent=2)
+    # Auswahl UND Inhalt merken: Nach „Demo zurücksetzen“ vergibt die App Auftragsnummern neu –
+    # ein anderer Auftrag mit derselben Nummer gilt dann nicht als schon übergeben
+    handover = (choice, json_text)
     status = ("incomplete" if missing else
-              "simulated" if st.session_state.get("sap_simulated") == choice else "ready")
+              "simulated" if st.session_state.get("sap_simulated") == handover else "ready")
     _, products = capture_ui.master_data()
     product_names = {pid: product["name"] for pid, product in products.items()}
 
@@ -189,7 +195,6 @@ def sap_handover() -> None:
                 st.markdown("\n".join(f"- **{row['SAP-Begriff']}** (`{row['SAP-Feld']}`): {row['Erklärung']}"
                                       for row in mapping))
 
-        json_text = json.dumps(payload, ensure_ascii=False, indent=2)
         with payload_tab:
             st.code(json_text, language="json")
             with st.expander("HTTP-Aufruf an API_SALES_ORDER_SRV", icon=":material/send:"):
@@ -220,7 +225,7 @@ def sap_handover() -> None:
                                file_name=f"kundenauftrag_{order.order_id or 'beispiel'}.json",
                                disabled=bool(missing), on_click="ignore")
             st.button("Übergabe simulieren", type="primary", icon=":material/send:", key="sap_simulate",
-                      on_click=simulate, args=(choice,), disabled=bool(missing))
+                      on_click=simulate, args=(handover,), disabled=bool(missing))
 
 
 # ================= Seitenaufbau =================
