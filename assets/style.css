@@ -296,6 +296,11 @@
   .st-key-process-kpis [data-testid="stHorizontalBlock"] { flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
   .st-key-process-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 0.75rem) !important; min-width: calc(50% - 0.75rem) !important; }
 }
+/* Dashboard: fünf Kennzahlen passen bis 641 px nebeneinander (Schrift oben verkleinert), auf dem Handy zwei je Reihe */
+@media (max-width: 640px) {
+  .st-key-dashboard-kpis [data-testid="stHorizontalBlock"] { flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
+  .st-key-dashboard-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 0.75rem) !important; min-width: calc(50% - 0.75rem) !important; }
+}
 
 /* ---------- Making-of: Zeitleiste – senkrechte Linie mit Punkten, je Entscheidung eine Zeile (Phase · Titel) ---------- */
 .making-of-timeline { list-style: none; margin: 0.25rem 0 0; padding: 0; }
