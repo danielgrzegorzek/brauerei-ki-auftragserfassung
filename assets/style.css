@@ -73,7 +73,7 @@
 }
 
 /* ---------- Seitenkopf: Piktogramm, Titel und ein Satz – ohne Karte, direkt auf dem Hintergrund ---------- */
-.st-key-page-header { padding: 0.4rem 0 0.35rem; }
+.st-key-page-header { padding: 0.4rem 0 0.75rem; }
 .fiori-page-header { display: flex; align-items: center; gap: 0.9rem; }
 .fiori-page-header h1 {
   font-size: 1.85rem; font-weight: 700; line-height: 1.2;
@@ -282,11 +282,14 @@
   .chat-typing span, .order-step { animation: none; }
 }
 
-/* ---------- Kennzahlen der Prozessseite: 641–1100 px zwei mal zwei, damit nichts abgeschnitten wird ----------
-   (darunter stapelt Streamlit die Spalten ohnehin untereinander) */
-@media (min-width: 641px) and (max-width: 1100px) {
-  .st-key-process-kpis [data-testid="stHorizontalBlock"] { flex-wrap: wrap; }
-  .st-key-process-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 1rem) !important; min-width: calc(50% - 1rem) !important; }
+/* ---------- Kennzahlen der Prozessseite: bis 1100 px zwei mal zwei – nichts abgeschnitten, auf dem Handy
+   keine vier hohen Einzelkarten untereinander ---------- */
+@media (max-width: 1100px) {
+  .st-key-process-kpis [data-testid="stHorizontalBlock"] { flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
+  .st-key-process-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 0.75rem) !important; min-width: calc(50% - 0.75rem) !important; }
+  /* Beschriftung umbrechen statt mit „…“ abschneiden */
+  .st-key-process-kpis [data-testid="stMetricLabel"] [data-testid="stMarkdownContainer"],
+  .st-key-process-kpis [data-testid="stMetricLabel"] p { white-space: normal; overflow: visible; text-overflow: clip; }
 }
 
 /* ---------- Making-of: Brücke Prozess – KI – ERP, Zeitleiste, Messläufe ---------- */
@@ -331,7 +334,7 @@
 .swimlane {
   display: grid; gap: 0.4rem 0.5rem;
   grid-template-columns: 7rem repeat(var(--steps), minmax(6.5rem, 1fr));   /* passt ab 1100 px ohne Scrollen */
-  overflow-x: auto; padding-bottom: 0.25rem;
+  padding-bottom: 0.25rem;   /* ohne overflow: Tooltips der Schwachstellen dürfen über den Rand ragen */
 }
 .lane-band { grid-column: 1 / -1; background: var(--fiori-accent-soft); border-radius: 0.6rem; }
 .lane-label { grid-column: 1; align-self: center; padding: 0.5rem 0.7rem; font-size: 0.85rem; font-weight: 700; color: var(--fiori-text); }
@@ -354,16 +357,70 @@
 }
 .step strong { font-size: 0.88rem; line-height: 1.3; }
 .step-meta { font-size: 0.75rem; font-weight: 700; color: var(--kind-color); }
-.step-note { font-size: 0.78rem; line-height: 1.35; color: var(--fiori-label); }
+/* Schwachstelle (Ist): kleines Warndreieck oben rechts, der Text als Tooltip bei Maus, Tastatur und Antippen */
+.step-issue { position: relative; margin-left: auto; display: inline-flex; border-radius: 0.3rem; cursor: help; }
+.step-issue:focus-visible { outline: 2px solid var(--fiori-accent); outline-offset: 2px; }
+.step-issue-icon {
+  width: 1.15rem; height: 1rem; display: grid; place-items: end center; padding-bottom: 0.05rem;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: var(--step-warn); color: var(--fiori-card);
+  font-size: 0.68rem; font-weight: 800; line-height: 1;
+}
+.step-issue-tip {
+  position: absolute; top: calc(100% + 0.4rem); right: -0.3rem; z-index: 20;
+  width: max-content; max-width: 13rem;
+  padding: 0.45rem 0.6rem; border-radius: 0.5rem;
+  background: var(--fiori-text); color: var(--fiori-card); box-shadow: var(--fiori-shadow-hover);
+  font-size: 0.78rem; font-weight: 400; line-height: 1.35;
+  opacity: 0; pointer-events: none; transition: opacity 0.12s ease;   /* unsichtbar, aber für Screenreader da */
+}
+.step-issue:hover .step-issue-tip, .step-issue:focus .step-issue-tip { opacity: 1; }
 /* Die Rolle steht am Desktop in der Bahn – für Screenreader trotzdem an jedem Schritt */
 .step-lane { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* Schmale Fenster und Handy: nummerierte Liste, die Rolle als Etikett am Schritt */
 @media (max-width: 1100px) {
-  .swimlane { display: flex; flex-direction: column; overflow: visible; }
+  .swimlane { display: flex; flex-direction: column; }
   .lane-band, .lane-label { display: none; }
   .step { margin: 0; }
   .step-lane {
     position: static; width: auto; height: auto; overflow: visible; clip: auto;
     font-size: 0.75rem; font-weight: 700; color: var(--fiori-label);
   }
+}
+
+/* ---------- SAP-Übergabe als Fiori-„Object Page“: Kopf, Reiter, Fußleiste mit Message Strip ---------- */
+.st-key-sap-toolbar { gap: 0.5rem 1.25rem !important; }
+.st-key-sap-toolbar [data-testid="stPageLink"] { padding-bottom: 0.2rem; }
+.sap-op-overline { font-size: 0.8rem; color: var(--fiori-label); }
+.sap-op-titlebar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.5rem 1rem; margin-top: 0.15rem; }
+.sap-op-title { font-size: 1.5rem; font-weight: 700; line-height: 1.25; color: var(--fiori-text); }
+.sap-op-subtitle { color: var(--fiori-label); margin-top: 0.1rem; }
+/* Status wie der Fiori-„Object Status“: Farbe plus Text – nie nur Farbe */
+.sap-status { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 1rem; font-size: 0.88rem; font-weight: 700; white-space: nowrap; }
+.sap-status.info { color: var(--fiori-accent); background: var(--fiori-accent-soft); }
+.sap-status.success { color: var(--step-ok); background: color-mix(in srgb, var(--step-ok) 14%, transparent); }
+.sap-status.error { color: var(--step-error); background: color-mix(in srgb, var(--step-error) 14%, transparent); }
+/* Schlüsselwerte im Kopf und Felder im Formular: Bezeichnung klein und grau, Wert darunter */
+.sap-op-attributes, .sap-form-fields { margin: 0; }
+.sap-op-attributes { display: flex; flex-wrap: wrap; gap: 0.75rem 2.5rem; margin: 1rem 0 0.25rem; }
+.sap-op-attributes dt, .sap-form-fields dt { font-size: 0.8rem; font-weight: 400; color: var(--fiori-label); }
+.sap-op-attributes dd, .sap-form-fields dd { margin: 0.1rem 0 0; color: var(--fiori-text); }
+.sap-op-attributes dd { font-size: 1.1rem; font-weight: 600; }
+.sap-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.25rem 2rem; margin: 0.35rem 0 0.5rem; }
+.sap-form-title { font-weight: 700; color: var(--fiori-text); margin-bottom: 0.5rem; }
+.sap-form-fields { display: flex; flex-direction: column; gap: 0.6rem; }
+/* Fußleiste: bleibt beim Scrollen durch die Object Page unten sichtbar (am Handy normal im Fluss) */
+.st-key-sap-footer {
+  position: sticky; bottom: 0.75rem; z-index: 5;
+  gap: 0.5rem 0.75rem !important; margin-top: 0.25rem; padding: 0.5rem 0.6rem;
+  background: var(--fiori-card); border: 1px solid var(--fiori-border); border-radius: 0.75rem;
+  box-shadow: var(--fiori-shadow-hover);
+}
+/* Der Message Strip nimmt den Restplatz und bricht in sich um – die Knöpfe bleiben rechts daneben */
+.st-key-sap-footer > [data-testid="stElementContainer"]:first-child { flex: 1 1 0 !important; min-width: 16rem; }
+.st-key-sap-footer [data-testid="stAlertContainer"] { padding: 0.5rem 0.75rem; }
+@media (max-width: 640px) {
+  .st-key-sap-footer { position: static; }
+  .sap-op-attributes { gap: 0.6rem 1.5rem; }
+  .sap-op-title { font-size: 1.25rem; }
 }

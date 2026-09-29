@@ -210,9 +210,13 @@ def record(page: Page, live: bool) -> float:
     scroll_to(page, sap_card, block="start")
     caption(page, "Als Kundenauftrag über die Standard-API – Preise und Leergut ermittelt SAP selbst.")
     pause(page, 4)
+    click(page, sap_card.get_by_role("tab", name="Nutzdaten (JSON)"))  # der JSON-Code steckt in einem Reiter
     scroll_to(page, sap_card.locator('[data-testid="stCode"]').first)
     caption(page, "Simulation: Der Aufruf wird gezeigt, aber nicht gesendet.")
-    pause(page, 4)
+    pause(page, 2.5)
+    click(page, sap_card.get_by_role("button", name="Übergabe simulieren"))
+    sap_card.get_by_text("Übergabe simuliert").first.wait_for()
+    pause(page, 3)
 
     # Schlusskarte
     caption(page, None)
