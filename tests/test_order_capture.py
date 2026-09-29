@@ -6,7 +6,7 @@ import pytest
 
 from src.demo_messages import DEMO_MESSAGES
 from src.order_capture import (
-    ERROR, INFO, WARNING, build_draft, captured_orders, check_delivery_date, check_order,
+    ERROR, INFO, WARNING, Draft, apply_order_cutoff, build_draft, captured_orders, check_delivery_date, check_order,
     delete_captured_orders, first_regular_delivery_day, is_after_cutoff, load_customers, match_customer, save_order,
 )
 from src.plausibility import run_checks
@@ -170,6 +170,31 @@ def test_dialect_demo_for_tomorrow_warns_after_cutoff(conn):
     assert "after_cutoff" not in {issue.code for issue in before.issues}
     assert "after_cutoff" in {issue.code for issue in after.issues}
     assert not after.has_errors
+
+
+def test_dialect_demo_after_cutoff_moves_to_the_day_after_tomorrow(conn):
+    """„bis morgn“ nach 14 Uhr: Der Code legt den Termin auf den übernächsten Liefertag – mit Warnhinweis."""
+    draft = apply_order_cutoff(build_draft(conn, DEMOS["Biergarten schreibt im Dialekt"].extract(TODAY)), TODAY, True)
+    assert draft.delivery_date == date(2026, 9, 30)  # Mittwoch statt Dienstag
+    assert [(hint.level, hint.code) for hint in draft.date_hints] == [(WARNING, "moved_after_cutoff")]
+    assert "29.09.2026" in draft.date_hints[0].text and "30.09.2026" in draft.date_hints[0].text
+    result = check_order(conn, draft.customer_id, draft.delivery_date,
+                         [(line.product_id, line.quantity) for line in draft.lines], TODAY, after_cutoff=True)
+    assert "after_cutoff" not in {issue.code for issue in result.issues}  # der neue Termin ist regulär
+
+
+@pytest.mark.parametrize("requested, today, after_cutoff, expected", [
+    (date(2026, 9, 29), TODAY, False, date(2026, 9, 29)),             # vor 14 Uhr: bleibt
+    (date(2026, 10, 2), TODAY, True, date(2026, 10, 2)),              # späterer Termin: bleibt
+    (TODAY, TODAY, True, TODAY),                                       # heute: eigene Warnung, bleibt
+    (date(2026, 10, 5), date(2026, 10, 3), True, date(2026, 10, 6)),  # Samstag nach 14 Uhr: Montag → Dienstag
+    (date(2026, 10, 4), date(2026, 10, 3), True, date(2026, 10, 4)),  # Sonntag: eigene Prüfung, bleibt
+    (None, TODAY, True, None),                                         # kein Termin: Rückfrage im Chat
+])
+def test_order_cutoff_only_moves_the_next_delivery_day(requested, today, after_cutoff, expected):
+    moved = apply_order_cutoff(Draft("K1001", [], requested, []), today, after_cutoff)
+    assert moved.delivery_date == expected
+    assert bool(moved.date_hints) == (expected != requested)
 
 
 def save_demo(conn, title, fix_missing_product=None):

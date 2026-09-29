@@ -23,8 +23,8 @@ from src.extraction import ExtractionResult, IncomingMessage
 from src.formatting import format_eur, format_number
 from src.message_safety import safety_warnings
 from src.order_capture import (
-    ERROR, INFO, WARNING, CheckResult, Draft, Issue, build_draft, check_order, is_after_cutoff, load_customers,
-    load_products, save_order,
+    ERROR, INFO, WARNING, CheckResult, Draft, Issue, apply_order_cutoff, build_draft, check_order, is_after_cutoff,
+    load_customers, load_products, save_order,
 )
 
 ISSUE_ICONS = {ERROR: "⛔", WARNING: "⚠️", INFO: "ℹ️"}
@@ -117,7 +117,8 @@ def next_version() -> int:
 def new_capture(result: ExtractionResult, message: IncomingMessage, source_key: tuple | None = None) -> dict:
     """KI-Ergebnis mit den Stammdaten abgleichen und als neuen Entwurf zusammenstellen."""
     with closing(get_connection()) as conn:
-        draft = build_draft(conn, result.order)
+        # Abgleich, dann Bestellschluss: nach 14 Uhr für morgen bestellt → übernächster Liefertag mit Hinweis
+        draft = apply_order_cutoff(build_draft(conn, result.order), today(), after_cutoff())
     return {
         "source_key": source_key,   # zu welcher Auswahl der Entwurf gehört (Posteingang)
         "result": result,
@@ -237,6 +238,8 @@ def show_proposal(capture: dict, key_prefix: str,
             st.caption(f"In der Nachricht: „{extracted.delivery_date_text}“")
     if customer_id == draft.customer_id:  # Abgleich-Hinweise nur, solange die Zuordnung unverändert ist
         show_issues(draft.customer_hints)
+    if delivery_date == draft.delivery_date:  # z. B. „nach Bestellschluss verschoben“ – bis der Mensch ändert
+        show_issues(draft.date_hints)
 
     # 2. Positionen – bearbeitbare Tabelle
     st.markdown("##### Positionen")

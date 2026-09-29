@@ -87,8 +87,8 @@ DECISIONS = [
              "Ein Auftrag ist erst fertig, wenn er im ERP steht. Die Prozessseite zeigt Ist und Soll und den "
              "Kundenauftrag für die Standard-Schnittstelle – als Simulation, klar gekennzeichnet."),
     Decision("Feinschliff", "Bestellschluss 14 Uhr",
-             "Eine Regel aus dem Alltag: Wer nach 14 Uhr für morgen bestellt, bekommt einen Hinweis zur "
-             "Tourenplanung, und der Chat bietet erst spätere Liefertage an."),
+             "Eine Regel aus dem Alltag: Wer nach 14 Uhr für morgen bestellt, bekommt automatisch den "
+             "übernächsten Liefertag – mit Warnhinweis und einer kurzen Erklärung im Chat."),
 ]
 
 

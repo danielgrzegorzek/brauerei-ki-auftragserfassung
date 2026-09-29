@@ -18,8 +18,8 @@ from zoneinfo import ZoneInfo
 from src.extraction import WEEKDAYS
 from src.formatting import format_date, format_number
 from src.order_capture import (
-    INFO, CheckResult, Draft, DraftLine, Issue, check_order, customer_history, first_regular_delivery_day,
-    load_customers, load_products, price_on,
+    INFO, ORDER_CUTOFF, CheckResult, Draft, DraftLine, Issue, check_order, customer_history,
+    first_regular_delivery_day, load_customers, load_products, price_on,
 )
 from src.order_models import ExtractedItem, ExtractedOrder
 
@@ -241,8 +241,8 @@ def open_quick_replies(messages: list[ChatMessage]) -> list[QuickReply]:
 
 def apply_quick_reply(draft: Draft, choice: QuickReply) -> Draft:
     """Setzt Artikel, Menge oder Liefertermin aus der Schnellantwort – ohne KI, reine Datenänderung."""
-    if choice.delivery_date is not None:
-        return replace(draft, delivery_date=choice.delivery_date)
+    if choice.delivery_date is not None:  # vom Kunden gewählt – ein Hinweis zum alten Termin gilt nicht mehr
+        return replace(draft, delivery_date=choice.delivery_date, date_hints=[])
     lines = list(draft.lines)
     line = lines[choice.line_index]
     if choice.product_id is not None:
@@ -302,18 +302,26 @@ def compose_reply(extracted: ExtractedOrder, draft: Draft, result: CheckResult, 
         first = UNKNOWN_CUSTOMER_REPLY if "customer_unknown" in codes else ASSIGN_CUSTOMER_REPLY
         return Reply(" ".join([first] + problems))
 
+    # Nach Bestellschluss verschoben (apply_order_cutoff) – das erfährt der Kunde gleich mit
+    cutoff_note = ([f"Unser Bestellschluss für den nächsten Liefertag ist {ORDER_CUTOFF.hour} Uhr – wir liefern "
+                    f"deshalb am {date_label(draft.delivery_date)}."]
+                   if any(hint.code == "moved_after_cutoff" for hint in draft.date_hints) else [])
+
     asked_date = date_question(result, today, after_cutoff)
     if asked_date:
         questions.append(asked_date)
     if questions:  # immer nur eine Frage – die Knöpfe gehören eindeutig zu ihr
         more = " Danach hätten wir noch eine kurze Frage." if len(questions) > 1 else ""
-        return Reply(" ".join(["Danke für Ihre Bestellung!"] + problems + [questions[0].text + more]),
+        return Reply(" ".join(["Danke für Ihre Bestellung!"] + problems + cutoff_note + [questions[0].text + more]),
                      questions[0].quick_replies)
     if problems:
-        return Reply(" ".join(["Danke für Ihre Bestellung!"] + problems))
+        return Reply(" ".join(["Danke für Ihre Bestellung!"] + problems + cutoff_note))
     if result.has_errors:  # Sicherheitsnetz: nie eine Eingangsbestätigung für einen fehlerhaften Auftrag
         return Reply(CHECKING_REPLY)
     summary = lines_summary([(line.product_id, line.quantity) for line in draft.lines], products)
+    if cutoff_note:
+        return Reply(f"Danke, Ihre Bestellung ist eingegangen: {summary}. {cutoff_note[0]} "
+                     "Wir prüfen kurz und schicken Ihnen gleich die Bestätigung.")
     return Reply(f"Danke, Ihre Bestellung ist eingegangen: {summary} – Lieferung am {date_label(draft.delivery_date)}. "
                  "Wir prüfen kurz und schicken Ihnen gleich die Bestätigung.")
 

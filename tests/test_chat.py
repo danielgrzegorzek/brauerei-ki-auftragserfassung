@@ -11,7 +11,7 @@ from src.chat import (
 )
 from src.demo_messages import CHAT_EXAMPLES, DEMO_MESSAGES, INJECTION_EXAMPLE
 from src.message_safety import instruction_warnings
-from src.order_capture import WARNING, DraftLine, Issue, build_draft, load_products
+from src.order_capture import WARNING, Draft, DraftLine, Issue, apply_order_cutoff, build_draft, load_products
 from src.order_models import ExtractedItem, ExtractedOrder
 
 TODAY = date(2026, 9, 28)  # ein Montag
@@ -92,6 +92,23 @@ def test_offered_days_start_later_after_cutoff(conn):
     extracted = ExtractedOrder("Gasthof Zur Post", None, None, [ExtractedItem("10 Kasten Helles", 10, "Helles", "Kasten")])
     reply = reply_for_draft(conn, extracted, build_draft(conn, extracted), TODAY, after_cutoff=True)
     assert [option.label for option in reply.quick_replies] == ["Mi, 30.09.", "Do, 01.10.", "Fr, 02.10."]
+
+
+def test_chat_explains_the_moved_date_after_cutoff(conn):
+    """„bis morgn“ nach 14 Uhr: Die Brauerei nennt Bestellschluss und neuen Termin – ohne Rückfrage."""
+    extracted = MESSAGES["Dialekt"].extract(TODAY)
+    draft = apply_order_cutoff(build_draft(conn, extracted), TODAY, after_cutoff=True)
+    reply = reply_for_draft(conn, extracted, draft, TODAY, after_cutoff=True)
+    assert reply.text.startswith("Danke, Ihre Bestellung ist eingegangen")
+    assert "Bestellschluss" in reply.text and "14 Uhr" in reply.text
+    assert "Mittwoch, 30.09.2026" in reply.text
+    assert reply.quick_replies == []
+
+
+def test_date_chosen_by_button_drops_the_cutoff_hint():
+    draft = Draft("K1001", [], date(2026, 9, 30), [], [Issue(WARNING, "verschoben", "moved_after_cutoff")])
+    updated = apply_quick_reply(draft, QuickReply("Fr, 02.10.", delivery_date=date(2026, 10, 2)))
+    assert updated.delivery_date == date(2026, 10, 2) and updated.date_hints == []
 
 
 def test_sunday_is_skipped_in_offered_days(conn):

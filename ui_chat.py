@@ -98,9 +98,10 @@ def choose(choice: QuickReply) -> None:
     human_edited = capture_ui.table_rows(table) != capture_ui.table_rows(capture["lines_df"])
     draft = capture["draft"]
     customer_id = capture.get("current_customer", draft.customer_id)
-    draft = replace(draft, customer_id=customer_id,
-                    delivery_date=capture.get("current_date", draft.delivery_date),
-                    customer_hints=draft.customer_hints if customer_id == draft.customer_id else [])
+    delivery_date = capture.get("current_date", draft.delivery_date)
+    draft = replace(draft, customer_id=customer_id, delivery_date=delivery_date,
+                    customer_hints=draft.customer_hints if customer_id == draft.customer_id else [],
+                    date_hints=draft.date_hints if delivery_date == draft.delivery_date else [])
     draft = chat.apply_quick_reply(draft, choice)
     row_missing = choice.line_index is not None and choice.line_index not in table.index
     if choice.line_index is not None and not row_missing:

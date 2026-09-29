@@ -131,13 +131,15 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   `docs/EVALUATION.md` (Modellvergleich). Kosten je Lauf ca. 3–8 US-Cent; `--report-only` kostenlos
 - `tools/record_demo.py` – Demo-Video (ca. 90 s, stumm mit Untertiteln): Playwright steuert Edge durch die laufende
   App (Dialekt → Auftrag → Freigabe → Angriff → SAP), ffmpeg macht MP4 + Vorschaubild in `data/demo/`.
-  Live-KI ca. 2 US-Cent (prüft das Kennzeichen, bricht sonst ab), `--demo` kostenlos. **Vor 14 Uhr aufnehmen**
-  (Bestellschluss). Fertiges Video liegt im Portfolio-Repo unter `assets/demo.mp4`
+  Live-KI ca. 2 US-Cent (prüft das Kennzeichen, bricht sonst ab), `--demo` kostenlos. Aufnahme zu jeder Uhrzeit
+  (nach 14 Uhr zeigt sie den verschobenen Termin). Fertiges Video liegt im Portfolio-Repo unter `assets/demo.mp4`
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
   Abgleich (`build_draft`) gibt nur Hinweise (Warnung/Info); blockierende Fehler kommen nur aus
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,
   kein Leergut bis zur Lieferung. **Bestellschluss** `ORDER_CUTOFF` = 14 Uhr (deutsche Zeit): danach für den
-  nächsten Liefertag → Warnung `after_cutoff`; die Oberfläche übergibt `after_cutoff()` aus `ui_capture`.
+  nächsten Liefertag bestellt → `apply_order_cutoff` (nach `build_draft`, in `ui_capture.new_capture`) legt den
+  Termin auf den übernächsten Liefertag, Hinweis `moved_after_cutoff` in `Draft.date_hints`, Satz in der
+  Chat-Antwort; stellt der Mensch zurück → Warnung `after_cutoff`. Die Oberfläche übergibt `after_cutoff()`.
 - `tests/` – pytest; `conftest.py` baut einmal pro Lauf eine Test-Datenbank im Temp-Ordner;
   KI-Aufrufe nur mit Schein-Client (`FakeClient`), nie mit der echten API
 - `docs/ENTSCHEIDUNGEN.md` – Designentscheidungen mit Begründung (öffentlich)

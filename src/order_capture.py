@@ -1,7 +1,8 @@
 """Auftragserfassung: KI-Ergebnis mit Stammdaten abgleichen, prüfen und speichern.
 
 Ablauf:
-1. build_draft()  – KI-Ergebnis → Auftragsentwurf: Kunde und Artikel aus dem Stamm zuordnen
+1. build_draft()  – KI-Ergebnis → Auftragsentwurf: Kunde und Artikel aus dem Stamm zuordnen;
+   apply_order_cutoff() legt den Termin nach Bestellschluss auf den übernächsten Liefertag
 2. check_order()  – Entwurf (ggf. vom Menschen geändert) gegen die Geschäftsregeln prüfen
 3. save_order()   – bestätigten Auftrag speichern (erst nach Klick des Menschen)
 
@@ -13,10 +14,10 @@ jeder Änderung des Menschen neu und kennt den aktuellen Stand.
 import difflib
 import re
 import sqlite3
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, time, timedelta
 
-from src.formatting import format_eur, format_number
+from src.formatting import format_date, format_eur, format_number
 from src.order_models import ExtractedItem, ExtractedOrder
 
 # Stufen der Hinweise
@@ -59,6 +60,7 @@ class Draft:
     customer_hints: list[Issue]
     delivery_date: date | None
     lines: list[DraftLine]
+    date_hints: list[Issue] = field(default_factory=list)  # z. B. „nach Bestellschluss verschoben“
 
 
 @dataclass
@@ -236,6 +238,21 @@ def build_draft(conn: sqlite3.Connection, extracted: ExtractedOrder) -> Draft:
         product_id, match_hints = match_product(item, products, history)
         lines.append(DraftLine(item.original_text, product_id, item.quantity, hints + match_hints))
     return Draft(customer_id, customer_hints, extracted.delivery_date, lines)
+
+
+def apply_order_cutoff(draft: Draft, today: date, after_cutoff: bool) -> Draft:
+    """Bestellschluss: Wer nach 14 Uhr für den nächsten Liefertag bestellt, bekommt den übernächsten –
+    mit Warnhinweis. Die KI liefert nur den gewünschten Termin, die Regel wendet der Code an.
+    Heute, Sonntag und spätere Termine bleiben unverändert (dafür gibt es eigene Prüfungen)."""
+    requested = draft.delivery_date
+    if not after_cutoff or requested is None or requested.weekday() == 6:
+        return draft
+    first = first_regular_delivery_day(today, after_cutoff=True)
+    if not today < requested < first:
+        return draft
+    hint = Issue(WARNING, f"Nach Bestellschluss ({ORDER_CUTOFF.hour} Uhr) bestellt – Liefertermin vom "
+                          f"{format_date(requested)} auf den {format_date(first)} verschoben.", "moved_after_cutoff")
+    return replace(draft, delivery_date=first, date_hints=[hint])
 
 
 # ---------- Stufe 2: Prüfung ----------
