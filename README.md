@@ -17,7 +17,8 @@ meiner Steuerung. Wer was entschieden hat, zeigt die Seite **Making-of** in der 
 ![Eine Dialekt-Nachricht wird im Live-Chat zum geprüften Auftrag](docs/demo.gif)
 -->
 *🎞️ Animation (GIF) folgt: Eine Dialekt-Nachricht wird im Live-Chat zum geprüften Auftrag.*
-*🎬 Demo-Video (90 Sekunden) folgt.*
+*🎬 [Demo-Video (90 Sekunden, ohne Ton)](https://danielgrzegorzek.github.io/assets/demo.mp4): Dialekt-Bestellung →
+geprüfter Auftrag → Freigabe → abgewehrter Angriff → Übergabe an SAP.*
 
 | Auf einen Blick | |
 |---|---|

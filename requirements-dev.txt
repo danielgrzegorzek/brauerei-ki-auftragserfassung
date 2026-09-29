@@ -1,3 +1,5 @@
-# Nur für die Entwicklung (Tests). Installation: pip install -r requirements-dev.txt
+# Nur für die Entwicklung (Tests, Demo-Video). Installation: pip install -r requirements-dev.txt
 -r requirements.txt
 pytest==9.1.1
+playwright==1.63.0      # steuert den Browser für das Demo-Video (tools/record_demo.py)
+imageio-ffmpeg==0.6.0   # bringt ffmpeg mit: wandelt die Aufnahme in MP4 um

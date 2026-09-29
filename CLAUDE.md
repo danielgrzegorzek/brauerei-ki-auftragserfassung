@@ -117,6 +117,10 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `tools/evaluate_extraction.py` – 7 Demo-Nachrichten + Sicherheitstest (Prompt-Injection) an Claude,
   Vergleich mit dem Soll; hängt jeden Lauf an `docs/evaluation.json` an und erzeugt daraus
   `docs/EVALUATION.md` (Modellvergleich). Kosten je Lauf ca. 3–8 US-Cent; `--report-only` kostenlos
+- `tools/record_demo.py` – Demo-Video (ca. 90 s, stumm mit Untertiteln): Playwright steuert Edge durch die laufende
+  App (Dialekt → Auftrag → Freigabe → Angriff → SAP), ffmpeg macht MP4 + Vorschaubild in `data/demo/`.
+  Live-KI ca. 2 US-Cent (prüft das Kennzeichen, bricht sonst ab), `--demo` kostenlos. **Vor 14 Uhr aufnehmen**
+  (Bestellschluss). Fertiges Video liegt im Portfolio-Repo unter `assets/demo.mp4`
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
   Abgleich (`build_draft`) gibt nur Hinweise (Warnung/Info); blockierende Fehler kommen nur aus
   `check_order`. `save_order` prüft erneut. Erfasste Aufträge: `orders.source = 'KI-Erfassung'`,
@@ -164,6 +168,10 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 .venv\Scripts\python.exe -m tools.evaluate_extraction
 .venv\Scripts\python.exe -m tools.evaluate_extraction --model claude-haiku-4-5
 .venv\Scripts\python.exe -m tools.evaluate_extraction --report-only   # nur Bericht, ohne API
+
+# Demo-Video aufnehmen (App muss laufen; einmalig vorher: python -m playwright install ffmpeg)
+.venv\Scripts\python.exe -m tools.record_demo --url http://localhost:8502          # Live-KI, ca. 2 US-Cent
+.venv\Scripts\python.exe -m tools.record_demo --url http://localhost:8502 --demo   # kostenlos
 ```
 
 Der API-Schlüssel steht nur in `.streamlit/secrets.toml` (lokal) bzw. in den Secrets der
@@ -203,6 +211,6 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Making-of:** Seite „Making-of“, Hinweiszeile auf jeder Seite, Bestellschluss 14 Uhr;
   dazu Daniels Portfolio-Seite im eigenen Repo `danielgrzegorzek.github.io` (statisches HTML/CSS)
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
-- [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video
+- [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video [x] (im Portfolio, per Skript)
 
 Umgebung geprüft (2026-09-28): Python 3.13.15, pip 26.2.1, Git 2.55.0.

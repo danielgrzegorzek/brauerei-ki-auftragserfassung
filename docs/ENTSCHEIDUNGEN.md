@@ -294,7 +294,17 @@ Gastronomie, Großhandel); die **Sparte** der Produktbereich. Alle drei zusammen
 | Tests und Commits als **Zahlen mit Stand-Datum**; die Entscheidungen werden beim Aufruf aus dieser Datei gezählt | In der Cloud gibt es weder einen Testlauf noch die Git-Historie; diese Datei liegt dagegen mit im Repository. | – |
 | Neuer Code als **neue Module** (`src/making_of.py`, Seite, Piktogramme); frisch geladene Dateien importieren keine neuen Namen aus bestehenden Modulen | Streamlit Cloud behält bereits geladene Module nach einem Update im Speicher – so entsteht kein `ImportError`, auch ohne Neustart der App. | Neustart nach jedem Update: nur über das Konto des Besitzers möglich. |
 
-## 14. Bewusste Grenzen
+## 14. Demo-Video
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| Video **per Skript aufgenommen** (`tools/record_demo.py`): Playwright steuert den installierten Edge durch die laufende App, ffmpeg (`imageio-ffmpeg`) wandelt in MP4 | Nach Änderungen an der Oberfläche lässt sich das Video mit einem Befehl neu aufnehmen – gleiche Klickfolge, gleiche Untertitel. Beide Bibliotheken nur in `requirements-dev.txt`, nicht in der App. | Von Hand mit OBS oder der Windows-Spielleiste: jedes Mal neu üben, Timing schwankt. |
+| **Stumm mit Untertiteln** statt Sprechtext | Videos auf LinkedIn und Webseiten laufen meist ohne Ton; die Untertitel tragen die Aussage. Eine eigene Tonspur lässt sich später darüberlegen. | Computerstimme: klingt unecht. |
+| **Live-KI** im Video, Kennzeichen „Live-KI · Claude Sonnet 5“ sichtbar; das Skript prüft das Kennzeichen und bricht sonst ab | Echte Auswertung wirkt glaubwürdiger als ein vorbereitetes Ergebnis. Kosten: ca. 2 US-Cent je Aufnahme. Die Prüfung verhindert, dass ein Probelauf im Demo-Modus unbemerkt Geld kostet – das war beim ersten Versuch passiert. | `--demo`: kostenlos, zeigt aber „vorbereitetes KI-Ergebnis“. |
+| **Ohne Kennzahlen** (keine Evaluation, kein Business Case) – Ablauf: Dialekt → Auftrag → Freigabe → Angriff → SAP-Übergabe | Das Video zeigt, wie die App arbeitet; Zahlen aus dem fiktiven Szenario stehen auf den Fachseiten mit ihren Annahmen. | – |
+| Aufnahme **vor 14 Uhr** | Nach dem Bestellschluss warnt die App beim Dialekt-Beispiel („bis morgn“) zu Recht – die Prüfung wäre dann nicht grün. | – |
+
+## 15. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).
