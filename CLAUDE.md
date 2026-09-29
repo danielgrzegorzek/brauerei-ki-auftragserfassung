@@ -211,7 +211,9 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
     bestehende Module (z. B. neue Konstante in `src/…`), entsteht ein `ImportError` → App in Streamlit
     Cloud neu starten (Manage app → ⋮ → Reboot app; nur über Daniels Konto). Nach jedem Push die Live-App prüfen.
     Deshalb neuen Code möglichst in **neue Module**; frisch geladene Dateien (`app.py`, `pages/`, neue Module)
-    importieren keine neuen Namen aus bestehenden Modulen.
+    importieren keine neuen Namen aus bestehenden Modulen. Auch **geänderte Texte oder Logik in bestehenden
+    Modulen** (z. B. `src/tour.py`, `ui_chat.py`) erscheinen erst nach dem Reboot – `pages/`, `app.py` und
+    `assets/*.css` dagegen sofort (bei der Design-Überarbeitung am 29.09.2026 live beobachtet).
   - GitHub-Name seit 29.09.2026 `danielgrzegorzek` (vorher `danig204`). Streamlit erkennt eine App an ihren
     GitHub-Koordinaten (Besitzer, Repo, Branch, Startdatei). Die Umbenennung ohne vorheriges Löschen hat die alte
     App verwaist: nicht mehr verwaltbar, Adresse `braeu-am-stein` blockiert (Support-Anfrage offen). Seitdem
