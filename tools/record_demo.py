@@ -275,50 +275,50 @@ def record(d: Director, live: bool) -> dict[str, float]:
         order_card.locator('[data-testid="stDataFrame"] canvas').first.wait_for(timeout=10_000)
     except Exception:
         pass
-    d.pause(0.6)
+    d.pause(0.3)
     marks["order"] = d.now() + 0.4
-    d.until(max(d.now() + 0.8, 18.8))
+    d.until(max(d.now() + 0.5, 18.8))
     d.caption("Regeln prüfen, Mensch bestätigt")
-    d.hover(app.locator('[data-testid="stDateInput"]').first, seconds=0.9)
+    d.hover(app.locator('[data-testid="stDateInput"]').first, seconds=0.8)
     marks["gif_end"] = d.now() + 0.5
-    d.until(max(d.now() + 1.0, 21.2))
+    d.until(max(d.now() + 0.7, 21.2))
 
     # 22–32 s: bestätigen & speichern, Link zur SAP-Übergabe, Object Page, „Übergabe simulieren“
-    d.scroll_bottom_to(save, margin=140, seconds=0.8)
-    d.click(save, seconds=0.6)
+    d.scroll_bottom_to(save, margin=140, seconds=0.7)
+    d.click(save, seconds=0.5)
     d.caption("Kundenauftrag für SAP S/4HANA")
     link = app.locator("a", has_text="So sähe die Übergabe an SAP aus")
     link.wait_for(timeout=30_000)
-    d.scroll_to(order_card, seconds=0.8)
-    d.click(link, seconds=0.6)
+    d.scroll_to(order_card, seconds=0.7)
+    d.click(link, seconds=0.5)
     sap_card = app.locator(".st-key-card-sap")
     sap_card.wait_for(timeout=30_000)
-    d.pause(0.4)
-    d.scroll_to(sap_card, offset=HEADER + 150, seconds=1.0)  # mit Überschrift und Auftragsauswahl
+    d.pause(0.2)
+    d.scroll_to(sap_card, offset=HEADER + 150, seconds=0.9)  # mit Überschrift und Auftragsauswahl
     marks["sap"] = d.now() + 0.3
-    d.pause(0.6)
-    d.click(sap_card.get_by_role("button", name="Übergabe simulieren"), seconds=0.7)
+    d.pause(0.4)
+    d.click(sap_card.get_by_role("button", name="Übergabe simulieren"), seconds=0.6)
     sap_card.get_by_text("Übergabe simuliert").first.wait_for(timeout=20_000)
-    d.until(max(d.now() + 1.2, 31.4))
+    d.until(max(d.now() + 1.0, 31.4))
 
     # 32–38 s: Business Case mit den drei Kennzahlen
-    d.click(nav.filter(has_text="Business Case"), seconds=0.6)
+    d.click(nav.filter(has_text="Business Case"), seconds=0.5)
+    d.caption("Business Case: Zeitersparnis pro Jahr")  # Einblendung wechselt mit dem Klick
+    shown = d.now()
     kpis = app.locator(".st-key-bc-kpis")
     kpis.wait_for(timeout=30_000)
     app.locator('[data-testid="stPlotlyChart"] .main-svg').first.wait_for(timeout=30_000)  # Diagramm gezeichnet
-    d.caption("Business Case: Zeitersparnis pro Jahr")
-    shown = d.now()
-    marks["business_case"] = shown + 1.8
+    marks["business_case"] = d.now() + 1.2
     d.pause(0.6)
     d.hover(kpis.locator('[data-testid="stMetricValue"]').first, seconds=0.9)
     d.until(max(shown + 4.5, 37.4))  # mindestens 4,5 s zum Lesen, auch wenn die Cloud langsamer lädt
 
     # 38–45 s: Making-of
-    d.click(nav.filter(has_text="Making-of"), seconds=0.6)
-    app.locator(".st-key-card-making-of-role").wait_for(timeout=30_000)
+    d.click(nav.filter(has_text="Making-of"), seconds=0.5)
     d.caption("Konzipiert von Daniel Grzegorzek")
     shown = d.now()
-    marks["making_of"] = shown + 2.0
+    app.locator(".st-key-card-making-of-role").wait_for(timeout=30_000)
+    marks["making_of"] = d.now() + 2.0
     d.pause(0.8)
     d.hover(app.locator(".st-key-card-making-of-role [data-testid='stMarkdown']").first, seconds=1.0)
     d.until(max(shown + 5.5, 45.0))
@@ -333,18 +333,32 @@ def ffmpeg(*arguments: str) -> None:
 
 
 def encode(frames: list[tuple[float, Path]], end: float, out_dir: Path) -> Path:
-    """Einzelbilder mit ihrer Anzeigedauer → MP4 (H.264) mit gleichmäßigen 30 fps, ohne Tonspur, unter MAX_MB."""
-    playlist = out_dir / "frames.ffconcat"
-    lines = ["ffconcat version 1.0"]
-    for (stamp, path), (next_stamp, _) in zip(frames, frames[1:] + [(end, None)]):
-        lines += [f"file '{path.resolve().as_posix()}'", f"duration {max(next_stamp - stamp, 0.001):.4f}"]
-    lines.append(f"file '{frames[-1][1].resolve().as_posix()}'")  # letztes Bild: sonst gilt seine Dauer nicht
-    playlist.write_text("\n".join(lines), encoding="utf-8")
+    """Einzelbilder → MP4 (H.264) mit gleichmäßigen 30 fps, ohne Tonspur, unter MAX_MB.
+    Für jedes der 30 Bilder pro Sekunde wird das Einzelbild genommen, das zu diesem Zeitpunkt zu sehen war –
+    so ist das Video genau so lang wie die Aufnahme."""
+    first = frames[0][0]
+    count = round((end - first) * FPS)
     mp4 = out_dir / "demo.mp4"
     for crf in (23, 26, 29, 32):  # so gut wie möglich, aber unter MAX_MB
-        ffmpeg("-f", "concat", "-safe", "0", "-i", str(playlist),
-               "-vf", f"fps={FPS},scale={SIZE[0]}:{SIZE[1]}:flags=lanczos,format=yuv420p",
-               "-c:v", "libx264", "-preset", "slow", "-crf", str(crf), "-movflags", "+faststart", "-an", str(mp4))
+        encoder = subprocess.Popen(
+            [imageio_ffmpeg.get_ffmpeg_exe(), "-loglevel", "error", "-y", "-f", "image2pipe", "-framerate", str(FPS),
+             "-c:v", "mjpeg", "-i", "-",
+             # Einzelbilder kommen im Vollbereich (JPEG) – das MP4 bekommt den üblichen Videobereich
+             "-vf", f"scale={SIZE[0]}:{SIZE[1]}:flags=lanczos:in_range=pc:out_range=tv,format=yuv420p",
+             "-color_range", "tv", "-c:v", "libx264", "-preset", "slow", "-crf", str(crf),
+             "-movflags", "+faststart", "-an", str(mp4)],
+            stdin=subprocess.PIPE)
+        index, data = 0, frames[0][1].read_bytes()
+        for number in range(count):
+            moment = first + number / FPS
+            if index + 1 < len(frames) and frames[index + 1][0] <= moment:
+                while index + 1 < len(frames) and frames[index + 1][0] <= moment:
+                    index += 1
+                data = frames[index][1].read_bytes()
+            encoder.stdin.write(data)
+        encoder.stdin.close()
+        if encoder.wait() != 0:
+            raise SystemExit("ffmpeg konnte das Video nicht erzeugen.")
         if mp4.stat().st_size <= MAX_MB * 1_000_000:
             break
     return mp4
@@ -405,8 +419,7 @@ def main() -> None:
     first = screencast.frames[0][0]  # Zeitstempel des ersten Bildes = Sekunde 0 im Video
     marks = {name: second + director.wall_start - first for name, second in marks.items()}
     mp4 = encode(screencast.frames, end, args.out)
-    extras(mp4, marks, args.out)
-    shutil.rmtree(frames_dir)
+    extras(mp4, marks, args.out)  # Einzelbilder bleiben in frames/ – zum Nachschneiden ohne neue Aufnahme
     print(f"Fertig: {mp4} ({mp4.stat().st_size / 1_000_000:.1f} MB), {len(screencast.frames)} Einzelbilder, "
           f"Dauer ca. {end - first:.1f} s – dazu demo-poster.jpg, demo-chat.gif und Prüfbilder in {args.out / 'check'}")
 
