@@ -14,7 +14,7 @@ import difflib
 import re
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 from src.formatting import format_eur, format_number
 from src.order_models import ExtractedItem, ExtractedOrder
@@ -28,6 +28,7 @@ MAX_DAYS_AHEAD = 60             # Liefertermin weiter in der Zukunft → Warnung
 UNUSUAL_QUANTITY_FACTOR = 2     # Menge über dem Doppelten der bisher größten Menge → Warnung
 HARD_LIMIT_FACTOR = 3           # Menge über dem Dreifachen der größten Menge aller Kunden → Fehler
 CUSTOMER_MATCH_CUTOFF = 0.75    # Mindest-Ähnlichkeit (0–1) für einen unsicheren Kundentreffer
+ORDER_CUTOFF = time(14, 0)      # Bestellschluss: bis 14 Uhr bestellt → Lieferung am nächsten Liefertag
 
 # Namensabgleich über Wortbestandteile: Abkürzungen auflösen, allgemeine Wörter ignorieren
 NAME_ABBREVIATIONS = {"ff": "freiwillige feuerwehr"}
@@ -239,7 +240,22 @@ def build_draft(conn: sqlite3.Connection, extracted: ExtractedOrder) -> Draft:
 
 # ---------- Stufe 2: Prüfung ----------
 
-def check_delivery_date(delivery_date: date | None, today: date) -> list[Issue]:
+def is_after_cutoff(now: datetime) -> bool:
+    """Nach Bestellschluss bestellt? now = aktuelle Zeit in Deutschland (chat.now_berlin)."""
+    return now.time() >= ORDER_CUTOFF
+
+
+def first_regular_delivery_day(today: date, after_cutoff: bool = False) -> date:
+    """Frühester regulärer Liefertag: der nächste Tag ohne Sonntag – nach Bestellschluss einer später."""
+    day, remaining = today, 2 if after_cutoff else 1
+    while remaining:
+        day += timedelta(days=1)
+        if day.weekday() != 6:  # sonntags wird nicht ausgeliefert
+            remaining -= 1
+    return day
+
+
+def check_delivery_date(delivery_date: date | None, today: date, after_cutoff: bool = False) -> list[Issue]:
     if delivery_date is None:
         return [Issue(ERROR, "Kein Liefertermin – bitte Datum wählen.", "no_date")]
     if delivery_date < today:
@@ -248,6 +264,9 @@ def check_delivery_date(delivery_date: date | None, today: date) -> list[Issue]:
         return [Issue(ERROR, "Sonntags wird nicht ausgeliefert – bitte einen anderen Tag wählen.", "sunday")]
     if delivery_date == today:
         return [Issue(WARNING, "Lieferung noch heute – bitte mit der Tourenplanung abstimmen.", "today")]
+    if delivery_date < first_regular_delivery_day(today, after_cutoff):
+        return [Issue(WARNING, f"Nach Bestellschluss ({ORDER_CUTOFF.hour} Uhr) bestellt – Lieferung am nächsten "
+                               "Liefertag nur nach Rücksprache mit der Tourenplanung.", "after_cutoff")]
     if delivery_date > today + timedelta(days=MAX_DAYS_AHEAD):
         return [Issue(WARNING, f"Der Liefertermin liegt mehr als {MAX_DAYS_AHEAD} Tage in der Zukunft.",
                       "far_future")]
@@ -271,11 +290,12 @@ def open_empties_hint(conn: sqlite3.Connection, customer_id: str) -> list[Issue]
 
 
 def check_order(conn: sqlite3.Connection, customer_id: str | None, delivery_date: date | None,
-                lines: list[tuple[str | None, int]], today: date) -> CheckResult:
-    """Stufe 2: Prüft den (ggf. vom Menschen geänderten) Entwurf. lines = [(Artikelnummer, Menge), …]"""
+                lines: list[tuple[str | None, int]], today: date, after_cutoff: bool = False) -> CheckResult:
+    """Stufe 2: Prüft den (ggf. vom Menschen geänderten) Entwurf. lines = [(Artikelnummer, Menge), …]
+    after_cutoff: Prüfung nach Bestellschluss – dann ist der nächste Liefertag nur nach Rücksprache möglich."""
     customers = load_customers(conn)
     products = load_products(conn)
-    issues = check_delivery_date(delivery_date, today)
+    issues = check_delivery_date(delivery_date, today, after_cutoff)
     if customer_id is None:
         issues.insert(0, Issue(ERROR, "Kein Kunde ausgewählt.", "no_customer"))
     if not lines:

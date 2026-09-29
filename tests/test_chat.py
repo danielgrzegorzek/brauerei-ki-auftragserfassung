@@ -87,6 +87,13 @@ def test_missing_date_gets_next_delivery_days_as_buttons(conn):
     assert "Donnerstag, 01.10.2026" in after.text
 
 
+def test_offered_days_start_later_after_cutoff(conn):
+    """Nach 14 Uhr bietet der Chat „morgen“ nicht mehr an – sonst widerspräche er dem Bestellschluss."""
+    extracted = ExtractedOrder("Gasthof Zur Post", None, None, [ExtractedItem("10 Kasten Helles", 10, "Helles", "Kasten")])
+    reply = reply_for_draft(conn, extracted, build_draft(conn, extracted), TODAY, after_cutoff=True)
+    assert [option.label for option in reply.quick_replies] == ["Mi, 30.09.", "Do, 01.10.", "Fr, 02.10."]
+
+
 def test_sunday_is_skipped_in_offered_days(conn):
     saturday = date(2026, 10, 3)
     extracted = ExtractedOrder("Gasthof Zur Post", date(2026, 10, 4), "Sonntag",

@@ -67,7 +67,7 @@ def reset() -> None:
 def brewery_reply(capture: dict) -> chat.Reply:
     with closing(get_connection()) as conn:
         return chat.reply_for_draft(conn, capture["extracted"], capture["draft"], capture_ui.today(),
-                                    capture["answered"], capture["safety"])
+                                    capture["answered"], capture["safety"], capture_ui.after_cutoff())
 
 
 # ---------- Callbacks: laufen vor dem Neuzeichnen der Seite ----------
@@ -272,7 +272,8 @@ def chat_view() -> None:
             draft = capture["draft"]
             with closing(get_connection()) as conn:
                 first = check_order(conn, draft.customer_id, draft.delivery_date,
-                                    [(line.product_id, line.quantity) for line in draft.lines], capture_ui.today())
+                                    [(line.product_id, line.quantity) for line in draft.lines], capture_ui.today(),
+                                    capture_ui.after_cutoff())
             capture_ui.show_steps(steps, capture_ui.order_steps(draft.customer_id, first, capture["safety"]),
                                   animate=True)
             capture["animate"] = False

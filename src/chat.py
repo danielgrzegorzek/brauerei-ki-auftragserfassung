@@ -18,8 +18,8 @@ from zoneinfo import ZoneInfo
 from src.extraction import WEEKDAYS
 from src.formatting import format_date, format_number
 from src.order_capture import (
-    INFO, CheckResult, Draft, DraftLine, Issue, check_order, customer_history, load_customers, load_products,
-    price_on,
+    INFO, CheckResult, Draft, DraftLine, Issue, check_order, customer_history, first_regular_delivery_day,
+    load_customers, load_products, price_on,
 )
 from src.order_models import ExtractedItem, ExtractedOrder
 
@@ -212,23 +212,23 @@ def quantity_question(index: int, item: ExtractedItem, line: DraftLine, checked_
     return None
 
 
-def next_delivery_days(today: date, count: int = DAYS_OFFERED) -> list[date]:
-    """Die nächsten Liefertage nach heute – ohne Sonntag."""
-    days, day = [], today
+def next_delivery_days(today: date, count: int = DAYS_OFFERED, after_cutoff: bool = False) -> list[date]:
+    """Die nächsten regulären Liefertage – ohne Sonntag, nach Bestellschluss ohne den nächsten Liefertag."""
+    days, day = [], first_regular_delivery_day(today, after_cutoff)
     while len(days) < count:
-        day += timedelta(days=1)
         if day.weekday() != 6:
             days.append(day)
+        day += timedelta(days=1)
     return days
 
 
-def date_question(result: CheckResult, today: date) -> Reply | None:
+def date_question(result: CheckResult, today: date, after_cutoff: bool = False) -> Reply | None:
     codes = {issue.code for issue in result.issues}
     code = next((code for code in DATE_QUESTIONS if code in codes), None)
     if code is None:
         return None
     return Reply(DATE_QUESTIONS[code], [QuickReply(short_date(day), delivery_date=day)
-                                        for day in next_delivery_days(today)])
+                                        for day in next_delivery_days(today, after_cutoff=after_cutoff)])
 
 
 def open_quick_replies(messages: list[ChatMessage]) -> list[QuickReply]:
@@ -268,9 +268,11 @@ def not_available_text(item: ExtractedItem, line: DraftLine) -> str:
 
 def compose_reply(extracted: ExtractedOrder, draft: Draft, result: CheckResult, products: dict[str, dict],
                   allowed: set[str] | None, history: dict[str, tuple[int, int]], today: date,
-                  answered: set[int] = frozenset(), safety_issues: list[Issue] = ()) -> Reply:
+                  answered: set[int] = frozenset(), safety_issues: list[Issue] = (),
+                  after_cutoff: bool = False) -> Reply:
     """Eingangsbestätigung oder EINE Rückfrage mit Knöpfen – aus Abgleich (draft) und Prüfung (result).
-    answered: Positionen, deren Rückfrage der Kunde schon per Schnellantwort beantwortet hat."""
+    answered: Positionen, deren Rückfrage der Kunde schon per Schnellantwort beantwortet hat.
+    after_cutoff: nach Bestellschluss – die Terminknöpfe beginnen dann einen Liefertag später."""
     if safety_issues:
         return Reply(SAFETY_REPLY)
     if not draft.lines:
@@ -300,7 +302,7 @@ def compose_reply(extracted: ExtractedOrder, draft: Draft, result: CheckResult, 
         first = UNKNOWN_CUSTOMER_REPLY if "customer_unknown" in codes else ASSIGN_CUSTOMER_REPLY
         return Reply(" ".join([first] + problems))
 
-    asked_date = date_question(result, today)
+    asked_date = date_question(result, today, after_cutoff)
     if asked_date:
         questions.append(asked_date)
     if questions:  # immer nur eine Frage – die Knöpfe gehören eindeutig zu ihr
@@ -317,17 +319,19 @@ def compose_reply(extracted: ExtractedOrder, draft: Draft, result: CheckResult, 
 
 
 def reply_for_draft(conn: sqlite3.Connection, extracted: ExtractedOrder, draft: Draft, today: date,
-                    answered: set[int] = frozenset(), safety_issues: list[Issue] = ()) -> Reply:
+                    answered: set[int] = frozenset(), safety_issues: list[Issue] = (),
+                    after_cutoff: bool = False) -> Reply:
     """Prüft den Entwurf und erzeugt daraus die Antwort der Brauerei."""
     result = check_order(conn, draft.customer_id, draft.delivery_date,
-                         [(line.product_id, line.quantity) for line in draft.lines], today)
+                         [(line.product_id, line.quantity) for line in draft.lines], today, after_cutoff)
     products = load_products(conn)
     allowed, history = None, {}
     if draft.customer_id:
         group = load_customers(conn)[draft.customer_id]["group"]
         allowed = {pid for pid in products if price_on(conn, pid, group, today) is not None}
         history = customer_history(conn, draft.customer_id)
-    return compose_reply(extracted, draft, result, products, allowed, history, today, answered, safety_issues)
+    return compose_reply(extracted, draft, result, products, allowed, history, today, answered, safety_issues,
+                         after_cutoff)
 
 
 def confirmation_text(order_id: int, delivery_date: date, summary: str) -> str:

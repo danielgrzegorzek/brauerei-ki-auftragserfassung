@@ -23,8 +23,8 @@ from src.extraction import ExtractionResult, IncomingMessage
 from src.formatting import format_eur, format_number
 from src.message_safety import safety_warnings
 from src.order_capture import (
-    ERROR, INFO, WARNING, CheckResult, Draft, Issue, build_draft, check_order, load_customers, load_products,
-    save_order,
+    ERROR, INFO, WARNING, CheckResult, Draft, Issue, build_draft, check_order, is_after_cutoff, load_customers,
+    load_products, save_order,
 )
 
 ISSUE_ICONS = {ERROR: "⛔", WARNING: "⚠️", INFO: "ℹ️"}
@@ -44,6 +44,11 @@ def master_data() -> tuple[dict, dict]:
 
 def today() -> date:
     return now_berlin().date()
+
+
+def after_cutoff() -> bool:
+    """Jetzt schon nach Bestellschluss (14 Uhr deutscher Zeit)?"""
+    return is_after_cutoff(now_berlin())
 
 
 # ---------- Live-KI: Schlüssel, Client, Kontingent ----------
@@ -268,7 +273,7 @@ def show_proposal(capture: dict, key_prefix: str,
 
     # 3. Prüfung – läuft bei jeder Änderung neu
     with closing(get_connection()) as conn:
-        checked = check_order(conn, customer_id, delivery_date, lines, today())
+        checked = check_order(conn, customer_id, delivery_date, lines, today(), after_cutoff())
 
     st.markdown("##### Prüfung")
     st.dataframe(

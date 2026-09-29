@@ -1,13 +1,13 @@
 """Tests für Abgleich und Prüfung der Auftragserfassung – je Demo-Nachricht das erwartete Verhalten."""
 
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
 from src.demo_messages import DEMO_MESSAGES
 from src.order_capture import (
     ERROR, INFO, WARNING, build_draft, captured_orders, check_delivery_date, check_order,
-    delete_captured_orders, load_customers, match_customer, save_order,
+    delete_captured_orders, first_regular_delivery_day, is_after_cutoff, load_customers, match_customer, save_order,
 )
 from src.plausibility import run_checks
 
@@ -132,6 +132,44 @@ def test_delivery_date_rules(delivery, expected):
 
 def test_normal_delivery_date_has_no_issues():
     assert check_delivery_date(date(2026, 10, 2), TODAY) == []
+
+
+@pytest.mark.parametrize("now, expected", [
+    (datetime(2026, 9, 28, 13, 59), False),
+    (datetime(2026, 9, 28, 14, 0), True),
+    (datetime(2026, 9, 28, 23, 30), True),
+])
+def test_order_cutoff_is_14_oclock(now, expected):
+    assert is_after_cutoff(now) is expected
+
+
+@pytest.mark.parametrize("today, after_cutoff, expected", [
+    (TODAY, False, date(2026, 9, 29)),              # Montag vor 14 Uhr → Dienstag
+    (TODAY, True, date(2026, 9, 30)),               # Montag nach 14 Uhr → Mittwoch
+    (date(2026, 10, 3), False, date(2026, 10, 5)),  # Samstag vor 14 Uhr → Montag (sonntags keine Lieferung)
+    (date(2026, 10, 3), True, date(2026, 10, 6)),   # Samstag nach 14 Uhr → Dienstag
+])
+def test_first_regular_delivery_day(today, after_cutoff, expected):
+    assert first_regular_delivery_day(today, after_cutoff) == expected
+
+
+def test_next_day_after_cutoff_is_a_warning_not_an_error():
+    """Nach 14 Uhr für morgen: der Mensch stimmt mit der Tourenplanung ab – Speichern bleibt möglich."""
+    issues = check_delivery_date(date(2026, 9, 29), TODAY, after_cutoff=True)
+    assert [(issue.level, issue.code) for issue in issues] == [(WARNING, "after_cutoff")]
+    assert "14 Uhr" in issues[0].text
+    assert check_delivery_date(date(2026, 9, 29), TODAY) == []                   # vor 14 Uhr: kein Hinweis
+    assert check_delivery_date(date(2026, 9, 30), TODAY, after_cutoff=True) == []  # übermorgen: in Ordnung
+
+
+def test_dialect_demo_for_tomorrow_warns_after_cutoff(conn):
+    draft = build_draft(conn, DEMOS["Biergarten schreibt im Dialekt"].extract(TODAY))
+    lines = [(line.product_id, line.quantity) for line in draft.lines]
+    before = check_order(conn, draft.customer_id, draft.delivery_date, lines, TODAY)
+    after = check_order(conn, draft.customer_id, draft.delivery_date, lines, TODAY, after_cutoff=True)
+    assert "after_cutoff" not in {issue.code for issue in before.issues}
+    assert "after_cutoff" in {issue.code for issue in after.issues}
+    assert not after.has_errors
 
 
 def save_demo(conn, title, fix_missing_product=None):
