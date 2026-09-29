@@ -25,21 +25,20 @@
 /* ---------- Karten: weiß auf grauem Grund, runde Ecken, leichter Schatten ---------- */
 [class*="st-key-card"],
 [class*="st-key-tile-"],
-.st-key-page-header,
 [data-testid="stMetric"] {
   background: var(--fiori-card);
   border: 1px solid var(--fiori-card-border) !important;
   border-radius: 0.75rem;
   box-shadow: var(--fiori-shadow);
 }
-[class*="st-key-card"] { padding: 1.1rem 1.35rem; }
+[class*="st-key-card"] { padding: 1.25rem 1.5rem; }
 [data-testid="stMetric"] { padding: 0.75rem 0.9rem; }
 /* Schmale Fenster (kleine Laptops): Kennzahlen etwas kleiner, damit fünf nebeneinander passen */
 @media (max-width: 1100px) {
   [data-testid="stMetricValue"], [data-testid="stMetricValue"] * { font-size: 1.3rem !important; }
 }
 
-/* ---------- Hinweis auf den Autor: eine dezente Zeile über jeder Seite ---------- */
+/* ---------- Hinweis auf Autor und Simulation: eine dezente Zeile über jeder Seite ---------- */
 .st-key-portfolio-note { gap: 0.15rem 0.55rem !important; margin: -0.75rem 0 -0.35rem; }
 .st-key-portfolio-note p,
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] span { font-size: 0.82rem !important; color: var(--fiori-label); }
@@ -49,15 +48,17 @@
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] span {
   color: var(--fiori-accent); text-decoration: underline; text-underline-offset: 0.18em;
 }
+/* Trennpunkt vor jedem Stück außer dem ersten */
+.st-key-portfolio-note > [data-testid="stElementContainer"]:not(:first-child) p::before,
 .st-key-portfolio-note [data-testid="stPageLink"]::before { content: "·"; color: var(--fiori-label); margin-right: 0.55rem; }
 .st-key-portfolio-note [data-testid="stPageLink"] { display: flex; align-items: center; }
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] { gap: 0 !important; }
 /* Seitensymbol der Navigation – hier nur Text */
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] > span:has([data-testid="stIconMaterial"]) { display: none; }
-/* Handy: Satz in der ersten Zeile, Links darunter – ohne Trennpunkt am Zeilenanfang */
+/* Handy: Autor in der ersten Zeile, Rest darunter – ohne Trennpunkt am Zeilenanfang */
 @media (max-width: 640px) {
   .st-key-portfolio-note > [data-testid="stElementContainer"]:first-child { flex-basis: 100%; }
-  .st-key-portfolio-note > [data-testid="stElementContainer"]:nth-child(2) [data-testid="stPageLink"]::before { content: none; }
+  .st-key-portfolio-note > [data-testid="stElementContainer"]:nth-child(2) p::before { content: none; }
 }
 
 /* ---------- Titelbanner der Startseite: ruhigerer Titel als Streamlits Standard ---------- */
@@ -68,25 +69,24 @@
   .st-key-card-hero h1 { font-size: 1.8rem; }
 }
 
-/* ---------- Seitenkopf wie die Fiori-„Object Page“ ---------- */
-.st-key-page-header { padding: 1.1rem 1.5rem; }
-.fiori-page-header { display: flex; align-items: center; gap: 1.1rem; }
+/* ---------- Seitenkopf: Piktogramm, Titel und ein Satz – ohne Karte, direkt auf dem Hintergrund ---------- */
+.st-key-page-header { padding: 0.4rem 0 0.35rem; }
+.fiori-page-header { display: flex; align-items: center; gap: 0.9rem; }
 .fiori-page-header h1 {
-  font-size: 1.9rem; font-weight: 700; line-height: 1.2;
+  font-size: 1.85rem; font-weight: 700; line-height: 1.2;
   margin: 0; padding: 0; color: var(--fiori-text);
 }
-.fiori-page-header p { margin: 0.3rem 0 0; color: var(--fiori-label); }
+.fiori-page-header p { margin: 0.25rem 0 0; color: var(--fiori-label); }
 .fiori-pictogram { flex-shrink: 0; }   /* bei langem Untertitel nicht zusammendrücken */
-.fiori-pictogram img { width: 3.25rem; height: 3.25rem; display: block; }
+.fiori-pictogram img { width: 2.75rem; height: 2.75rem; display: block; }
 
 /* ---------- Handy-Breite: schmalere Ränder und kleinerer Seitentitel – mehr Platz für den Inhalt ---------- */
 @media (max-width: 640px) {
   [data-testid="stMainBlockContainer"] { padding-left: 1rem; padding-right: 1rem; }
-  [class*="st-key-card"] { padding: 0.9rem 0.85rem; }
-  .st-key-page-header { padding: 0.9rem 1rem; }
-  .fiori-page-header { gap: 0.75rem; }
-  .fiori-page-header h1 { font-size: 1.35rem; }
-  .fiori-pictogram img { width: 2.5rem; height: 2.5rem; }
+  [class*="st-key-card"] { padding: 1rem; }
+  .fiori-page-header { gap: 0.7rem; }
+  .fiori-page-header h1 { font-size: 1.4rem; }
+  .fiori-pictogram img { width: 2.25rem; height: 2.25rem; }
 }
 
 /* ---------- Launchpad-Kacheln ---------- */

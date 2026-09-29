@@ -34,9 +34,11 @@ pages = {  # Schlüssel = Dateiname – so verweist auch die Tour (src/tour.py) 
 }
 page = st.navigation(list(pages.values()), position="top")
 
-# Dezenter Hinweis auf den Autor – auf jeder Seite, auch für Besucher, die direkt auf eine Unterseite kommen
+# Dezenter Hinweis auf Autor und Simulation – auf jeder Seite, auch für Besucher, die direkt auf eine Unterseite
+# kommen. Vier kurze Stücke, damit die Zeile auf dem Handy sauber umbricht (Trennpunkte setzt das CSS).
 with st.container(key="portfolio-note", horizontal=True, vertical_alignment="center"):
-    st.markdown(f"Ein Portfolio-Projekt von {AUTHOR}", width="content")
+    st.markdown(f"Portfolio-Projekt von {AUTHOR}", width="content")
+    st.markdown("Simulation mit fiktiven Daten", width="content")
     st.page_link(pages["making_of"], label="Making-of")
     st.page_link(PORTFOLIO_URL, label="Portfolio")
 
