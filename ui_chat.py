@@ -34,9 +34,8 @@ EXAMPLE_ICONS = {
 DEMO_TEXTS = {message.text for message in DEMO_MESSAGES + CHAT_EXAMPLES}  # dafür gibt es vorbereitete Ergebnisse
 DEMO_TYPING_SECONDS = 0.8  # auch im Demo-Modus kurz „schreibt …“ zeigen, sonst kommt die Antwort unnatürlich schnell
 INJECTION_EXPLANATION = (
-    "**So wehrt die App den Angriff ab:** Die KI übersetzt nur in ein festes Format – Preise, Rabatte oder "
-    "„Auftrag bestätigen“ gibt es darin gar nicht. Der Code erkennt die Anweisungen und warnt, die Prüfung "
-    "blockiert unrealistische Mengen, und gespeichert wird erst nach Freigabe durch einen Menschen."
+    "**So wehrt die App ab:** festes Antwortformat ohne Preise oder Freigaben, Warnung bei Anweisungen im Text, "
+    "Mengenprüfung – und gespeichert wird erst nach Freigabe durch einen Menschen."
 )
 
 
@@ -130,7 +129,7 @@ def order_saved(order_id: int, customer_name: str, delivery_date: date, net_tota
     st.session_state.sap_order_id = order_id  # Prozessseite zeigt dann gleich diesen Auftrag
     st.session_state.chat_saved = (
         f"Auftrag **{order_id}** für **{customer_name}** gespeichert – {format_eur(net_total)} netto, "
-        f"Lieferung am {format_date(delivery_date)}. Die Bestätigung steht im Chat, der Auftrag im Dashboard."
+        f"Lieferung am {format_date(delivery_date)}."
     )
 
 
@@ -203,8 +202,7 @@ def mode_info(key: str | None, session_left: int, day_left: int) -> bool:
     else:
         st.badge("Demo-Modus", icon=":material/science:", color="gray")
         if key is None:
-            st.caption("Kein API-Schlüssel hinterlegt – die Beispielvorschläge liefern vorbereitete KI-Ergebnisse "
-                       "im selben Format wie die Live-KI.")
+            st.caption("Ohne API-Schlüssel: Die Vorschläge liefern vorbereitete KI-Ergebnisse im echten Format.")
         elif not available:
             st.caption("Das Live-Kontingent ist aufgebraucht – die Beispielvorschläge funktionieren weiterhin.")
     return live
@@ -220,7 +218,7 @@ def chat_view() -> None:
         st.subheader("Bestellung per Messenger")
         live = mode_info(key, session_left, day_left)
 
-        st.markdown("**Beispiel ausprobieren** – oder selbst eine Bestellung schreiben:")
+        st.markdown("**Beispiel antippen** – oder selbst schreiben:")
         with st.container(horizontal=True, key="chat-examples"):
             for example in CHAT_EXAMPLES:
                 st.button(example.title, icon=EXAMPLE_ICONS[example.title], key=f"example_{example.title}",
@@ -248,11 +246,10 @@ def chat_view() -> None:
                           on_submit=send)
 
         if open_replies:
-            st.caption("Tipp: Rückfragen bitte über die Knöpfe beantworten – eine neue Nachricht gilt als "
-                       "neue Bestellung.")
+            st.caption("Rückfragen bitte per Knopf beantworten – eine neue Nachricht gilt als neue Bestellung.")
         if live:
-            st.caption(f"Kostenschutz: in diesem Besuch noch {session_left}, heute insgesamt noch {day_left} "
-                       "Live-Auswertungen. Eine Auswertung kostet weniger als 1 US-Cent.")
+            st.caption(f"Kostenschutz: noch {session_left} Live-Auswertungen in diesem Besuch, {day_left} heute – "
+                       "je unter 1 US-Cent.")
         st.button("Chat neu starten", icon=":material/restart_alt:", on_click=reset, key="chat_reset")
 
     with right, st.container(key="card-chat-order"):
@@ -264,8 +261,7 @@ def chat_view() -> None:
         capture = st.session_state.get("chat_capture")
         if capture is None:
             ui.illustrated_message("empty_inbox", "Noch keine Bestellung im Chat",
-                                   "Tippe links auf einen Vorschlag oder schreib selbst eine Bestellung – "
-                                   "hier entsteht dann der Auftrag.")
+                                   "Vorschlag antippen oder selbst schreiben – hier entsteht dann der Auftrag.")
             return
         steps = st.empty()  # „Auftrag entsteht“ oben – wird nach der Prüfung mit dem aktuellen Stand gefüllt
         if capture["animate"]:  # nur beim ersten Anzeigen: Schritt für Schritt aufbauen

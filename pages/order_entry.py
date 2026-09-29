@@ -50,7 +50,7 @@ def inbox_saved(order_id: int, customer_name: str, delivery_date: date, net_tota
     st.session_state.sap_order_id = order_id  # Prozessseite zeigt dann gleich diesen Auftrag
     st.session_state.inbox_saved = (
         f"Auftrag **{order_id}** für **{customer_name}** gespeichert – {format_eur(net_total)} netto, "
-        f"Lieferung am {format_date(delivery_date)}. Er erscheint jetzt auch im Dashboard."
+        f"Lieferung am {format_date(delivery_date)}."
     )
 
 
@@ -84,8 +84,8 @@ def inbox_view() -> None:
             sender_col, channel_col = st.columns([3, 2])
             sender = sender_col.text_input("Absender", placeholder="z. B. Gasthof Huber")
             channel = channel_col.selectbox("Kanal", ORDER_CHANNELS, index=ORDER_CHANNELS.index("WhatsApp"))
-            st.caption(":material/shield: Der Text wird zur Auswertung an Anthropic (Claude-API) übertragen – "
-                       "bitte keine echten Namen, Telefonnummern oder anderen personenbezogenen Daten eingeben.")
+            st.caption(":material/shield: Der Text geht zur Auswertung an Anthropic (Claude-API) – bitte keine "
+                       "echten personenbezogenen Daten eingeben.")
             message = IncomingMessage(text, sender, channel)
         else:
             demo = DEMO_MESSAGES[choice]
@@ -106,19 +106,13 @@ def inbox_view() -> None:
                 st.rerun()  # Seite neu zeichnen, damit die Zähler unten schon den neuen Stand zeigen
             if reason and message.text.strip():
                 st.caption(f"⚠️ {reason}")
-            st.caption(
-                f"**KI live** mit {MODELS[MODEL].name}: Eine Auswertung kostet weniger als 1 US-Cent. Zum Schutz "
-                f"vor hohen Kosten: in diesem Besuch noch {session_left}, heute insgesamt noch {day_left} "
-                "Live-Auswertungen."
-            )
+            st.caption(f"Kostenschutz: noch {session_left} Live-Auswertungen in diesem Besuch, {day_left} heute – "
+                       "je unter 1 US-Cent.")
         else:
             if st.button("Mit KI auswerten", type="primary", icon=":material/smart_toy:", width="stretch"):
                 inbox_extract(DemoExtractor(), message, source_key, live=False)
-            st.caption(
-                "**Demo-Modus:** Das KI-Ergebnis ist vorbereitet und hat genau das Format, das die echte KI liefert. "
-                "Alles danach – Abgleich, Prüfung, Speichern – läuft live. Im Modus **KI live** wertet Claude "
-                "die Nachrichten wirklich aus – auch eigene Texte."
-            )
+            st.caption("Demo: vorbereitetes KI-Ergebnis im echten Format – Abgleich, Prüfung und Speichern laufen "
+                       "live.")
 
     with right, st.container(key="card-proposal"):
         st.subheader("Auftragsvorschlag")
@@ -133,7 +127,7 @@ def inbox_view() -> None:
         if capture is None or capture.get("source_key") != source_key:
             # Leerzustand wie die Fiori-„Illustrated Message“
             ui.illustrated_message("empty_inbox", "Noch keine Nachricht ausgewertet",
-                                   "Wähle links eine Nachricht und lass sie von der KI auswerten.")
+                                   "Nachricht wählen und von der KI auswerten lassen.")
         else:
             capture_ui.show_proposal(capture, "inbox_", inbox_saved)
 
@@ -141,8 +135,7 @@ def inbox_view() -> None:
 # ================= Seitenaufbau =================
 
 ui.page_header("KI-Auftragserfassung",
-               "Freitext rein, sauberer Auftrag raus – die KI schlägt vor, der Mensch prüft und bestätigt.",
-               "message")
+               "Freitext rein, geprüfter Auftrag raus – die KI schlägt vor, der Mensch bestätigt.", "message")
 
 chat_tab, inbox_tab = st.tabs([":material/smartphone: Live-Chat", ":material/inbox: Posteingang (7 Beispiele)"])
 with chat_tab:
@@ -151,7 +144,8 @@ with inbox_tab:
     inbox_view()
 
 with st.container(key="card-captured"):
-    st.subheader("Erfasste Aufträge")
+    st.subheader("Erfasste Aufträge", anchor=False,
+                 help="In der Online-Demo werden erfasste Aufträge beim Neustart der App zurückgesetzt.")
     with closing(get_connection()) as conn:
         saved_orders = captured_orders(conn)
     if saved_orders:
@@ -167,4 +161,3 @@ with st.container(key="card-captured"):
             st.rerun()
     else:
         st.caption("Noch keine Aufträge erfasst.")
-    st.caption("In der Online-Demo werden erfasste Aufträge beim Neustart der App zurückgesetzt.")
