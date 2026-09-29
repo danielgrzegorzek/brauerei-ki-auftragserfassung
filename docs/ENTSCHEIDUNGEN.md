@@ -7,18 +7,18 @@ Dieses Dokument hält fest, **welche Entscheidungen** in diesem Projekt getroffe
 
 ```
 app.py                 Rahmen: Datenbank sicherstellen, Gestaltung laden, Seitennavigation
-ui.py                  Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Kacheln, Illustrationen)
+ui.py                  Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Leerzustand, SVG-Einbettung)
 ui_capture.py          Bausteine der Auftragserfassung: Auftragsvorschlag, „Auftrag entsteht“, Kontingent
 ui_chat.py             Messenger-Ansicht: Handy im Chat-Stil, Beispielvorschläge, Live-KI mit Demo-Rückfall
 ui_tour.py             geführte Tour: Band oben auf jeder Seite, Seitenwechsel
-assets/                Logo, SVG-Illustrationen, Stylesheet
+assets/                Logo, Piktogramme, Leerzustands-Illustration, Stylesheet
 pages/                 Oberfläche (Streamlit) – nur Anzeige und Eingaben
-  home.py              Startseite mit Datenbasis und Plausibilitäts-Check
+  home.py              Startseite als Launchpad: ein Satz, Tour-Knopf, Kacheln mit je einer Kennzahl
   dashboard.py         Vertriebs-Dashboard
   order_entry.py       KI-Auftragserfassung mit Bestätigung durch den Menschen
-  business_case.py     Business Case: vorher/nachher mit Schiebereglern
-  process.py           Prozess & SAP-Übergabe: Ist/Soll als Schwimmbahnen, Kundenauftrag für SAP S/4HANA
-  making_of.py         Making-of: Rolle, Entscheidungen als Zeitleiste, Evaluation, Gelerntes, Kennzahlen
+  business_case.py     Business Case: drei Kennzahlen, Vergleich; Annahmen und Rechenweg eingeklappt
+  process.py           Prozess & SAP-Übergabe: Ist/Soll als Schwimmbahnen, Kundenauftrag als Object Page
+  making_of.py         Making-of: Rolle, Entscheidungen als Zeitleiste, Links
 src/                   Logik ohne Streamlit – vollständig testbar
   database.py          Schema, Verbindung, Schemaversion
   master_data.py       Stammdaten: Artikel, Leergut, Preise, Kunden
@@ -38,7 +38,7 @@ src/                   Logik ohne Streamlit – vollständig testbar
   tour.py              Inhalt der geführten Tour (sechs Schritte, Zahlen aus den Daten)
   process.py           Ist- und Soll-Prozess als Daten, Kennzahlen (manuelle Schritte, Minuten, Medienbrüche)
   sap_mapping.py       Übergabe an SAP S/4HANA: Kundenauftrag (OData), Vollständigkeit, Feld-Mapping
-  making_of.py         Inhalt der Making-of-Seite (Zeitleiste, Evaluationsverlauf, Kennzahlen)
+  making_of.py         Inhalt der Making-of-Seite (Rolle, Zeitleiste, Links)
   order_capture.py     Abgleich → Prüfung → Speichern
 tests/                 automatische Tests (pytest)
 tools/                 Evaluation der KI-Auswertung (docs/evaluation.json → docs/EVALUATION.md)
@@ -207,12 +207,12 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 | **Vorsichtige Standardwerte**, jeder mit einem Satz Begründung (Fragezeichen am Regler): 6 → 2 min je Auftrag, 40 €/h, Fehlerquote 2 % → 1 %, 50 € je Fehler | Die Rechnung soll auch einer skeptischen Prüfung standhalten; jede Annahme ist ein Regler. Ergebnis mit diesen Werten: rund 217 Stunden und 8.300 € pro Jahr, 33 vermiedene Fehler. | Optimistische Werte (z. B. 10 min, 60 €/h): größere Zahlen, aber unglaubwürdig. |
 | **Betrieb & Wartung** (2.000 €/Jahr) wird abgezogen – über den Auftrag hinaus ergänzt | Nur die KI-Aufrufe abzuziehen würde die Ersparnis schönrechnen: Hosting, Updates und die regelmäßige Kontrolle der KI-Qualität kosten auch. | Das einmalige Einführungsprojekt ist bewusst nicht enthalten (projektabhängig) – im Rechenweg genannt. |
 | **Negative Ergebnisse werden gezeigt** | Glaubwürdigkeit: Mit ungünstigen Annahmen zeigt der Rechner ehrlich einen Verlust. | – |
-| **Ergebnis zuerst** (drei Kennzahlen und ein Satz), darunter Annahmen, Vergleich und Rechenweg | Wer die Seite 30 Sekunden ansieht, soll das Ergebnis sehen – auch auf dem Handy ganz oben. | – |
-| **Rechenweg aufklappbar**, jede Zeile mit den aktuellen, **ungerundeten** Zwischenwerten (325,8 h × 40 € = 13.032 €) | Nachvollziehbar statt Blackbox – jede Zeile muss beim Nachrechnen aufgehen. Der Satz unter den Kennzahlen rechnet ebenfalls auf: Zeit + Fehler − KI − Betrieb = Ergebnis. | Gerundete Zwischenwerte: gehen nicht auf (vom Review gefunden). |
+| **Ergebnis zuerst:** drei große Kennzahlen, darunter der Vergleich; Annahmen und Rechenweg eingeklappt (seit der Design-Überarbeitung, Abschnitt 15) | Wer die Seite 30 Sekunden ansieht, soll das Ergebnis sehen – auch auf dem Handy ganz oben. | Annahmen offen neben dem Diagramm (bis zur Überarbeitung): mehr Text als Fokus. |
+| **Rechenweg aufklappbar**, jede Zeile mit den aktuellen, **ungerundeten** Zwischenwerten (325,8 h × 40 € = 13.032 €) | Nachvollziehbar statt Blackbox – jede Zeile muss beim Nachrechnen aufgehen. Der Satz am Anfang des Rechenwegs rechnet ebenfalls auf: Zeit + Fehler − KI − Betrieb = Ergebnis. | Gerundete Zwischenwerte: gehen nicht auf (vom Review gefunden). |
 | Rechenlogik in **`src/business_case.py`**, getestet mit einem von Hand nachgerechneten Beispiel | Die Seite zeigt nur an; jede Zahl ist im Test nachvollziehbar. | – |
 | Vergleich als **gestapelte waagrechte Balken** (vorher/mit KI) mit Blau/Orange/Aqua, mit dem Prüfskript für hell und dunkel validiert | Zeigt Gesamtkosten und Zusammensetzung auf einen Blick. Grau fiel als Kategoriefarbe durch (zu farblos, zu wenig Kontrast), das helle Orange im Dunkelmodus. | Zwei getrennte Diagramme: schwerer zu vergleichen. |
 | Summe unter dem Balkennamen, Werte im Segment (nie gedreht, Schwarz oder Weiß nach Kontrast), **Legende als HTML** über dem Diagramm | Auf dem Handy überdeckte die Plotly-Legende die Balken; die HTML-Legende bricht sauber um. Farbe ist nie das einzige Merkmal; dazu die Tabellenansicht. | – |
-| **Nutzen ohne Euro** mit Zahlen aus den Daten (stärkster vs. ruhigster Monat, **alle Kanäle**) | „Entlastung in der Hochsaison“ wird greifbar: im September 36 % mehr Bestellungen als im Februar. Nur WhatsApp + E-Mail hätten 60 % ergeben – verzerrt, weil deren Anteil über die Zeit wächst. | – |
+| **Nutzen ohne Euro** als vier kurze Stichpunkte (Badges) unter dem Diagramm | Seit der Design-Überarbeitung ohne Absätze: Hochsaison, Rückmeldung in Sekunden, Wissen nicht nur im Kopf Einzelner, saubere Daten. | Absätze mit Zahlen aus den Daten (bis zur Überarbeitung, z. B. im September 36 % mehr Bestellungen als im Februar): genauer, aber viel Text. |
 | **Ehrliche Sprache:** „Auftragszahlen aus der Datenbank (simuliert)“, „gemessen“ nur für echte Messungen, sonst „angenommen“ | Eine Seite, die auf Ehrlichkeit setzt, darf simulierte Daten nicht „echt“ nennen. Fehlgeschlagene Messläufe zählen nicht als Messung. | – |
 | Reglerwerte bleiben beim **Seitenwechsel** erhalten (`persist_state="session"`) | Wer zwischendurch ins Dashboard schaut, verliert seine Annahmen nicht. | – |
 | **Code-Review mit Gegenprüfung** (Rechnung, Streamlit, Diagramm/Barrierefreiheit), jeder Fund gegengeprüft | Unter anderem gefunden: Telefon-Widerspruch, Rechenweg ging nicht auf, zu wenig Kontrast der Zahlen im Diagramm (jetzt schwarz/weiß nach WCAG ≥ 4,5:1). | – |
@@ -222,13 +222,13 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
-| **Geführte Tour** in sechs Schritten (Problem → Live-KI → Prüfung und Mensch → SAP-Übergabe → Business Case → Dashboard und Fazit), je ein bis zwei Sätze | Wer die App ein, zwei Minuten ansieht – oft auf dem Handy –, soll ohne Suchen Problem, Lösung, Nutzen und Fazit sehen. | Nur ein Video: nicht zum Ausprobieren. |
+| **Geführte Tour** in sechs Schritten (Problem → Live-KI → Prüfung und Mensch → SAP-Übergabe → Business Case → Dashboard und Fazit), je genau ein Satz | Wer die App ein, zwei Minuten ansieht – oft auf dem Handy –, soll ohne Suchen Problem, Lösung, Nutzen und Fazit sehen. | Nur ein Video: nicht zum Ausprobieren. |
 | Tour als **Band oben auf der Seite**, „Weiter“ wechselt auf die passende Seite (`st.switch_page`) | Die Seite bleibt sichtbar und bedienbar – man probiert direkt aus, was die Tour erklärt. | Dialogfenster: verdeckt genau das, was erklärt wird. |
-| Tour-Inhalt in **`src/tour.py`**, Zahlen aus den Daten; das Band zeichnet `app.py` vor jeder Seite | Keine fest eingetippten Zahlen; testbar (sechs Schritte, ein bis zwei Sätze, Seiten existieren); auf allen Seiten gleich. | – |
+| Tour-Inhalt in **`src/tour.py`**, Zahlen aus den Daten; das Band zeichnet `app.py` vor jeder Seite | Keine fest eingetippten Zahlen; testbar (sechs Schritte, je ein Satz, Seiten existieren); auf allen Seiten gleich. | – |
 | Link **„Zu diesem Schritt springen“**, wenn man während der Tour selbst navigiert | Wer abschweift, findet zurück, ohne neu zu starten. | – |
 | Dank-Hinweis nach dem Abschluss über den Session State | `st.rerun()` verwirft einen vorher gesetzten Hinweis – im Browser aufgefallen. | – |
-| **Startseite:** ein Satz, worum es geht; Knopf „In 60 Sekunden durch die App“ und „Direkt ausprobieren“; drei **Highlights mit Kennzahl** (7 von 7, Stunden pro Jahr, analysierte Aufträge) | In Sekunden verständlich: Problem, Lösung, Beleg. Die Kacheln führen zu Live-Chat, Business Case und Dashboard. | – |
-| Highlights aus **denselben Funktionen** wie Evaluation und Business Case (`measured_ai_cost`, `default_result`) | Startseite, Tour und Detailseite zeigen immer dieselben Zahlen. | Zahlen im Text pflegen: veralten unbemerkt. |
+| **Startseite** als Launchpad: ein Satz, worum es geht, Knopf „In 60 Sekunden durch die App“ und fünf Kacheln (Details in Abschnitt 15) | In Sekunden verständlich; jede Kachel führt zu einer Seite. | Highlights und Datenbasis auf der Startseite (bis zur Überarbeitung): mehr Belege, aber kein klarer Fokus. |
+| Kennzahlen der Kacheln aus **denselben Funktionen** wie die Fachseiten (`default_result`, `analytics.kpis`, `process.figures`) | Startseite, Tour und Detailseite zeigen immer dieselben Zahlen. | Zahlen im Text pflegen: veralten unbemerkt. |
 | **README:** oben ein Satz Problem, ein Satz Lösung, Live-Link, Platzhalter für Animation und Video; danach KI-Einsatz, Sicherheit, Evaluation, Business Case, Architektur, Installation | Leser entscheiden in Sekunden, ob sie weiterlesen; Fachleute finden die Details darunter. | – |
 | Startseite rechnet mit dem **Zeitraum der Historie** (`analytics.history_period`) | Nach dem 30.09. erfasste Demo-Aufträge würden sonst Zeitraum und 12-Monats-Umsatz verschieben. | – |
 | **Code-Review mit Gegenprüfung** auch für Tour und README | Gefunden: Die Tour versprach Leergut im Dashboard (wird aber erst bei der Lieferung gebucht), „rechts“ stimmt auf dem Handy nicht, die Vorschläge stehen über dem Handy, das README verallgemeinerte den Demo-Rückfall. Texte, die Bedienung beschreiben, müssen genau stimmen. | – |
@@ -276,9 +276,9 @@ Gastronomie, Großhandel); die **Sparte** der Produktbereich. Alle drei zusammen
 | **Kundennummer → Geschäftspartner** über eine feste Regel (K1001 → 10001001) | Macht das nötige Schlüsselmapping sichtbar. Den Warenempfänger leitet SAP aus dem Geschäftspartner ab. | Im Echtbetrieb eine Zuordnungstabelle oder die Nummer direkt aus SAP. |
 | **Bestellnummer des Kunden** = „App-Auftrag <Nr.> · <Kanal>“, höchstens 35 Zeichen | So findet man den Auftrag in SAP wieder und sieht, woher er kam. | – |
 | **Vollständigkeitsprüfung** vor der Übergabe | Angelehnt an SAPs Unvollständigkeitsprotokoll: Fehlt ein Pflichtfeld, gibt es keinen Download. | – |
-| **Simulation:** Die Seite zeigt Feld-Mapping, JSON und HTTP-Aufruf und bietet das JSON zum Herunterladen an | Kein SAP-System verfügbar; so ist trotzdem genau prüfbar, was übergeben würde. | Echte Anbindung: Kommunikationsszenario mit technischem Benutzer, CSRF-Token, Antwort „201 Created“ mit Auftragsnummer. |
+| **Simulation** als Object Page (Abschnitt 15): Positionen, Organisationsdaten, Feld-Mapping, JSON und HTTP-Aufruf, JSON zum Herunterladen, „Übergabe simulieren“ | Kein SAP-System verfügbar; so ist trotzdem genau prüfbar, was übergeben würde. | Echte Anbindung: Kommunikationsszenario mit technischem Benutzer, CSRF-Token, Antwort „201 Created“ mit Auftragsnummer. |
 | **Ist- und Soll-Prozess als Daten** (`src/process.py`), Kennzahlen daraus berechnet | Ein Test koppelt die Minuten an den Business Case (6 bzw. 2) – Prozessseite, Startseite und Tour zeigen dieselben Zahlen. | Prozessbild als Grafik: veraltet unbemerkt. |
-| Soll-Prozess und Kennzahlen gelten **für WhatsApp und E-Mail**; die Seite sagt dazu, dass Anrufe weiterhin mitgeschrieben werden (4 statt 6 min) | Wie im Business Case, wo Telefon nur zuschaltbar ist. Die Kanäle kommen aus `DEFAULT_CHANNELS`, ein Test prüft es. | Anrufe per Spracherkennung: eigener Baustein, hier nicht umgesetzt. |
+| Soll-Prozess und Kennzahlen gelten **für WhatsApp und E-Mail**; die Seite sagt dazu (im Fragezeichen der Kennzahl „Arbeitszeit“), dass Anrufe weiterhin mitgeschrieben werden (4 statt 6 min) | Wie im Business Case, wo Telefon nur zuschaltbar ist. Die Kanäle kommen aus `DEFAULT_CHANNELS`, ein Test prüft es. | Anrufe per Spracherkennung: eigener Baustein, hier nicht umgesetzt. |
 | **Schwimmbahnen** (eine Bahn je Rolle) in HTML/CSS, unter 1100 px eine nummerierte Liste mit Rollen-Etikett; weiche Trennstriche in langen Wörtern | Bekannte Darstellung aus BPMN; ohne zusätzliche Bibliothek, hell und dunkel; die Art des Schritts steht als Text und als Farbe. Kein seitliches Scrollen, keine mitten im Wort zerschnittenen Begriffe. | Diagramm-Bibliothek (z. B. Mermaid): in Streamlit nicht eingebaut. |
 | Nach dem Speichern ein Link **„So sähe die Übergabe an SAP aus“**; die Seite wählt diesen Auftrag vor | Der Weg von der Nachricht bis ins ERP ist mit einem Klick nachvollziehbar. | – |
 | Feld-Mapping als **statische Tabelle** (`st.table`) | Lange Werte werden umgebrochen statt abgeschnitten – im Browser aufgefallen. | `st.dataframe`: sortierbar, kürzt aber lange Texte. |
@@ -288,10 +288,10 @@ Gastronomie, Großhandel); die **Sparte** der Produktbereich. Alle drei zusammen
 
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
-| Zeile **„Ein Portfolio-Projekt von …“ oben auf jeder Seite**, mit Links zu Making-of und Portfolio | Wer über einen Link direkt auf eine Unterseite kommt, sieht sofort, von wem die App ist. Eine dezente Zeile, damit sie die Fachseiten nicht überlagert; auf dem Handy stehen die Links in einer eigenen Zeile. | Nur auf der Startseite: Besucher von Unterseiten sähen ihn nicht. |
+| Zeile **„Portfolio-Projekt von … · Simulation mit fiktiven Daten“ oben auf jeder Seite**, mit Links zu Making-of und Portfolio | Wer über einen Link direkt auf eine Unterseite kommt, sieht sofort, von wem die App ist. Eine dezente Zeile, damit sie die Fachseiten nicht überlagert; auf dem Handy stehen die Links in einer eigenen Zeile. | Nur auf der Startseite: Besucher von Unterseiten sähen ihn nicht. |
 | **Making-of** als eigene Seite mit ehrlicher Rollenverteilung: Szenario, Anforderungen, Geschäftsregeln, Prüfung und Entscheidungen vom Autor, der Code von Claude Code | Der KI-Einsatz ist Teil des Projekts – offen benannt ist er glaubwürdiger als verschwiegen. | – |
 | Zeitleiste nur mit Entscheidungen, die **nachweislich vom Autor** stammen; Inhalt in `src/making_of.py`, Tests koppeln ihn an Code und Messung (14-Uhr-Regel, 7 von 7 aus `docs/evaluation.json`) | Die Seite darf nichts behaupten, was die App nicht tut. Beim Schreiben fiel so auf, dass der Bestellschluss noch fehlte – er wurde daraufhin eingebaut. | Freier Text in der Seite: veraltet unbemerkt. |
-| Tests und Commits als **Zahlen mit Stand-Datum**; die Entscheidungen werden beim Aufruf aus dieser Datei gezählt | In der Cloud gibt es weder einen Testlauf noch die Git-Historie; diese Datei liegt dagegen mit im Repository. | – |
+| Tests und Commits als **Zahlen mit Stand-Datum**; die Entscheidungen werden beim Aufruf aus dieser Datei gezählt | In der Cloud gibt es weder einen Testlauf noch die Git-Historie; diese Datei liegt dagegen mit im Repository. Seit der Design-Überarbeitung nicht mehr angezeigt (die Werte bleiben in `src/making_of.py`). | – |
 | Neuer Code als **neue Module** (`src/making_of.py`, Seite, Piktogramme); frisch geladene Dateien importieren keine neuen Namen aus bestehenden Modulen | Streamlit Cloud behält bereits geladene Module nach einem Update im Speicher – so entsteht kein `ImportError`, auch ohne Neustart der App. | Neustart nach jedem Update: nur über das Konto des Besitzers möglich. |
 
 ## 14. Demo-Video
@@ -304,7 +304,31 @@ Gastronomie, Großhandel); die **Sparte** der Produktbereich. Alle drei zusammen
 | **Ohne Kennzahlen** (keine Evaluation, kein Business Case) – Ablauf: Dialekt → Auftrag → Freigabe → Angriff → SAP-Übergabe | Das Video zeigt, wie die App arbeitet; Zahlen aus dem fiktiven Szenario stehen auf den Fachseiten mit ihren Annahmen. | – |
 | Aufnahme **vor 14 Uhr** | Nach dem Bestellschluss warnt die App beim Dialekt-Beispiel („bis morgn“) zu Recht – die Prüfung wäre dann nicht grün. | – |
 
-## 15. Bewusste Grenzen
+## 15. Design-Überarbeitung: ruhiger, weniger Text
+
+Ziel: übersichtlicher und ruhiger, fast nur Überschriften, Kennzahlen und Visualisierungen – ohne neue
+Funktionen und ohne Änderung an der Logik in `src/` (dort änderten sich nur Texte: Tour und Rollen-Satz).
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| **Höchstens ein Satz** unter jedem Seitentitel, keine Absätze und Info-Boxen mit Fließtext; Fachdetails (Annahmen, Rechenweg, Feld-Erklärungen, SAP-Begriffe) nur **eingeklappt** oder im Fragezeichen | Wer die App kurz ansieht, erfasst jede Seite in Sekunden; Fachleute finden die Details weiterhin. | Erklärende Absätze (bis zur Überarbeitung): vollständiger, aber viel zu lesen. |
+| **Hinweiszeile mit Simulationskennzeichen** („Portfolio-Projekt von … · Simulation mit fiktiven Daten“) auf jeder Seite statt Fußzeilen je Seite | Autor und Simulation sind überall sichtbar – in einer Zeile, auf dem Handy in zwei. | Fußzeile je Seite: leicht übersehen, mehr Text. |
+| **Seitenkopf ohne Karte**, direkt auf dem Hintergrund | Eine Box weniger je Seite; die Karten bleiben dem Inhalt vorbehalten. | Seitenkopf als Karte (bis zur Überarbeitung). |
+| **Startseite als Fiori-Launchpad:** Titel, ein Satz, Tour-Knopf, fünf gleich große Kacheln (Titel, Symbol, eine Kennzahl); auf dem Handy zwei je Reihe | Wie der Einstieg in SAP: ein Blick, ein Klick. Der Kacheltitel ist zugleich der Link und liegt über der ganzen Kachel. | Highlights, Datenbasis und Plausibilitäts-Check auf der Startseite: der Check läuft jetzt nur noch per Befehl und in den Tests. |
+| Kacheln mit **fachlichen Kennzahlen**, wie sie ein Mitarbeiter der Brauerei sähe: 7 Nachrichten im Posteingang, Umsatz der letzten 12 Monate, 6 → 1 manuelle Schritte, Ersparnis pro Jahr; Making-of nur mit Symbol | Das Launchpad zeigt das Geschäft, nicht das Projekt – vom Autor so festgelegt. | Projekt-Kennzahlen (7 von 7, Tests): gehören ins Making-of bzw. auf GitHub. |
+| **UI5 Web Components geprüft und verworfen** – die Object Page ist mit Streamlit und eigenem CSS nachgebaut | Technisch möglich (Streamlit 1.64 bindet eigene Bausteine ohne iframe ein), aber: Die „Object Page“ gibt es nur in UI5 für React; ohne Node-Build käme UI5 bei jedem Besuch als viele Einzeldateien aus einem fremden CDN; UI5 lädt standardmäßig die SAP-Schrift „72“; der JavaScript-Teil wäre für Tests und Erklärung eine zweite App. | UI5 Web Components: originalgetreuer, aber großer Aufwand und fremde Abhängigkeit zur Laufzeit. |
+| **SAP-Übergabe als Object Page eines Kundenauftrags:** Kopf mit Kennzeichnung „Simulation, kein SAP-Produkt“, Status (Farbe **und** Text) und Schlüsselwerten; Reiter Positionen, Organisationsdaten, Feld-Mapping, Nutzdaten (JSON); Fußleiste mit Message Strip, Download und „Übergabe simulieren“ | So sähe der Auftrag in einer Fiori-App aus; die Fußleiste bleibt beim Scrollen sichtbar (am Handy im Fluss). „Übergabe simulieren“ sendet nichts, sondern zeigt, was SAP antworten würde. | Alles untereinander (bis zur Überarbeitung): lang und textlastig. |
+| Status „Übergabe simuliert“ merkt sich **Auftrag und Inhalt** | Nach „Demo zurücksetzen“ vergibt die App Auftragsnummern neu – nur mit der Nummer galt ein anderer Auftrag als schon übergeben (von der Gegenprüfung gefunden). | – |
+| **Schwimmbahnen ohne Notizzeilen;** im Ist-Prozess ein Warnsymbol je Schwachstelle, der Text als Tooltip (Maus, Tastatur, Antippen; Screenreader über `aria-label`) | Die Bahnen zeigen den Ablauf auf einen Blick; die Schwachstellen bleiben erreichbar – vom Autor so festgelegt. | Tooltips lassen sich ohne JavaScript nicht per Esc schließen; die Soll-Notizen bleiben als Daten in `src/process.py`, werden aber nicht angezeigt. |
+| Vorher/nachher auf der Prozessseite **nur als Kennzahlen** („6 → 1“, „6 → 2 min“, „2 → 0“, „Std. → Sek.“) | Der Vergleich steht im Wert selbst, ohne Begleittext. | Wert mit Veränderung „−5 gegenüber heute“: zwei Zahlen für eine Aussage. |
+| **`st.fragment`** für Business Case, Dashboard und SAP-Übergabe | Ein Regler, ein Filter oder die Auftragswahl lädt nur diesen Teil neu, nicht die ganze Seite mit Rahmen und Tour – ruhiger und schneller. Im Dashboard ersetzt `return` das `st.stop()`. | Nicht in der Auftragserfassung: Chat, Auftragsvorschlag und Tabelle hängen eng zusammen – dort überwiegt das Risiko veralteter Anzeigen. |
+| **Kennzahlen auf dem Handy** zwei je Reihe (Prozess, Dashboard); Beschriftungen brechen an Wortgrenzen um statt mit „…“ abzuschneiden | Keine hohen Einzelkarten untereinander, keine abgeschnittenen Begriffe. | – |
+| **Making-of gekürzt:** Rolle in zwei Sätzen, Zeitleiste mit einer Zeile je Entscheidung (Phase · Titel), vier Links (Portfolio, GitHub, Entscheidungen, Evaluationsbericht) | Die Seite beantwortet „Wer hat was gemacht, und was wurde entschieden?“ in Sekunden; alles Weitere steht verlinkt auf GitHub. | Warum-Text, Evaluationsverlauf, Gelerntes und Projektzahlen: entfernt, die Inhalte bleiben in `src/making_of.py`. |
+| **Tour: genau ein Satz je Schritt**, passend zu den gekürzten Seiten (verweist auf „Übergabe simulieren“ und „Annahmen anpassen“) | Das Tour-Band bleibt klein, auch auf dem Handy. | – |
+| Streamlits **Hülle um Container** (`stLayoutWrapper`) trägt Größe und `sticky` | Streamlit gibt dem Container selbst `flex: 1` und legt eine Hülle darum – Breite, Höhe und die klebende Fußleiste wirken nur an der Hülle (im Browser und in der Gegenprüfung gefunden). | CSS hängt an Streamlit-Interna – feste Paketversion 1.64. |
+| **Prüfung je Seite** im Browser (hell, dunkel, 1280 px, 390 px, höchstens zwei Nachbesserungsrunden) und **Code-Review mit Gegenprüfung** in zwei Durchgängen | Gefunden und behoben u. a.: Kachelgrößen, abgeschnittene Beschriftungen, Fußleiste klebte nicht, Tooltip verschwand beim Darüberfahren, Kontrast des Status „Bereit zur Übergabe“ (jetzt mindestens 4,5 : 1), veralteter Status nach neu vergebener Auftragsnummer. | – |
+
+## 16. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).

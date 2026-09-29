@@ -71,9 +71,11 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 ## Projektstruktur
 
 - `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), `ui.apply_style()`, Navigation (`st.navigation`),
-  Hinweiszeile „Ein Portfolio-Projekt von …“ (Container `portfolio-note`) über jeder Seite
-- `ui.py` – Oberflächen-Bausteine im Fiori-Stil (bewusst außerhalb von `src/`): `page_header`, `tile`,
-  `illustration`, `illustrated_message`, `image_uri`; Farbvariablen je Hell/Dunkel in `COLORS`
+  Hinweiszeile „Portfolio-Projekt von … · Simulation mit fiktiven Daten“ (Container `portfolio-note`) über
+  jeder Seite
+- `ui.py` – Oberflächen-Bausteine im Fiori-Stil (bewusst außerhalb von `src/`): `page_header` (ohne Karte),
+  `illustrated_message`, `img`/`svg_uri`, `image_uri`, `raw_html`, `chart_legend`; Farbvariablen je
+  Hell/Dunkel in `COLORS`
   (auch `--chat-*` für den Messenger und `--step-*` für „Auftrag entsteht“)
 - `ui_capture.py` – Bausteine der Auftragserfassung für beide Reiter: `show_proposal` (Formular, Prüfung,
   Speichern mit `on_saved`-Callback), `order_steps`/`show_steps` („Auftrag entsteht“), `new_capture`,
@@ -82,12 +84,21 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   (Zurück/Weiter/Beenden, `st.switch_page`); `start()` am Knopf der Startseite. Inhalt: `src/tour.py`
 - `ui_chat.py` – Messenger-Ansicht (`chat_view`): Callbacks `use_example`, `send`, `choose`, `order_saved`;
   `process` (Live-KI, sonst Demo-Rückfall); Chat-HTML immer über `html.escape`
-- `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Illustrationen, Piktogramme
-- `pages/` – Streamlit-Seiten (nur Oberfläche): `home.py`, `dashboard.py`, `order_entry.py`, `business_case.py`,
-  `making_of.py` (Rolle, Zeitleiste, Evaluation 4/7 → 7/7, Gelerntes, Kennzahlen, Links),
-  `process.py` (Schwimmbahnen Ist/Soll + SAP-Übergabe; Vorauswahl über `st.session_state.sap_order_id`,
-  das beide Speicher-Callbacks setzen)
-  (Reiter „Live-Chat“ = `ui_chat.chat_view`, Reiter „Posteingang“ = 7 Beispiele)
+- `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Leerzustands-Illustration
+  (`empty_inbox`), Piktogramme
+- `pages/` – Streamlit-Seiten (nur Oberfläche); Grundsatz seit der Design-Überarbeitung: höchstens ein Satz
+  unter dem Titel, Details eingeklappt oder im Fragezeichen
+  - `home.py` – Launchpad: Titel, ein Satz, Tour-Knopf, Kacheln (`tile` in der Seite selbst; Titel = Seitenlink
+    über der ganzen Kachel; je eine fachliche Kennzahl, Making-of nur Symbol)
+  - `dashboard.py` – `filter_bar`, `kpi_tiles`, `chart_grid` im Fragment `dashboard()`
+  - `order_entry.py` (Reiter „Live-Chat“ = `ui_chat.chat_view`, Reiter „Posteingang“ = 7 Beispiele)
+  - `business_case.py` – Fragment `calculator()`: drei Kennzahlen, Diagramm, Badges; „Annahmen anpassen“ und
+    „Rechenweg“ eingeklappt
+  - `process.py` – Kennzahlen vorher → nachher, Schwimmbahnen (Ist-Schwachstellen als Tooltip), SAP-Übergabe
+    als Object Page im Fragment `sap_handover()` (Kopf, Reiter, Fußleiste mit Message Strip und
+    „Übergabe simulieren“; `sap_simulated` = (Auswahl, JSON)); Vorauswahl über
+    `st.session_state.sap_order_id`, das beide Speicher-Callbacks setzen
+  - `making_of.py` – Rolle (zwei Sätze), Zeitleiste (eine Zeile je Entscheidung), vier Links
 - `src/` – Logik ohne Streamlit:
   - Daten: `database.py` (Schema, `SCHEMA_VERSION`), `master_data.py`, `order_generator.py`,
     `empties_generator.py`, `data_setup.py`, `plausibility.py` (prüft nur `source = 'Historie'`)
@@ -99,8 +110,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
     `calendar_hint`, Antwortschema `OrderSchema`), `ai_usage.py` (Kostenschutz: 1.000 Zeichen,
     5 Aufrufe je Besuch, 30 je Tag; Tabelle `ai_usage`)
   - Tour: `tour.py` (`tour_steps` – sechs Schritte mit Seitenschlüssel aus `app.py`, Zahlen aus den Daten)
-  - Making-of: `making_of.py` (Texte, `DECISIONS` – nur Entscheidungen, die Daniel getroffen hat –,
-    `EVALUATION_STEPS`, `LEARNINGS`, Links; `TESTS`/`COMMITS` mit `FIGURES_AS_OF` von Hand nachziehen)
+  - Making-of: `making_of.py` (`ROLE_INTRO`, `DECISIONS` – nur Entscheidungen, die Daniel getroffen hat –,
+    Links; `WHY`, `BRIDGE`, `EVALUATION_STEPS`, `LEARNINGS`, `TESTS`/`COMMITS` werden seit der
+    Design-Überarbeitung nicht mehr angezeigt, sind aber getestet)
   - Prozess & SAP: `process.py` (`AS_IS`/`TO_BE` als `ProcessStep`, `figures` – Minuten = Business-Case-
     Annahmen, per Test gekoppelt), `sap_mapping.py` (`OrderForSap`, `sales_order_payload` für OData
     `API_SALES_ORDER_SRV`, `missing_fields`, `field_mapping`, `http_request`; ohne Preise und Leergut –
@@ -132,8 +144,14 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - Diagramm-Regeln: eine Akzentfarbe (`charts.PALETTES`, hell/dunkel), Tabellenansicht zu jedem
   Diagramm, keine zweite y-Achse; Theme-Farbe nur unter `[theme.light]`/`[theme.dark]`
 - Nach Änderungen in `src/` oder `ui.py` den Streamlit-Server neu starten (lädt Module nicht immer neu)
-- Oberfläche angelehnt an **SAP Fiori (Horizon)** – eigenes Logo, keine SAP-Marken. Karten entstehen über
-  Container-Keys: `card-…`, `tile-…`, `page-header`, `message-bubble` (CSS über `st-key-<key>`-Klassen).
+- Oberfläche angelehnt an **SAP Fiori (Horizon)** – eigenes Logo, keine SAP-Marken; UI5 Web Components geprüft
+  und verworfen (siehe `docs/ENTSCHEIDUNGEN.md`, Abschnitt 15). Karten entstehen über Container-Keys: `card-…`,
+  `tile-…`, `message-bubble` (CSS über `st-key-<key>`-Klassen); `page-header` steht ohne Karte.
+- **Streamlit legt um jeden Container eine Hülle** (`[data-testid="stLayoutWrapper"]`) und gibt dem Container
+  `flex: 1` – feste Größen und `position: sticky` gehören an die Hülle (`…:has(> .st-key-…)`).
+  Markdown-Blöcke haben unten einen negativen Rand; Kennzahl-Beschriftungen kürzt Streamlit mit „…“.
+- **`st.fragment`** für Business Case, Dashboard und SAP-Übergabe (nur dieser Teil lädt neu); in Fragmenten
+  `return` statt `st.stop()`. Nicht in der Auftragserfassung (Chat, Vorschlag und Tabelle eng gekoppelt).
 - **`st.html` filtert `<style>` und `<svg>`** → eigenes HTML/CSS über `ui.raw_html` (`st.markdown` mit
   `unsafe_allow_html`); SVGs als `<img>` über `ui.img`, das die Modus-Farben in ein CDATA-`<style>` im SVG schreibt.
 - Läuft auf Port 8501 schon ein manuell gestarteter Server, zum Testen die Konfiguration
@@ -210,6 +228,8 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
   Kundenauftrag für die OData-API (JSON + Feld-Mapping, Simulation), 6. Tour-Schritt
 - [x] **Making-of:** Seite „Making-of“, Hinweiszeile auf jeder Seite, Bestellschluss 14 Uhr;
   dazu Daniels Portfolio-Seite im eigenen Repo `danielgrzegorzek.github.io` (statisches HTML/CSS)
+- [x] **Design-Überarbeitung:** ruhiger, weniger Text; Startseite als Launchpad, SAP-Übergabe als Object Page,
+  Fragmente, Tour mit je einem Satz
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video [x] (im Portfolio, per Skript)
 

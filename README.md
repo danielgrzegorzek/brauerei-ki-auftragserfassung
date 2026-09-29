@@ -56,11 +56,12 @@ Nachricht ─► KI versteht (festes Format) ─► Code ordnet zu und prüft �
   kommt erst, wenn ein Mensch auf „Auftrag bestätigen & speichern“ klickt.
 - **Posteingang** (zweiter Reiter): sieben Beispielnachrichten aus WhatsApp, E-Mail und Telefon –
   vom sauberen Großhändler-Auftrag bis zum Neukunden mit Artikel, den es nicht gibt.
-- **Prozess & SAP** zeigt den Ablauf heute und mit KI und wie der bestätigte Auftrag an SAP S/4HANA geht.
+- **Prozess & SAP** zeigt den Ablauf heute und mit KI und den bestätigten Auftrag als Kundenauftrag für
+  SAP S/4HANA – aufgebaut wie eine Fiori-Object-Page, mit „Übergabe simulieren“.
 - **Business Case** und **Vertriebs-Dashboard** zeigen, was das im Jahr bringt und was die Daten über das
   Geschäft verraten.
-- **Making-of** erzählt, wie die App entstanden ist: meine Rolle, meine Entscheidungen als Zeitleiste und wie
-  die Evaluation von 4 auf 7 von 7 kam.
+- **Making-of** zeigt, wie die App entstanden ist: meine Rolle, meine Entscheidungen als Zeitleiste und Links
+  zu Code, Entscheidungen und Evaluationsbericht.
 
 ## KI-Einsatz
 
@@ -110,7 +111,8 @@ Die Seite **Business Case** rechnet vorher (Abtippen) gegen nachher (KI-gestütz
 - **Auftragsmenge aus der Datenbank:** 3.258 Aufträge per WhatsApp und E-Mail in 12 Monaten (simulierte
   Daten); Telefon zuschaltbar – dann vorsichtig mit geringerer Zeitersparnis.
 - **KI-Kosten gemessen** (aus der Evaluation), alles andere **vorsichtige Annahmen** mit Begründung, die man
-  per Schieberegler ändern kann: 6 statt 2 Minuten je Auftrag, 40 € je Stunde, Fehlerquote 2 % statt 1 %.
+  unter „Annahmen anpassen“ per Schieberegler ändern kann: 6 statt 2 Minuten je Auftrag, 40 € je Stunde,
+  Fehlerquote 2 % statt 1 %.
 - **Ergebnis:** rund **217 Stunden und 8.300 € pro Jahr**, 33 vermiedene Fehler – nach Abzug von KI-Kosten
   (28 €) sowie Betrieb und Wartung (2.000 €). Der Rechenweg ist aufklappbar und geht beim Nachrechnen auf;
   mit ungünstigen Annahmen zeigt der Rechner ehrlich einen Verlust.
@@ -129,8 +131,9 @@ ERP kommt:
   Verkaufsorganisation und Sparte.
 - **Bewusst nicht übergeben:** Preise und Leergut – die ermittelt SAP selbst (Konditionstechnik,
   Leergutstückliste).
-- **Vollständigkeitsprüfung**, danach JSON und HTTP-Aufruf zum Ansehen und Herunterladen. Nach dem
-  Speichern eines Auftrags führt ein Link direkt zu seiner Übergabe.
+- **Object Page wie in Fiori:** Kopf mit Status und Schlüsselwerten, Reiter für Positionen,
+  Organisationsdaten, Feld-Mapping und JSON; Vollständigkeitsprüfung, Download und „Übergabe simulieren“.
+  Nach dem Speichern eines Auftrags führt ein Link direkt zu seiner Übergabe.
 - **Simulation:** Es ist kein SAP-System angebunden; alle Nummern sind Beispielwerte.
 
 ## Architektur
@@ -203,6 +206,7 @@ vollständig im Demo-Modus. Evaluation: `python -m tools.evaluate_extraction` (k
 - [x] Geführte Tour „In 60 Sekunden durch die App“
 - [x] Prozessseite: Ist- vs. Soll-Prozess und Übergabe an SAP S/4HANA (simuliert)
 - [x] Making-of-Seite und Bestellschluss 14 Uhr als Geschäftsregel
+- [x] Design-Überarbeitung: ruhiger, weniger Text, Startseite als Launchpad, SAP-Übergabe als Object Page
 - [ ] Regelbasierter Parser als Vergleich „Regeln vs. KI“
 
 ## Hinweise
