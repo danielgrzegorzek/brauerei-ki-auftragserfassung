@@ -248,8 +248,8 @@ def chat_view() -> None:
         if open_replies:
             st.caption("Rückfragen bitte per Knopf beantworten – eine neue Nachricht gilt als neue Bestellung.")
         if live:
-            st.caption(f"Kostenschutz: noch {session_left} Live-Auswertungen in diesem Besuch, {day_left} heute – "
-                       "je unter 1 US-Cent.")
+            st.caption(f"Kostenschutz: Live-Auswertungen in diesem Besuch noch {session_left}, heute insgesamt "
+                       f"noch {day_left} – je unter 1 US-Cent.")
         st.button("Chat neu starten", icon=":material/restart_alt:", on_click=reset, key="chat_reset")
 
     with right, st.container(key="card-chat-order"):

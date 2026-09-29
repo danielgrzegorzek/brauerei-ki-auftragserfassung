@@ -137,7 +137,9 @@ def calculator() -> None:
             st.badge(title, icon=icon, color="gray")
 
     # 4. Annahmen – eingeklappt, jede mit Begründung (Fragezeichen am Regler)
-    with st.expander("Annahmen anpassen", icon=":material/tune:"):
+    # key: Die Warnung bei negativem Ergebnis kommt und geht – ohne festen Schlüssel würde der Bereich dabei
+    # zuklappen, mitten beim Verschieben eines Reglers
+    with st.expander("Annahmen anpassen", icon=":material/tune:", key="bc-assumptions"):
         st.toggle("Telefonaufträge einbeziehen", key="bc_phone", persist_state="session",
                   help="Standard: nur WhatsApp und E-Mail. Telefonaufträge rechnen wir vorsichtig mit eigenen "
                        "Minuten (es schreibt weiterhin jemand mit) und ohne geringere Fehlerquote.")
@@ -160,7 +162,7 @@ def calculator() -> None:
                   key="bc_reset")
 
     # 5. Rechenweg mit Datengrundlage – eingeklappt
-    with st.expander("Rechenweg", icon=":material/calculate:"):
+    with st.expander("Rechenweg", icon=":material/calculate:", key="bc-steps"):
         st.markdown(
             f"Bei **{format_number(inputs.all_orders)} Aufträgen** im Jahr über {channel_text}: "
             f"**{hours_text(result.saved_hours)}** Erfassungsarbeit ({format_eur(result.saved_labor_cost, 0)}) und "

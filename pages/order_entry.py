@@ -106,8 +106,8 @@ def inbox_view() -> None:
                 st.rerun()  # Seite neu zeichnen, damit die Zähler unten schon den neuen Stand zeigen
             if reason and message.text.strip():
                 st.caption(f"⚠️ {reason}")
-            st.caption(f"Kostenschutz: noch {session_left} Live-Auswertungen in diesem Besuch, {day_left} heute – "
-                       "je unter 1 US-Cent.")
+            st.caption(f"Kostenschutz: Live-Auswertungen in diesem Besuch noch {session_left}, heute insgesamt "
+                       f"noch {day_left} – je unter 1 US-Cent.")
         else:
             if st.button("Mit KI auswerten", type="primary", icon=":material/smart_toy:", width="stretch"):
                 inbox_extract(DemoExtractor(), message, source_key, live=False)

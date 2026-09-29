@@ -38,7 +38,7 @@ def tour_steps(orders_per_year: int, saved_hours: float, saved_eur: float) -> li
                  f"Auftrag per {' oder '.join(DEFAULT_CHANNELS)} – darunter der Kundenauftrag für SAP S/4HANA, "
                  "den Sie mit „Übergabe simulieren“ testweise übergeben."),
         TourStep("business_case", "Was es bringt",
-                 f"Mit echten Auftragsmengen und gemessenen KI-Kosten spart die Brauerei rund "
+                 f"Mit den Auftragsmengen aus den (simulierten) Daten und gemessenen KI-Kosten spart die Brauerei rund "
                  f"{format_number(saved_hours)} Stunden und {format_eur(saved_eur, 0)} im Jahr – eigene Annahmen "
                  "stellen Sie unter „Annahmen anpassen“ ein."),
         TourStep("dashboard", "Überblick und Fazit",

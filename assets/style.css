@@ -39,10 +39,10 @@
 }
 /* Handy: Kennzahlen kompakter; die Beschriftung bricht um statt mit „…“ abzuschneiden – aber nicht mitten im Wort */
 @media (max-width: 640px) {
-  [data-testid="stMetric"] { padding: 0.6rem 0.7rem; }
+  [data-testid="stMetric"] { padding: 0.55rem 0.4rem; }
   [data-testid="stMetricLabel"] [data-testid="stMarkdownContainer"],
   [data-testid="stMetricLabel"] p {
-    white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: normal; word-break: normal;
+    white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; font-size: 0.8rem;
   }
 }
 
@@ -296,8 +296,8 @@
   .st-key-process-kpis [data-testid="stHorizontalBlock"] { flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
   .st-key-process-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 0.75rem) !important; min-width: calc(50% - 0.75rem) !important; }
 }
-/* Dashboard: fünf Kennzahlen passen bis 641 px nebeneinander (Schrift oben verkleinert), auf dem Handy zwei je Reihe */
-@media (max-width: 640px) {
+/* Dashboard: fünf Kennzahlen passen erst ab etwa 940 px nebeneinander – darunter zwei je Reihe */
+@media (max-width: 940px) {
   .st-key-dashboard-kpis [data-testid="stHorizontalBlock"] { flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
   .st-key-dashboard-kpis [data-testid="stColumn"] { flex: 1 1 calc(50% - 0.75rem) !important; min-width: calc(50% - 0.75rem) !important; }
 }
@@ -425,7 +425,11 @@
 .st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 2.6rem !important; line-height: 1.15; color: var(--fiori-accent); }
 .st-key-bc-benefits { gap: 0.5rem !important; }
 .st-key-bc-benefits [data-testid="stCaptionContainer"] { margin-right: 0.25rem; }
-@media (max-width: 640px) {
+@media (max-width: 1100px) {   /* drei nebeneinander: kleiner, sonst schneidet Streamlit mit „…“ ab */
+  .st-key-bc-kpis [data-testid="stMetricValue"],
+  .st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 1.9rem !important; }
+}
+@media (max-width: 640px) {   /* untereinander: wieder mehr Platz */
   .st-key-bc-kpis [data-testid="stMetricValue"],
   .st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 2.1rem !important; }
 }
