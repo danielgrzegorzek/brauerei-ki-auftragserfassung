@@ -18,7 +18,7 @@ from src.formatting import format_date, format_eur, format_month, format_number
 
 PLOTLY_CONFIG = {"displayModeBar": False}
 EURO = st.column_config.NumberColumn(format="euro")
-EVALUATION_URL = "https://github.com/danig204/brauerei-ki-auftragserfassung/blob/main/docs/EVALUATION.md"
+EVALUATION_URL = "https://github.com/danielgrzegorzek/brauerei-ki-auftragserfassung/blob/main/docs/EVALUATION.md"
 UNIT_FORMATS = {         # Anzeige der Reglerwerte im deutschen Format
     "min": lambda v: f"{format_number(v, 1)} min",
     "%": lambda v: f"{format_number(v, 1)} %",

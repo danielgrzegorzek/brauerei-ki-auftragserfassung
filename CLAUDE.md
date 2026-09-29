@@ -174,7 +174,7 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Phase 2 – Dashboard:** KPIs, Umsatz nach Monat/Kundengruppe/Produkt, Saisonalität, Top-Kunden, Leergut
 - [x] **Phase 3 – Auftragserfassung (Demo-Modus):** Zielformat, Beispielnachrichten, Stammdatenabgleich, Human-in-the-Loop
 - [x] **Phase 4 – Erste Veröffentlichung:** GitHub, Streamlit Cloud, Basis-README
-  - Live: https://braeu-am-stein.streamlit.app · Repo: https://github.com/danig204/brauerei-ki-auftragserfassung
+  - Live: https://braeu-am-stein.streamlit.app · Repo: https://github.com/danielgrzegorzek/brauerei-ki-auftragserfassung
   - **Jeder Push auf `main` aktualisiert die Live-App automatisch** → vor dem Push Tests laufen lassen.
   - Achtung: Die Cloud behält beim Update bereits geladene Module im Speicher. Kommen neue Namen in
     bestehende Module (z. B. neue Konstante in `src/…`), entsteht ein `ImportError` → App in Streamlit

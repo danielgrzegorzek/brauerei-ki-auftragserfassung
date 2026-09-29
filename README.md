@@ -162,7 +162,7 @@ Jede Entscheidung mit Begründung und verworfener Alternative: **[docs/ENTSCHEID
 Voraussetzung: Python 3.13. Die Datenbank wird beim ersten Start automatisch erzeugt.
 
 ```bash
-git clone https://github.com/danig204/brauerei-ki-auftragserfassung.git
+git clone https://github.com/danielgrzegorzek/brauerei-ki-auftragserfassung.git
 cd brauerei-ki-auftragserfassung
 python -m venv .venv
 ```
