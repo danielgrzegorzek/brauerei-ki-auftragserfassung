@@ -179,15 +179,21 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
 - [x] **Phase 2 – Dashboard:** KPIs, Umsatz nach Monat/Kundengruppe/Produkt, Saisonalität, Top-Kunden, Leergut
 - [x] **Phase 3 – Auftragserfassung (Demo-Modus):** Zielformat, Beispielnachrichten, Stammdatenabgleich, Human-in-the-Loop
 - [x] **Phase 4 – Erste Veröffentlichung:** GitHub, Streamlit Cloud, Basis-README
-  - Live: https://braeu-am-stein.streamlit.app · Repo: https://github.com/danielgrzegorzek/brauerei-ki-auftragserfassung
+  - Live: https://braeu-am-stein-ki.streamlit.app · Repo: https://github.com/danielgrzegorzek/brauerei-ki-auftragserfassung
   - **Jeder Push auf `main` aktualisiert die Live-App automatisch** → vor dem Push Tests laufen lassen.
   - Achtung: Die Cloud behält beim Update bereits geladene Module im Speicher. Kommen neue Namen in
     bestehende Module (z. B. neue Konstante in `src/…`), entsteht ein `ImportError` → App in Streamlit
     Cloud neu starten (Manage app → ⋮ → Reboot app; nur über Daniels Konto). Nach jedem Push die Live-App prüfen.
     Deshalb neuen Code möglichst in **neue Module**; frisch geladene Dateien (`app.py`, `pages/`, neue Module)
     importieren keine neuen Namen aus bestehenden Modulen.
-  - GitHub-Name seit 29.09.2026 `danielgrzegorzek` (vorher `danig204`). Die Cloud-App war noch auf die alten
-    Koordinaten registriert und übernahm Pushes nicht mehr → Neu-Bereitstellung durch Daniel nötig.
+  - GitHub-Name seit 29.09.2026 `danielgrzegorzek` (vorher `danig204`). Streamlit erkennt eine App an ihren
+    GitHub-Koordinaten (Besitzer, Repo, Branch, Startdatei). Die Umbenennung ohne vorheriges Löschen hat die alte
+    App verwaist: nicht mehr verwaltbar, Adresse `braeu-am-stein` blockiert (Support-Anfrage offen). Seitdem
+    läuft die App unter `braeu-am-stein-ki`. Auch `braeu-am-stein-app` war nach Löschen und sofortigem
+    Neuanlegen blockiert.
+  - **Vor jeder Umbenennung von GitHub-Konto, Repo, Branch oder `app.py`:** erst die App in Streamlit Cloud
+    löschen, dann umbenennen, dann neu bereitstellen (mit Python 3.13 und Secrets) – und dabei eine
+    **neue** Subdomain wählen. Danach Links in README und Portfolio anpassen.
 - [x] **Phase 5 – Echter KI-Modus:** Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter,
   Kostenschutz, eigene Nachrichten, Evaluation (7/7)
 - [ ] **Phase 5b – Präsentation:** Teil 1 [x] Live-Chat im Messenger-Stil, Prompt-Injection-Test,

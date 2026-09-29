@@ -5,7 +5,7 @@ Dialekt –, und der Innendienst tippt jede davon von Hand ab.
 **Lösung:** Eine KI macht daraus in Sekunden einen Auftragsvorschlag, normaler Code prüft ihn gegen Stammdaten
 und Regeln, und ein Mensch bestätigt.
 
-**▶ Live-App: [braeu-am-stein.streamlit.app](https://braeu-am-stein.streamlit.app/)** – ohne Anmeldung.
+**▶ Live-App: [braeu-am-stein-ki.streamlit.app](https://braeu-am-stein-ki.streamlit.app/)** – ohne Anmeldung.
 Auf der Startseite führt **„In 60 Sekunden durch die App“** durch alles Wichtige.
 
 Ein Portfolio-Projekt von **Daniel Grzegorzek** ([Portfolio](https://danielgrzegorzek.github.io)): Szenario,
