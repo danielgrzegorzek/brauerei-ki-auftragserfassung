@@ -1,0 +1,12 @@
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <rect class="ill-soft" width="48" height="48" rx="12"/>
+  <rect class="ill-accent" x="12" y="10" width="24" height="30" rx="3"/>
+  <rect class="ill-card" x="15" y="15" width="18" height="22" rx="1.5"/>
+  <rect class="ill-accent" x="19" y="7.5" width="10" height="5" rx="2"/>
+  <path class="ill-accent-line" d="M17.5 21l1.8 1.8 3.2-3.4M17.5 29l1.8 1.8 3.2-3.4" fill="none" stroke-width="1.8"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="ill-accent">
+    <rect x="24.5" y="20.2" width="6" height="1.8" rx="0.9"/>
+    <rect x="24.5" y="28.2" width="6" height="1.8" rx="0.9"/>
+  </g>
+</svg>
