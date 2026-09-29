@@ -8,18 +8,37 @@
    Streamlit-Updates können Selektoren ändern → Paketversionen sind fest.
    ===================================================================== */
 
-/* ---------- Seitenränder wie bei Fiori: schmaler als Streamlits Standard im Breitmodus ---------- */
+/* ---------- Zentrierter Inhaltsbereich mit begrenzter Breite – eine Regel für alle Seiten ----------
+   --content-max: 1200 px für normale Seiten, 1400 px für Dashboard und Auftragserfassung (viele Diagramme bzw.
+   Chat und Auftrag nebeneinander). Die breiten Seiten erkennt das CSS an ihrer Filterleiste bzw. am Chat.
+   Hinweiszeile, Seitenkopf und Inhalt stehen in diesem Bereich; die Kopfleiste richtet sich nach denselben
+   Rändern. Unterhalb der Inhaltsbreite bleibt alles wie bisher (2rem Rand, auf dem Handy 1rem). */
+:root { --content-max: 1200px; }
+body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 [data-testid="stMainBlockContainer"] {
+  max-width: calc(var(--content-max) + 4rem) !important;   /* Inhalt + 2 × 2rem Rand */
+  margin-inline: auto;                                      /* links und rechts gleich viel Platz */
   padding-left: 2rem;
   padding-right: 2rem;
   padding-top: 5.25rem;   /* Platz unter der festen Kopfleiste */
 }
+/* Lange Textzeilen auf eine angenehme Lesebreite begrenzen (rund 75 Zeichen) */
+[data-testid="stMarkdownContainer"] :is(p, li),
+.fiori-page-header p { max-width: 70ch; }
 
-/* ---------- Kopfleiste wie die Fiori-„Shell Bar“ ---------- */
+/* ---------- Kopfleiste wie die Fiori-„Shell Bar“: volle Breite, Inhalt an den Rändern des Seiteninhalts ---------- */
 [data-testid="stHeader"] {
   background: var(--fiori-card);
   border-bottom: 1px solid var(--fiori-border);
   box-shadow: var(--fiori-shadow);
+}
+@media (min-width: 641px) {
+  /* Nur der Inhalt scrollt, nicht die Kopfleiste: Beide halten deshalb immer Platz für einen Scrollbalken frei
+     (in der Kopfleiste unsichtbar) – so sind sie gleich breit und die Ränder stimmen in jedem Browser überein */
+  [data-testid="stMain"] { scrollbar-gutter: stable; }
+  [data-testid="stToolbar"] { overflow: hidden; scrollbar-gutter: stable; }
+  /* Logo und Menü bringen selbst 1rem Abstand mit – deshalb 1rem weniger als der Rand des Inhalts */
+  [data-testid="stToolbar"] > div { padding-inline: max(1rem, calc((100% - var(--content-max)) / 2 - 1rem)); }
 }
 
 /* ---------- Karten: weiß auf grauem Grund, runde Ecken, leichter Schatten ---------- */
@@ -74,6 +93,14 @@
 .st-key-home-hero { max-width: 52rem; padding: 1.75rem 0 1.25rem; }
 .st-key-home-hero h1 { font-size: 2.5rem; line-height: 1.15; padding: 0 0 0.35rem; }
 .st-key-home-hero [data-testid="stMarkdown"] p { font-size: 1.12rem; color: var(--fiori-label); }
+/* Ab Tablet-Breite: Titel, Satz, Tour-Knopf und Kacheln als ein zentrierter Block */
+@media (min-width: 641px) {
+  .st-key-home-hero { margin-inline: auto; align-items: center; }   /* Block mittig, der Knopf darin auch */
+  /* Streamlit setzt die Textausrichtung am Element selbst – deshalb hier ausdrücklich */
+  .st-key-home-hero h1, .st-key-home-hero [data-testid="stMarkdown"] p { text-align: center !important; }
+  .st-key-home-hero [data-testid="stMarkdown"] p { margin-inline: auto; }
+  .st-key-launchpad { justify-content: center; }
+}
 @media (max-width: 640px) {
   .st-key-home-hero { padding: 0.75rem 0 0.5rem; }
   .st-key-home-hero h1 { font-size: 1.8rem; }
