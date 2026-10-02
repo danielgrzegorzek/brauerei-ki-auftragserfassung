@@ -136,7 +136,7 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   durch die Live-App (Start → Dialekt-Chat → Auftrag → SAP-Übergabe → Business Case → Making-of), Einblendungen und
   Mauszeiger per `evaluate` im App-iframe, Bilder per CDP-Screencast, ffmpeg macht MP4 (< 8 MB), Vorschaubild,
   README-GIF und Prüfbilder je Szene in `data/demo/`. Live-KI ca. 1 US-Cent (prüft das Kennzeichen, bricht sonst ab),
-  `--demo` kostenlos, `--url` für lokal. Aufnahme zu jeder Uhrzeit (nach 14 Uhr zeigt sie den verschobenen Termin).
+  `--demo` kostenlos, `--url` für lokal, `--embed-from` (nach Design-Änderungen: Making-of zeigt ein lokales Zwischenvideo statt des veröffentlichten). Aufnahme zu jeder Uhrzeit (nach 14 Uhr zeigt sie den verschobenen Termin).
   Fertiges Video und Vorschaubild liegen im Portfolio-Repo (`assets/demo.mp4`, `assets/demo-poster.jpg`), das GIF
   fürs README als `docs/demo.gif` hier im Repo
 - Grundsatz Auftragserfassung: **Die KI versteht nur (liefert `ExtractedOrder`), der Code entscheidet.**
