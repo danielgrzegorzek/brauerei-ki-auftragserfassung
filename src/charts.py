@@ -1,8 +1,8 @@
 """Plotly-Diagramme für das Dashboard.
 
-Gestaltungsregeln: eine Akzentfarbe (Blau, geprüft auf Kontrast und Farbsehschwäche),
+Gestaltungsregeln: eine Akzentfarbe (Kupfer, geprüft auf Kontrast und Farbsehschwäche),
 Grau für Nebensächliches, dünne Linien (2 px), Balken mit 4 px abgerundetem Ende,
-dezente Gitterlinien und nur ausgewählte Beschriftungen direkt im Diagramm.
+Haarlinien als Gitter, Textschrift der App und nur ausgewählte Beschriftungen direkt im Diagramm.
 """
 
 import pandas as pd
@@ -12,19 +12,23 @@ from src.formatting import format_number
 from src.master_data import ORDER_CHANNELS
 
 MONTH_NAMES = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+FONT = "Schibsted Grotesk, Segoe UI, sans-serif"  # Textschrift der App (config.toml)
 
-# Farben je Hell-/Dunkelmodus, angelehnt an SAP Fiori (Horizon). Im dunklen Modus eigene,
-# hellere Stufen – nicht einfach invertiert. „surface“ = Kartenhintergrund, auf dem die Diagramme stehen.
-# Heatmap: Blau (unter Durchschnitt) ↔ Orange (darüber) – Rot ist bei Fiori für Fehler reserviert.
-# Kategorien (Business Case): Blau, Orange, Aqua – in dieser Reihenfolge mit dem Prüfskript validiert
-# (Unterscheidbarkeit auch bei Farbsehschwäche); im dunklen Modus ein dunkleres Orange.
+# Farben je Hell-/Dunkelmodus im Design „Papier, Tinte, Kupfer“ (wie assets/tokens.css). Im dunklen Modus
+# eigene Stufen – nicht einfach invertiert. „surface“ = Kartenhintergrund, auf dem die Diagramme stehen.
+# Kategorien (Business Case): Kupfer, Blau, Hopfengrün – in dieser Reihenfolge mit dem Prüfskript validiert
+# (hell und dunkel: alle Prüfungen bestanden, Farbsehschwäche ΔE ≥ 21 bei Ziel 8).
+# Heatmap: Blau (unter Durchschnitt) ↔ neutrales Grau ↔ Kupfer (darüber) – kühl gegen warm.
+# „muted“ = nebensächliche Linien (mindestens 3 : 1 auf der Karte), „text“ = Achsen, „ink“ = Tooltip-Text.
 PALETTES = {
-    "light": {"accent": "#0070f2", "muted": "#a9b4be", "text": "#556b82", "grid": "#e5e5e5",
-              "surface": "#ffffff", "low": "#0070f2", "mid": "#eaecee", "high": "#e76500",
-              "categories": ["#0070f2", "#e76500", "#1baf7a"]},
-    "dark": {"accent": "#1b90ff", "muted": "#5b738b", "text": "#a9b4be", "grid": "#2c3440",
-             "surface": "#1d232a", "low": "#1b90ff", "mid": "#3a4552", "high": "#ff8f4d",
-             "categories": ["#1b90ff", "#d95926", "#199e70"]},
+    "light": {"accent": "#a34a1f", "muted": "#9a9287", "text": "#6b645c", "ink": "#1c1a17",
+              "grid": "#ebe6dd", "baseline": "#cfc7bb", "surface": "#fffefb",
+              "low": "#2a75ba", "mid": "#efeae2", "high": "#a34a1f",
+              "categories": ["#a34a1f", "#2a75ba", "#7c9128"]},
+    "dark": {"accent": "#cf7743", "muted": "#6f685f", "text": "#a39c92", "ink": "#ece8e1",
+             "grid": "#2b2825", "baseline": "#45403a", "surface": "#1b1a18",
+             "low": "#4d97de", "mid": "#34302b", "high": "#cf7743",
+             "categories": ["#cf7743", "#4d97de", "#889d37"]},
 }
 
 
@@ -58,13 +62,15 @@ def apply_base_style(fig: go.Figure, colors: dict, height: int) -> go.Figure:
         margin=dict(l=8, r=8, t=8, b=8),
         separators=",.",  # deutsches Zahlenformat: Dezimalkomma, Tausenderpunkt
         showlegend=False,
-        font=dict(color=colors["text"]),
-        hoverlabel=dict(align="left"),
+        font=dict(family=FONT, color=colors["text"]),
+        # Tooltip ruhig wie eine Karte: heller Grund, Haarlinie, Text in Tinte – statt bunter Fläche
+        hoverlabel=dict(align="left", bgcolor=colors["surface"], bordercolor=colors["baseline"],
+                        font=dict(family=FONT, color=colors["ink"], size=13)),
         # Transparent: Das Diagramm geht nahtlos in die Karte über, auf der es steht
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
-    fig.update_xaxes(showgrid=False, linecolor=colors["grid"], zeroline=False)
+    fig.update_xaxes(showgrid=False, linecolor=colors["baseline"], zeroline=False)
     fig.update_yaxes(showgrid=True, gridcolor=colors["grid"], gridwidth=1, zeroline=False)
     return fig
 
@@ -111,7 +117,7 @@ def ranking_chart(labels: list[str], values: list[float], hover: list[str], colo
 
 
 def seasonality_heatmap(index: pd.DataFrame, colors: dict) -> go.Figure:
-    """Heatmap Warengruppe × Monat. Blau = unter Durchschnitt, Grau = 100, Rot = über Durchschnitt."""
+    """Heatmap Warengruppe × Monat. Blau = unter Durchschnitt, Grau = 100, Kupfer = über Durchschnitt."""
     # Warengruppen mit der stärksten Sommerspitze nach oben
     summer_months = [m for m in (6, 7, 8) if m in index.columns]
     if summer_months:
