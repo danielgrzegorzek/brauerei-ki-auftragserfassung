@@ -7,11 +7,12 @@ Dieses Dokument hält fest, **welche Entscheidungen** in diesem Projekt getroffe
 
 ```
 app.py                 Rahmen: Datenbank sicherstellen, Gestaltung laden, Seitennavigation
-ui.py                  Oberflächen-Bausteine im Fiori-Stil (Seitenkopf, Leerzustand, SVG-Einbettung)
+ui.py                  Oberflächen-Bausteine (Seitenkopf, Leerzustand, SVG-Einbettung), lädt Design-Variablen und Stylesheet
 ui_capture.py          Bausteine der Auftragserfassung: Auftragsvorschlag, „Auftrag entsteht“, Kontingent
 ui_chat.py             Messenger-Ansicht: Handy im Chat-Stil, Beispielvorschläge, Live-KI mit Demo-Rückfall
 ui_tour.py             geführte Tour: Band oben auf jeder Seite, Seitenwechsel
-assets/                Logo, Piktogramme, Leerzustands-Illustration, Stylesheet
+assets/                Design-Variablen (tokens.css), Stylesheet, Logo, Piktogramme, Leerzustands-Illustration
+static/fonts/          selbst gehostete Schriften Newsreader und Schibsted Grotesk (Lizenz SIL OFL 1.1)
 pages/                 Oberfläche (Streamlit) – nur Anzeige und Eingaben
   home.py              Startseite als Launchpad: ein Satz, Tour-Knopf, Kacheln mit je einer Kennzahl
   dashboard.py         Vertriebs-Dashboard
@@ -235,6 +236,9 @@ Auftragsentwurf ──► Mensch ändert Kunde, Termin, Positionen
 
 ## 10. Oberfläche im Fiori-Stil
 
+> Stand bis Oktober 2026. Seitdem hat die App eine eigene Designsprache (Abschnitt 16); nur die SAP-Übergabe
+> behält bewusst die Fiori-Optik.
+
 | Entscheidung | Begründung | Alternative / Grenze |
 |---|---|---|
 | Gestaltung **angelehnt an SAP Fiori (Horizon)**: Launchpad-Kacheln, Shell Bar, Object-Page-Kopf, Filter Bar, Liste/Detail-Layout, Illustrated Message | Vertraute Muster für Anwender aus dem SAP-Umfeld; ruhige, kartenbasierte Oberfläche. | Streamlit-Standardoptik. |
@@ -343,7 +347,39 @@ Funktionen und ohne Änderung an der Logik in `src/` (dort änderten sich nur Te
 | **Auf kleinen Bildschirmen unverändert:** Die Regeln greifen erst, wenn der Platz über die Inhaltsbreite hinausgeht bzw. ab 641 px | Auf dem Handy bleibt die volle Breite mit 1rem Rand. | – |
 | **Browser-Prüfung** seit dieser Änderung immer bei 390, 1280, 1920 und 2560 px, hell und dunkel | Große Monitore fielen vorher nicht auf, weil nur bis 1280 px geprüft wurde. | – |
 
-## 16. Bewusste Grenzen
+## 16. Eigene Designsprache „Papier, Tinte, Kupfer“
+
+Ziel: ein eigenes, ruhiges und unverwechselbares Produktdesign statt Fiori-Optik, das erkennbar zur
+Portfolio-Seite gehört (gleiche Akzentfarbe, gleiche Überschriftenschrift). Inhalte und Logik blieben
+unverändert – geändert haben sich Gestaltung, Diagrammfarben und zwei Darstellungsdetails der SAP-Übergabe.
+
+| Entscheidung | Begründung | Alternative / Grenze |
+|---|---|---|
+| **Akzentfarbe Kupfer** (`#a34a1f`, dunkel `#cf7743`), sonst warmes Papier und Tinte; Dunkelmodus mit eigenen Werten | Warm und unverwechselbar, passt zur Brauerei (Sudkessel aus Kupfer). Text erreicht 5,3 : 1 bzw. 5,7 : 1. Kupfer nur für Hauptaktion, Auswahl, Fokus, aktive Seite und die wichtigste Datenreihe. | Petrol-Blau: robuster gegen Verwechslung mit Signalfarben, aber weniger eigen. |
+| **Schriften:** Newsreader für Überschriften, Schibsted Grotesk für alles andere – selbst gehostet (`server.enableStaticServing`, `[[theme.fontFaces]]`), nur lateinische Zeichen; Newsreader mit festem optischem Schnitt für mittlere Größen (zusammen 81 KB) | Überschriften mit Charakter wie in einem Wirtschaftsmagazin, Daten in einer klaren Groteske für Bildschirme. Kein Abruf bei Google. Große Kennzahlen bewusst in der Groteske (Diagramm-Regel: keine Serifen bei Kennzahlen). „→“ fehlt in Newsreader – die Schriftliste holt es aus der Groteske. | Systemschrift: kein eigener Charakter. Google Fonts: externer Abruf. |
+| **Alle Design-Variablen an einer Stelle** (`assets/tokens.css`), hell und dunkel nebeneinander über `light-dark()`; `ui.py` setzt `color-scheme` auf der Seite und in jedem SVG | Eine Farbe wird einmal geändert statt in zwei Listen. Streamlit setzt `color-scheme` auf der App-Fläche selbst – so stimmen die Farben auch direkt nach dem Umschalten. `tests/test_design_tokens.py` prüft, dass `config.toml`, CSS und Diagramme dieselben Werte nutzen und die Kontraste reichen. | Farbtabelle in Python (bis 10/2026): zwei Listen je Modus. `light-dark()` braucht Browser ab 2024. |
+| **Karten mit Haarlinie statt Schatten**, Schatten nur beim Darüberfahren; Knöpfe als Pille; Kacheln mit kurzem Kupferstrich, der beim Darüberfahren über die ganze Breite wächst | Ruhig und präzise; die Bewegung zeigt, was klickbar ist. | Fiori-Karten mit Schatten (bis 10/2026). |
+| **Navigation nur als Text**, aktive Seite mit Kupferlinie; Hinweiszeile oben als dezenter Kolumnentitel | Weniger Unruhe in der Kopfleiste – die Symbole wiederholten nur die Wörter. | Symbol und Text. |
+| **Signalfarben neu abgestimmt** (Text auf Hinweisflächen mindestens 6 : 1); Prozessschritte manuell gelb, automatisch grün, Kunde blau | Kupfer bleibt der Bedienung vorbehalten – sonst lägen Akzent und Warnfarbe zu nah beieinander. Zustände immer mit Symbol und Text. | – |
+| **Barrierefreiheit:** Eingabefelder und Schalter „aus“ mit Rand von mindestens 3 : 1; sichtbarer Fokusrahmen in Kupfer; im Dunkelmodus dunkle Schrift auf Kupfer | WCAG 2.1 AA (1.4.3 Text, 1.4.11 Bedienelemente). Weiß auf hellem Kupfer hätte nur 3,3 : 1. | – |
+| **Diagramme:** Kupfer · Blau · Hopfengrün, Heatmap Blau ↔ Grau ↔ Kupfer, Haarlinien als Gitter, Tooltip als ruhige Karte, Schrift wie in der App | Mit dem Prüfskript validiert: hell und dunkel alle Prüfungen bestanden, Unterscheidbarkeit bei Farbsehschwäche ΔE ≥ 21 (Ziel 8). Kühl gegen warm liest sich als „unter / über Durchschnitt“. | Blau ↔ Orange (Fiori, bis 10/2026). |
+| **SAP-Übergabe bewusst im Fiori-Stil:** eigene Variablen `--fiori-*`, Systemschrift, Fiori-Blau, Fiori-Karte und -Knöpfe; darüber der Hinweis „Ansicht im Stil von SAP Fiori“; Positionen als einfache Tabelle (`st.table`) | Der Kontrast zeigt: So sähe der Auftrag in SAP aus. Die interaktive Tabelle zeichnet Streamlit auf eine Leinwand, deren Farben sich per CSS nicht ändern lassen. | Alles im neuen Design: Der Bezug zu SAP ginge verloren. |
+| **Neues Logo:** Kupfer-Krug, Schriftzug in Newsreader als Pfade (einmalig mit fontTools erzeugt) | Ein SVG im `<img>` lädt keine Webfonts – als Pfade sieht der Schriftzug überall gleich aus. | Schriftzug als Text: je nach Gerät in einer anderen Schrift. |
+| **Bewegung dezent:** Inhalte blenden beim Seiten- und Reiterwechsel sanft ein, Chat-Blasen gleiten ein, weiche Übergänge an Knöpfen, Reitern und Kacheln; bei „weniger Bewegung“ alles aus | Nur Deckkraft und `transform` – das Layout verschiebt sich nicht. Gemessen: Verschiebungen beim Laden entstehen durch Streamlits stückweises Nachladen, nicht durch die Animationen. | – |
+| Selektoren für Felder, Schalter und Reiter über `data-testid` und Rollen (z. B. `stDateInputField`, `stTab[aria-selected]`) | Streamlit 1.64 baut diese Bausteine mit react-aria; die alten `data-baseweb`-Merkmale gibt es nicht mehr. | CSS hängt an Streamlit-Interna – feste Paketversion. |
+| **Prüfung** bei 390, 1280, 1920 und 2560 px, hell und dunkel, alle Seiten und die Zustände nach Klicks (Chat-Bestellung, Posteingang, Tour, Annahmen, SAP-Reiter, „Übergabe simulieren“) – immer ohne Live-KI, Zähler der KI-Aufrufe vorher und nachher verglichen | Gefunden und behoben: zu blasser Schalter „aus“, Rand des Datumsfelds, Kasten-Symbol noch in Fiori-Blau, zu große Kennzeichnung über der Object Page. | – |
+
+**Schriften neu erzeugen** (Quelle: github.com/google/fonts, `ofl/newsreader` und `ofl/schibstedgrotesk`; Werkzeug: `requirements-dev.txt`):
+
+```powershell
+python -m fontTools.varLib.instancer "Newsreader[opsz,wght].ttf" opsz=28 wght=400:600 -o newsreader.ttf
+python -m fontTools.varLib.instancer "SchibstedGrotesk[wght].ttf" wght=400:700 -o schibsted.ttf
+python -m fontTools.subset newsreader.ttf --output-file=static/fonts/newsreader-text.woff2 --flavor=woff2 --no-hinting --desubroutinize --unicodes="U+0020-007E,U+00A0-00FF,U+0152-0153,U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2197,U+2212" --layout-features="kern,liga,calt,locl,case,tnum,pnum,zero,ccmp,mark,mkmk"
+```
+
+(für `schibsted.ttf` → `static/fonts/schibsted-grotesk.woff2` dieselben Optionen). Die Portfolio-Seite nutzt denselben Weg mit dem großen Schnitt `opsz=72`.
+
+## 17. Bewusste Grenzen
 
 - **Auftragsnummer = höchste Nummer + 1** – ausreichend für die Demo, nicht für viele
   gleichzeitige Nutzer (dafür: Nummernkreis bzw. Sequenz in der Datenbank).

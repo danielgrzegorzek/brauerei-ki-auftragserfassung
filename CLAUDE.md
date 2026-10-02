@@ -73,10 +73,9 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `app.py` – Rahmen: Datenbank sicherstellen (`ensure_database`), `ui.apply_style()`, Navigation (`st.navigation`),
   Hinweiszeile „Portfolio-Projekt von … · Simulation mit fiktiven Daten“ (Container `portfolio-note`) über
   jeder Seite
-- `ui.py` – Oberflächen-Bausteine im Fiori-Stil (bewusst außerhalb von `src/`): `page_header` (ohne Karte),
-  `illustrated_message`, `img`/`svg_uri`, `image_uri`, `raw_html`, `chart_legend`; Farbvariablen je
-  Hell/Dunkel in `COLORS`
-  (auch `--chat-*` für den Messenger und `--step-*` für „Auftrag entsteht“)
+- `ui.py` – Oberflächen-Bausteine (bewusst außerhalb von `src/`): `page_header` (ohne Karte),
+  `illustrated_message` (Leerzustand), `img`/`svg_uri`, `image_uri`, `raw_html`, `chart_legend`; `apply_style`
+  lädt `assets/tokens.css` + `style.css` und setzt `color-scheme` (hell/dunkel) – auch in jedes SVG
 - `ui_capture.py` – Bausteine der Auftragserfassung für beide Reiter: `show_proposal` (Formular, Prüfung,
   Speichern mit `on_saved`-Callback), `order_steps`/`show_steps` („Auftrag entsteht“), `new_capture`,
   Schlüssel/Client/Kontingent (`api_key`, `claude_client`, `live_calls_left`, `register_live_call`)
@@ -84,8 +83,11 @@ und Vertriebsanalyse für eine fiktive Brauerei.
   (Zurück/Weiter/Beenden, `st.switch_page`); `start()` am Knopf der Startseite. Inhalt: `src/tour.py`
 - `ui_chat.py` – Messenger-Ansicht (`chat_view`): Callbacks `use_example`, `send`, `choose`, `order_saved`;
   `process` (Live-KI, sonst Demo-Rückfall); Chat-HTML immer über `html.escape`
-- `assets/` – `style.css` (Seiten-CSS), `illustrations.css` (Farben der SVGs), Logo, Leerzustands-Illustration
-  (`empty_inbox`), Piktogramme
+- `assets/` – `tokens.css` (alle Design-Variablen, hell und dunkel nebeneinander über `light-dark()`, dazu
+  `--chat-*` für den Messenger und `--fiori-*` nur für die SAP-Übergabe), `style.css` (Regeln), `illustrations.css`
+  (Farben der SVGs), Logo (Schriftzug als Pfade), Leerzustands-Illustration (`empty_inbox`), Piktogramme
+- `static/fonts/` – selbst gehostete Schriften (Newsreader, Schibsted Grotesk, Lizenz OFL), eingebunden über
+  `[[theme.fontFaces]]` und `server.enableStaticServing` in `.streamlit/config.toml`
 - `pages/` – Streamlit-Seiten (nur Oberfläche); Grundsatz seit der Design-Überarbeitung: höchstens ein Satz
   unter dem Titel, Details eingeklappt oder im Fragezeichen
   - `home.py` – Launchpad: Titel, ein Satz, Tour-Knopf, Kacheln (`tile` in der Seite selbst; Titel = Seitenlink
@@ -147,12 +149,22 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - `tests/` – pytest; `conftest.py` baut einmal pro Lauf eine Test-Datenbank im Temp-Ordner;
   KI-Aufrufe nur mit Schein-Client (`FakeClient`), nie mit der echten API
 - `docs/ENTSCHEIDUNGEN.md` – Designentscheidungen mit Begründung (öffentlich)
-- Diagramm-Regeln: eine Akzentfarbe (`charts.PALETTES`, hell/dunkel), Tabellenansicht zu jedem
-  Diagramm, keine zweite y-Achse; Theme-Farbe nur unter `[theme.light]`/`[theme.dark]`
+- Diagramm-Regeln: eine Akzentfarbe (`charts.PALETTES`, hell/dunkel: Kupfer · Blau · Hopfengrün, mit dem
+  Prüfskript der Diagramm-Richtlinien validiert), Tabellenansicht zu jedem Diagramm, keine zweite y-Achse,
+  Kennzahlen in der Textschrift; Theme-Farbe nur unter `[theme.light]`/`[theme.dark]`
 - Nach Änderungen in `src/` oder `ui.py` den Streamlit-Server neu starten (lädt Module nicht immer neu)
-- Oberfläche angelehnt an **SAP Fiori (Horizon)** – eigenes Logo, keine SAP-Marken; UI5 Web Components geprüft
-  und verworfen (siehe `docs/ENTSCHEIDUNGEN.md`, Abschnitt 15). Karten entstehen über Container-Keys: `card-…`,
-  `tile-…`, `message-bubble` (CSS über `st-key-<key>`-Klassen); `page-header` steht ohne Karte.
+- **Design „Papier, Tinte, Kupfer“** (seit 10/2026, gemeinsam mit der Portfolio-Seite: gleiche Akzentfarbe
+  `#a34a1f`/`#cf7743`, gleiche Überschriftenschrift Newsreader; Text Schibsted Grotesk). Farben stehen an drei
+  Stellen – `config.toml`, `assets/tokens.css`, `charts.PALETTES`; `tests/test_design_tokens.py` hält sie gleich
+  und prüft die Kontraste. Kupfer nur für Hauptaktion, Auswahl, Fokus, aktive Seite, wichtigste Datenreihe;
+  Signalfarben immer mit Symbol und Text. Eingabefelder/Schalter „aus“ mit Rand ≥ 3 : 1 (`--line-input`).
+  Nur die **SAP-Übergabe** (`card-sap`) ist bewusst im Fiori-Stil (`--fiori-*`, Systemschrift) mit Hinweis
+  „Ansicht im Stil von SAP Fiori“; UI5 Web Components geprüft und verworfen (`docs/ENTSCHEIDUNGEN.md`,
+  Abschnitt 15 und 16). Karten entstehen über Container-Keys: `card-…`, `tile-…`, `message-bubble`
+  (CSS über `st-key-<key>`-Klassen); `page-header` steht ohne Karte.
+- Streamlit 1.64 baut Felder, Schalter und Reiter mit react-aria (kein `data-baseweb` mehr): Selektoren über
+  `data-testid` und Rollen, z. B. `stSelectbox [role="group"]`, `stDateInputField`, `stTab[aria-selected]`,
+  `stCheckbox label[data-selected]`. Bewegung nur über Deckkraft/`transform`; „weniger Bewegung“ schaltet alles ab.
 - **Streamlit legt um jeden Container eine Hülle** (`[data-testid="stLayoutWrapper"]`) und gibt dem Container
   `flex: 1` – feste Größen und `position: sticky` gehören an die Hülle (`…:has(> .st-key-…)`).
   Markdown-Blöcke haben unten einen negativen Rand; Kennzahl-Beschriftungen kürzt Streamlit mit „…“.
@@ -163,7 +175,8 @@ und Vertriebsanalyse für eine fiktive Brauerei.
 - **`st.fragment`** für Business Case, Dashboard und SAP-Übergabe (nur dieser Teil lädt neu); in Fragmenten
   `return` statt `st.stop()`. Nicht in der Auftragserfassung (Chat, Vorschlag und Tabelle eng gekoppelt).
 - **`st.html` filtert `<style>` und `<svg>`** → eigenes HTML/CSS über `ui.raw_html` (`st.markdown` mit
-  `unsafe_allow_html`); SVGs als `<img>` über `ui.img`, das die Modus-Farben in ein CDATA-`<style>` im SVG schreibt.
+  `unsafe_allow_html`); SVGs als `<img>` über `ui.img`, das Design-Variablen und Farbmodus in ein CDATA-`<style>`
+  im SVG schreibt.
 - Läuft auf Port 8501 schon ein manuell gestarteter Server, zum Testen die Konfiguration
   `streamlit-test` (Port 8502) in `.claude/launch.json` nutzen.
 - **Vorsicht Kosten:** `streamlit.testing.v1.AppTest` liest die lokale `secrets.toml` mit – Seitentests
@@ -242,6 +255,8 @@ Die Datenbank `data/brauerei.db` wird beim Start automatisch gebaut, wenn sie fe
   dazu Daniels Portfolio-Seite im eigenen Repo `danielgrzegorzek.github.io` (statisches HTML/CSS)
 - [x] **Design-Überarbeitung:** ruhiger, weniger Text; Startseite als Launchpad, SAP-Übergabe als Object Page,
   Fragmente, Tour mit je einem Satz
+- [x] **Eigene Designsprache „Papier, Tinte, Kupfer“** (10/2026) für App und Portfolio-Seite: selbst gehostete
+  Schriften, Kupfer-Akzent, neue Diagrammfarben, dezente Bewegung; SAP-Übergabe bleibt im Fiori-Stil
 - [ ] **Phase 7 – Regel-Parser (optional):** Vergleich „Regeln vs. KI“
 - [ ] **Phase 8 – Feinschliff:** Tests ergänzen, README komplett, Demo-Video [x] (im Portfolio, per Skript)
 

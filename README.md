@@ -139,7 +139,8 @@ ERP kommt:
 ```
 app.py         Rahmen: Datenbank sicherstellen, Gestaltung, Navigation, geführte Tour
 pages/         Seiten: Start, Dashboard, KI-Auftragserfassung, Prozess & SAP, Business Case, Making-of (nur Anzeige und Eingaben)
-ui*.py         Oberflächen-Bausteine: Fiori-Stil (ui), Auftragserfassung (ui_capture), Chat (ui_chat), Tour (ui_tour)
+ui*.py         Oberflächen-Bausteine: Gestaltung (ui), Auftragserfassung (ui_capture), Chat (ui_chat), Tour (ui_tour)
+assets/        Design-Variablen (tokens.css), Stylesheet, Logo, Piktogramme · static/fonts/: selbst gehostete Schriften
 src/           Logik ohne Oberfläche – vollständig testbar:
   extraction.py     KI-Anbindung (Demo und Claude, Prompt, Antwortschema, Modelle)
   order_capture.py  Abgleich → Prüfung → Speichern
@@ -150,17 +151,17 @@ src/           Logik ohne Oberfläche – vollständig testbar:
   sap_mapping.py    Übergabe an SAP S/4HANA: Kundenauftrag, Feld-Mapping, Vollständigkeit
   analytics.py, charts.py, database.py, Datengenerator, Plausibilitäts-Check …
 tools/         Evaluation der KI (→ docs/evaluation.json, docs/EVALUATION.md)
-tests/         pytest – 249 Tests, KI-Aufrufe nur mit Schein-Client
+tests/         pytest – 266 Tests, KI-Aufrufe nur mit Schein-Client
 docs/          Designentscheidungen und Evaluationsbericht
 ```
 
 | Bereich | Werkzeuge |
 |---|---|
-| Oberfläche | Streamlit (mehrseitig), Plotly – angelehnt an die SAP-Fiori-Designrichtlinien, eigene SVG-Illustrationen |
+| Oberfläche | Streamlit (mehrseitig), Plotly – eigene Designsprache „Papier, Tinte, Kupfer“ (Newsreader und Schibsted Grotesk, selbst gehostet), SAP-Übergabe bewusst im Fiori-Stil, eigene SVG-Illustrationen |
 | Daten | SQLite (Schema mit Schlüsseln und Prüfregeln), pandas |
 | KI | Claude Sonnet 5, strukturierte Ausgabe, austauschbarer Anbieter |
 | ERP | SAP S/4HANA: Kundenauftrag für die OData-API `API_SALES_ORDER_SRV` (Simulation) |
-| Qualität | 249 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
+| Qualität | 266 automatische Tests, 13 fachliche Plausibilitätsprüfungen, Live-Evaluation, Code-Review mit Gegenprüfung |
 | Sprache | Python 3.13 |
 
 Jede Entscheidung mit Begründung und verworfener Alternative: **[docs/ENTSCHEIDUNGEN.md](docs/ENTSCHEIDUNGEN.md)**.
@@ -205,6 +206,7 @@ vollständig im Demo-Modus. Evaluation: `python -m tools.evaluate_extraction` (k
 - [x] Prozessseite: Ist- vs. Soll-Prozess und Übergabe an SAP S/4HANA (simuliert)
 - [x] Making-of-Seite und Bestellschluss 14 Uhr als Geschäftsregel
 - [x] Design-Überarbeitung: ruhiger, weniger Text, Startseite als Launchpad, SAP-Übergabe als Object Page
+- [x] Eigene Designsprache „Papier, Tinte, Kupfer“ – gemeinsam mit der Portfolio-Seite
 - [ ] Regelbasierter Parser als Vergleich „Regeln vs. KI“
 
 ## Hinweise
@@ -212,7 +214,7 @@ vollständig im Demo-Modus. Evaluation: `python -m tools.evaluate_extraction` (k
 - **Alle Firmen, Personen und Zahlen sind frei erfunden.**
 - Im Live-Modus werden eingegebene Texte zur Auswertung an Anthropic übertragen – bitte keine echten
   personenbezogenen Daten eingeben.
-- Die Oberfläche ist an die SAP-Fiori-Designrichtlinien angelehnt; Logo und Illustrationen sind eigene
-  Entwürfe. Es handelt sich nicht um ein SAP-Produkt.
+- Die Oberfläche hat ein eigenes Design; nur die SAP-Übergabe ist bewusst im Stil von SAP Fiori gestaltet.
+  Logo und Illustrationen sind eigene Entwürfe. Es handelt sich nicht um ein SAP-Produkt.
 - Konzipiert und gesteuert von Daniel Grzegorzek, programmiert mit Claude Code – Details auf der Seite
   Making-of.
