@@ -147,6 +147,8 @@ def sap_handover() -> None:
     _, products = capture_ui.master_data()
     product_names = {pid: product["name"] for pid, product in products.items()}
 
+    # Kontrast zur übrigen App: Die Object Page ist bewusst im Stil von SAP Fiori gestaltet (CSS: card-sap)
+    ui.raw_html('<div class="fiori-hint">Ansicht im Stil von SAP Fiori</div>')
     with st.container(key="card-sap"):
         ui.raw_html(object_header(order, payload, status))
         items_tab, org_tab, mapping_tab, payload_tab = st.tabs([
@@ -161,7 +163,8 @@ def sap_handover() -> None:
             if items.empty:
                 st.caption("Keine Positionen.")
             else:
-                st.dataframe(items, hide_index=True)
+                # Statische Tabelle wie im Feld-Mapping: lässt sich per CSS im Fiori-Stil zeichnen
+                st.table(items, hide_index=True, border="horizontal")
 
         with org_tab:
             ui.raw_html(form([
