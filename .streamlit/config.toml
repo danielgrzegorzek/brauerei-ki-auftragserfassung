@@ -1,40 +1,100 @@
-# Oberfläche angelehnt an die SAP-Fiori-Designrichtlinien (Theme „Horizon“) – eigene Farbwerte,
-# kein SAP-Logo, keine SAP-Schrift.
+# Eigene Designsprache „Papier, Tinte, Kupfer“ – passend zur Portfolio-Seite (gleiche Akzentfarbe, gleiche
+# Überschriftenschrift). Die übrigen Design-Variablen stehen in assets/tokens.css, die Regeln in assets/style.css.
 # Wichtig: Farben NICHT direkt unter [theme] eintragen, sonst erzwingt Streamlit ein helles Theme
 # und ignoriert die Hell-/Dunkel-Einstellung des Betrachters.
 
+[server]
+enableStaticServing = true   # liefert static/ aus – dort liegen die Schriften (app/static/fonts/…)
+
 [theme]
-baseFontSize = 17          # etwas größer als der Standard (16 px)
-baseRadius = "0.5rem"      # abgerundete Bedienelemente wie bei Fiori
-buttonRadius = "0.5rem"
-showWidgetBorder = true    # Eingabefelder mit Rahmen, wie Fiori-Felder
+font = "Schibsted Grotesk, Segoe UI, sans-serif"          # Text und Bedienelemente
+headingFont = "Newsreader, Schibsted Grotesk, Georgia, serif"   # Überschriften; „→“ kommt aus der Textschrift
+headingFontSizes = ["2.5rem", "1.875rem", "1.5rem", "1.2rem", "1.0625rem", "1rem"]
+headingFontWeights = [500, 500, 500, 600, 600, 600]
+baseFontSize = 16            # Schibsted Grotesk hat große Kleinbuchstaben: 16 px lesen sich wie 17 px der alten Schrift
+baseRadius = "0.625rem"
+buttonRadius = "full"        # Knöpfe als Pille – wie auf der Portfolio-Seite
+showWidgetBorder = true
 metricValueFontSize = "1.75rem"   # passt auch bei fünf Kennzahlen nebeneinander auf Laptop-Breite
+metricValueFontWeight = 600
+
+# Selbst gehostete Schriften (Lizenz SIL OFL 1.1, siehe static/fonts/OFL-*.txt), nur lateinische Zeichen
+[[theme.fontFaces]]
+family = "Schibsted Grotesk"
+url = "app/static/fonts/schibsted-grotesk.woff2"
+weight = "400 700"
+
+[[theme.fontFaces]]
+family = "Newsreader"
+url = "app/static/fonts/newsreader-text.woff2"
+weight = "400 600"
 
 [theme.light]
-primaryColor = "#0070f2"               # Fiori-Blau: Buttons, Auswahl, Links
-backgroundColor = "#f5f6f7"            # hellgrauer Seitenhintergrund
-secondaryBackgroundColor = "#ffffff"   # Eingabefelder weiß
-textColor = "#1d2d3e"
-linkColor = "#0064d9"
-borderColor = "#d9d9d9"
-dataframeHeaderBackgroundColor = "#f5f6f7"
-greenColor = "#256f3a"                 # Signalfarben: positiv, kritisch, negativ, Info
-orangeColor = "#e76500"
-redColor = "#aa0808"
-blueColor = "#0070f2"
+primaryColor = "#a34a1f"               # Kupfer: Knöpfe, Auswahl, Fokus
+backgroundColor = "#f5f2ec"            # warmes Papier
+secondaryBackgroundColor = "#fffefb"   # Eingabefelder
+textColor = "#1c1a17"                  # Tinte
+linkColor = "#a34a1f"
+borderColor = "#e0d9ce"                # Haarlinien; Eingabefelder bekommen in style.css einen kräftigeren Rand
+dataframeBorderColor = "#e4ded4"
+dataframeHeaderBackgroundColor = "#f5f2ec"
+codeBackgroundColor = "#efeae2"
+# Signalfarben: Grundton, zarte Fläche, Text auf der Fläche (Text mindestens 6 : 1)
+redColor = "#b0302a"
+redBackgroundColor = "#f8e4e1"
+redTextColor = "#93241f"
+orangeColor = "#a35c0f"
+orangeBackgroundColor = "#f7e8d6"
+orangeTextColor = "#7d4508"
+yellowColor = "#8a6a00"
+yellowBackgroundColor = "#f6edcf"
+yellowTextColor = "#6b5200"
+greenColor = "#2d6a3e"
+greenBackgroundColor = "#e3eee2"
+greenTextColor = "#23552f"
+blueColor = "#2a5f8f"
+blueBackgroundColor = "#e2ebf3"
+blueTextColor = "#224d74"
+violetColor = "#6b4c9a"
+violetBackgroundColor = "#ece6f3"
+violetTextColor = "#563c7d"
+grayColor = "#6b645c"
+grayBackgroundColor = "#ebe6de"
+grayTextColor = "#57514a"
+chartCategoricalColors = ["#a34a1f", "#2a75ba", "#7c9128"]   # wie charts.PALETTES – mit Prüfskript validiert
 
 [theme.dark]
-primaryColor = "#1b90ff"
-backgroundColor = "#12171c"
-secondaryBackgroundColor = "#1d232a"
-textColor = "#eaecee"
-linkColor = "#4db1ff"
-borderColor = "#3a4552"
-dataframeHeaderBackgroundColor = "#12171c"
-greenColor = "#5dc122"
-orangeColor = "#ff8f4d"
-redColor = "#ff5c5c"
-blueColor = "#1b90ff"
+primaryColor = "#cf7743"
+backgroundColor = "#121110"
+secondaryBackgroundColor = "#1b1a18"
+textColor = "#ece8e1"
+linkColor = "#d98250"
+borderColor = "#34302b"
+dataframeBorderColor = "#2e2b27"
+dataframeHeaderBackgroundColor = "#171614"
+codeBackgroundColor = "#171614"
+redColor = "#ff8f84"
+redBackgroundColor = "#3a1d1a"
+redTextColor = "#ffb3ab"
+orangeColor = "#f0a35c"
+orangeBackgroundColor = "#3a2716"
+orangeTextColor = "#f6bf8c"
+yellowColor = "#e8c04b"
+yellowBackgroundColor = "#352c12"
+yellowTextColor = "#f0d27a"
+greenColor = "#7fcf95"
+greenBackgroundColor = "#1a2e20"
+greenTextColor = "#a6e0b5"
+blueColor = "#8ab8e6"
+blueBackgroundColor = "#18263a"
+blueTextColor = "#b0d0f0"
+violetColor = "#b9a2e8"
+violetBackgroundColor = "#261f36"
+violetTextColor = "#cfbff2"
+grayColor = "#a39c92"
+grayBackgroundColor = "#24221f"
+grayTextColor = "#c4bdb3"
+chartCategoricalColors = ["#cf7743", "#4d97de", "#889d37"]
 
 [browser]
 # Keine Nutzungsstatistik an Streamlit senden
