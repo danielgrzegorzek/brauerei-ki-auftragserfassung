@@ -46,14 +46,14 @@ OVERLAY_JS = """
 () => {
   const appStyle = `
     #demo-caption { position: fixed; left: 50%; bottom: 30px; z-index: 2147483646; max-width: 1000px;
-      transform: translateX(-50%); padding: 12px 28px; border-radius: 14px; background: rgba(18, 24, 33, .78);
-      color: #fff; font: 600 24px/1.35 "Segoe UI", system-ui, sans-serif; text-align: center;
-      pointer-events: none; opacity: 0; transition: opacity .3s ease; }
+      transform: translateX(-50%); padding: 12px 30px; border-radius: 999px; background: rgba(28, 26, 23, .84);
+      color: #f5f2ec; font: 600 24px/1.35 "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+      text-align: center; pointer-events: none; opacity: 0; transition: opacity .3s ease; }
     #demo-caption.visible { opacity: 1; }
     #demo-cursor { position: fixed; left: -3px; top: -2px; z-index: 2147483647; width: 24px; height: 24px;
       pointer-events: none; transform: translate(-100px, -100px); }
     .demo-ripple { position: fixed; z-index: 2147483646; width: 40px; height: 40px; margin: -20px 0 0 -20px;
-      border-radius: 50%; background: rgba(0, 112, 242, .18); border: 3px solid #0070f2; pointer-events: none;
+      border-radius: 50%; background: rgba(163, 74, 31, .18); border: 3px solid #a34a1f; pointer-events: none;
       animation: demo-ripple .55s ease-out forwards; }
     @keyframes demo-ripple { from { transform: scale(.3); opacity: 1; } to { transform: scale(1.25); opacity: 0; } }
     /* Entwickler- und Cloud-Knöpfe (Deploy, Fork, GitHub, Menü) gehören nicht ins Video */
