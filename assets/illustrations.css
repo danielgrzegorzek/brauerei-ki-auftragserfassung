@@ -1,11 +1,11 @@
-/* Farben der SVG-Piktogramme und der Leerzustands-Illustration. ui.py schreibt diese Regeln samt Farbvariablen
-   des aktuellen Modus direkt in jedes SVG – so wirken sie auch, wenn das SVG als <img> eingebettet ist. */
-.ill-on-accent { fill: #ffffff; }
-.ill-accent { fill: var(--fiori-accent); }
-.ill-accent-line { stroke: var(--fiori-accent); }
-.ill-soft { fill: var(--fiori-accent-soft); }
-.ill-card { fill: var(--fiori-card); }
+/* Farben der SVG-Piktogramme und der Leerzustands-Illustration. ui.py schreibt diese Regeln samt Design-Variablen
+   (tokens.css) und Farbmodus direkt in jedes SVG – so wirken sie auch, wenn das SVG als <img> eingebettet ist. */
+.ill-on-accent { fill: var(--surface); }
+.ill-accent { fill: var(--accent); }
+.ill-accent-line { stroke: var(--accent); }
+.ill-soft { fill: var(--accent-soft); }
+.ill-card { fill: var(--surface); }
 .ill-line { fill: var(--ill-line); }
-.ill-beer { fill: #ffb300; }
+.ill-beer { fill: #e8a838; }
 .ill-foam { fill: var(--ill-foam); }
 .ill-shine { fill: #ffffff; opacity: 0.5; }

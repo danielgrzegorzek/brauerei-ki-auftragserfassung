@@ -1,11 +1,12 @@
 /* =====================================================================
-   Gestaltung angelehnt an die SAP-Fiori-Designrichtlinien (Theme „Horizon“).
-   Die Farben kommen als CSS-Variablen (--fiori-*) aus ui.py –
-   passend zum hellen oder dunklen Modus des Betrachters.
+   Gestaltung der App – eigene Designsprache „Papier, Tinte, Kupfer“, passend zur Portfolio-Seite.
+   Alle Farben, Schriften, Radien und Bewegungen kommen als Variablen aus assets/tokens.css
+   (hell und dunkel nebeneinander). Grundfarben und Schriften für Streamlit: .streamlit/config.toml.
+   Ausnahme: Die SAP-Übergabe (Object Page) behält bewusst die Fiori-Optik – eigener Abschnitt unten.
 
-   Selektoren: bevorzugt die Klassen "st-key-<key>", die Streamlit für Container
-   mit key vergibt (dafür dokumentiert), und data-testid-Attribute.
-   Streamlit-Updates können Selektoren ändern → Paketversionen sind fest.
+   Selektoren: bevorzugt die Klassen "st-key-<key>", die Streamlit für Container mit key vergibt
+   (dafür dokumentiert), und data-testid-Attribute. Streamlit-Updates können Selektoren ändern →
+   Paketversionen sind fest.
    ===================================================================== */
 
 /* ---------- Zentrierter Inhaltsbereich mit begrenzter Breite – eine Regel für alle Seiten ----------
@@ -24,14 +25,36 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 }
 /* Lange Textzeilen auf eine angenehme Lesebreite begrenzen (rund 75 Zeichen) */
 [data-testid="stMarkdownContainer"] :is(p, li),
-.fiori-page-header p { max-width: 70ch; }
+.page-head p { max-width: 70ch; }
 
-/* ---------- Kopfleiste wie die Fiori-„Shell Bar“: volle Breite, Inhalt an den Rändern des Seiteninhalts ---------- */
+/* ---------- Schrift: Überschriften (Newsreader) etwas enger, Ziffern in Tabellen und Kennzahlen gleich breit ---------- */
+h1, h2, h3, h4 { letter-spacing: -0.015em; text-wrap: balance; }
+::selection { background: var(--accent-soft); color: var(--ink); }
+
+/* ---------- Kopfleiste: Papier mit Haarlinie, Navigation als reiner Text, aktive Seite mit Kupferlinie ---------- */
 [data-testid="stHeader"] {
-  background: var(--fiori-card);
-  border-bottom: 1px solid var(--fiori-border);
-  box-shadow: var(--fiori-shadow);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
 }
+[data-testid="stTopNavLink"] {
+  position: relative; border-radius: 0; background: none !important;
+}
+[data-testid="stTopNavLink"] p { font-size: 0.94rem; color: var(--muted); transition: color var(--fast) var(--ease); }
+[data-testid="stTopNavLink"]:hover p, [data-testid="stTopNavLink"][aria-current="page"] p { color: var(--ink); }
+[data-testid="stTopNavLink"][aria-current="page"] p { font-weight: 600; }
+[data-testid="stTopNavLink"] > span:has([data-testid="stIconMaterial"]) { display: none; }   /* nur Text – ruhiger */
+/* Die Navigationsleiste schneidet alles unterhalb der Links ab – die Linie sitzt deshalb am unteren Rand des Links.
+   Beim Darüberfahren deutet sie sich an, auf der aktiven Seite steht sie ganz. */
+[data-testid="stTopNavLink"]::after {
+  content: ""; position: absolute; left: 0.5rem; right: 0.5rem; bottom: -1px; height: 2px;
+  background: var(--accent); transform: scaleX(0); transform-origin: left;
+  transition: transform var(--slow) var(--ease);
+}
+[data-testid="stTopNavLink"]:hover::after { transform: scaleX(0.35); }
+[data-testid="stTopNavLink"][aria-current="page"]::after { transform: scaleX(1); }
+[data-testid="stTopNavLink"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-s); }
 @media (min-width: 641px) {
   /* Nur der Inhalt scrollt, nicht die Kopfleiste: Beide halten deshalb immer Platz für einen Scrollbalken frei
      (in der Kopfleiste unsichtbar) – so sind sie gleich breit und die Ränder stimmen in jedem Browser überein */
@@ -41,24 +64,28 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
   [data-testid="stToolbar"] > div { padding-inline: max(1rem, calc((100% - var(--content-max)) / 2 - 1rem)); }
 }
 
-/* ---------- Karten: weiß auf grauem Grund, runde Ecken, leichter Schatten ---------- */
+/* ---------- Karten, Kacheln und Kennzahlen: fast weiß auf Papier, Haarlinie statt Schatten ---------- */
 [class*="st-key-card"],
 [class*="st-key-tile-"],
 [data-testid="stMetric"] {
-  background: var(--fiori-card);
-  border: 1px solid var(--fiori-card-border) !important;
-  border-radius: 0.75rem;
-  box-shadow: var(--fiori-shadow);
+  background: var(--surface);
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-l);
+  box-shadow: none;
 }
-[class*="st-key-card"] { padding: 1.25rem 1.5rem; }
-[data-testid="stMetric"] { padding: 0.75rem 0.9rem; }
+[class*="st-key-card"] { padding: 1.5rem 1.75rem; }
+[data-testid="stMetric"] { padding: 0.85rem 1rem; }
+[data-testid="stMetricLabel"] p { color: var(--muted); }
+[data-testid="stMetricValue"] { letter-spacing: -0.02em; }
+/* Kartentitel (Markdown „####“ und st.subheader) in der Überschriftenschrift, mit etwas Luft darunter */
+[class*="st-key-card"] :is(h3, h4) { padding-bottom: 0.15rem; }
 /* Schmale Fenster (kleine Laptops): Kennzahlen etwas kleiner, damit fünf nebeneinander passen */
 @media (max-width: 1100px) {
   [data-testid="stMetricValue"], [data-testid="stMetricValue"] * { font-size: 1.3rem !important; }
 }
 /* Handy: Kennzahlen kompakter; die Beschriftung bricht um statt mit „…“ abzuschneiden – aber nicht mitten im Wort */
 @media (max-width: 640px) {
-  [data-testid="stMetric"] { padding: 0.55rem 0.4rem; }
+  [data-testid="stMetric"] { padding: 0.6rem 0.55rem; }
   [data-testid="stMetricLabel"] [data-testid="stMarkdownContainer"],
   [data-testid="stMetricLabel"] p {
     white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; font-size: 0.8rem;
@@ -68,16 +95,18 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 /* ---------- Hinweis auf Autor und Simulation: eine dezente Zeile über jeder Seite ---------- */
 .st-key-portfolio-note { gap: 0.15rem 0.55rem !important; margin: -0.75rem 0 -0.35rem; }
 .st-key-portfolio-note p,
-.st-key-portfolio-note [data-testid="stPageLink-NavLink"] span { font-size: 0.82rem !important; color: var(--fiori-label); }
+.st-key-portfolio-note [data-testid="stPageLink-NavLink"] span { font-size: 0.8rem !important; color: var(--muted); }
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] {
   padding: 0 !important; min-height: 0 !important; background: none !important;
 }
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] span {
-  color: var(--fiori-accent); text-decoration: underline; text-underline-offset: 0.18em;
+  color: var(--ink); text-decoration: underline; text-decoration-color: var(--line-strong);
+  text-underline-offset: 0.2em; transition: color var(--fast) var(--ease), text-decoration-color var(--fast) var(--ease);
 }
+.st-key-portfolio-note [data-testid="stPageLink-NavLink"]:hover span { color: var(--accent); text-decoration-color: var(--accent); }
 /* Trennpunkt vor jedem Stück außer dem ersten (zweites Stück: Text, danach: Links) */
 .st-key-portfolio-note > [data-testid="stElementContainer"]:nth-child(2) p::before,
-.st-key-portfolio-note [data-testid="stPageLink"]::before { content: "·"; color: var(--fiori-label); margin-right: 0.55rem; }
+.st-key-portfolio-note [data-testid="stPageLink"]::before { content: "·"; color: var(--muted); margin-right: 0.55rem; }
 .st-key-portfolio-note [data-testid="stPageLink"] { display: flex; align-items: center; }
 .st-key-portfolio-note [data-testid="stPageLink-NavLink"] { gap: 0 !important; }
 /* Seitensymbol der Navigation – hier nur Text */
@@ -90,9 +119,12 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 
 /* ---------- Startseite: Titel, ein Satz, Tour-Knopf – viel Luft, schmale Textspalte ---------- */
 /* stMarkdown: nur der Satz – nicht die Beschriftung des Knopfs */
-.st-key-home-hero { max-width: 52rem; padding: 1.75rem 0 1.25rem; }
-.st-key-home-hero h1 { font-size: 2.5rem; line-height: 1.15; padding: 0 0 0.35rem; }
-.st-key-home-hero [data-testid="stMarkdown"] p { font-size: 1.12rem; color: var(--fiori-label); }
+.st-key-home-hero { max-width: 54rem; padding: 3rem 0 2.25rem; }
+.st-key-home-hero h1 {
+  font-size: clamp(2.4rem, 4.6vw, 3.6rem); font-weight: 500; line-height: 1.04; letter-spacing: -0.025em;
+  padding: 0 0 0.6rem;
+}
+.st-key-home-hero [data-testid="stMarkdown"] p { font-size: 1.15rem; line-height: 1.55; color: var(--muted); }
 /* Ab Tablet-Breite: Titel, Satz, Tour-Knopf und Kacheln als ein zentrierter Block */
 @media (min-width: 641px) {
   .st-key-home-hero { margin-inline: auto; align-items: center; }   /* Block mittig, der Knopf darin auch */
@@ -102,93 +134,166 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
   .st-key-launchpad { justify-content: center; }
 }
 @media (max-width: 640px) {
-  .st-key-home-hero { padding: 0.75rem 0 0.5rem; }
-  .st-key-home-hero h1 { font-size: 1.8rem; }
-  .st-key-home-hero [data-testid="stMarkdown"] p { font-size: 1rem; }
+  .st-key-home-hero { padding: 1rem 0 0.75rem; }
+  .st-key-home-hero h1 { font-size: 2.1rem; }
+  .st-key-home-hero [data-testid="stMarkdown"] p { font-size: 1.02rem; }
 }
 
-/* ---------- Seitenkopf: Piktogramm, Titel und ein Satz – ohne Karte, direkt auf dem Hintergrund ---------- */
-.st-key-page-header { padding: 0.4rem 0 0.75rem; }
-.fiori-page-header { display: flex; align-items: center; gap: 0.9rem; }
-.fiori-page-header h1 {
-  font-size: 1.85rem; font-weight: 700; line-height: 1.2;
-  margin: 0; padding: 0; color: var(--fiori-text);
+/* ---------- Seitenkopf: Piktogramm, Titel und ein Satz – ohne Karte, direkt auf dem Papier ---------- */
+.st-key-page-header { padding: 0.5rem 0 0.9rem; }
+.page-head { display: flex; align-items: center; gap: 1rem; }
+.page-head h1 {
+  margin: 0; padding: 0;
+  font-family: var(--font-heading); font-size: 2.25rem; font-weight: 500; line-height: 1.1; letter-spacing: -0.02em;
+  color: var(--ink);
 }
-.fiori-page-header p { margin: 0.25rem 0 0; color: var(--fiori-label); }
-.fiori-pictogram { flex-shrink: 0; }   /* bei langem Untertitel nicht zusammendrücken */
-.fiori-pictogram img { width: 2.75rem; height: 2.75rem; display: block; }
+.page-head p { margin: 0.35rem 0 0; color: var(--muted); }
+.page-pictogram { flex-shrink: 0; }   /* bei langem Untertitel nicht zusammendrücken */
+.page-pictogram img { width: 2.75rem; height: 2.75rem; display: block; }
 
 /* ---------- Handy-Breite: schmalere Ränder und kleinerer Seitentitel – mehr Platz für den Inhalt ---------- */
 @media (max-width: 640px) {
   [data-testid="stMainBlockContainer"] { padding-left: 1rem; padding-right: 1rem; }
-  [class*="st-key-card"] { padding: 1rem; }
-  .fiori-page-header { gap: 0.7rem; }
-  .fiori-page-header h1 { font-size: 1.4rem; }
-  .fiori-pictogram img { width: 2.25rem; height: 2.25rem; }
+  [class*="st-key-card"] { padding: 1.1rem 1rem; }
+  .page-head { gap: 0.75rem; }
+  .page-head h1 { font-size: 1.65rem; }
+  .page-pictogram img { width: 2.25rem; height: 2.25rem; }
 }
 
-/* ---------- Launchpad-Kacheln (Fiori „Generic Tile“): feste Größe, Titel oben, Kennzahl unten ---------- */
+/* ---------- Knöpfe: Hauptaktion Kupfer, sonst ruhig mit Haarlinie; weiche Übergänge ---------- */
+[data-testid^="stBaseButton"] {
+  transition: background-color var(--fast) var(--ease), border-color var(--fast) var(--ease),
+              color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+/* Schrift auf Kupfer aus den Design-Variablen: im Dunkelmodus dunkel – weiß hätte dort nur 3,3 : 1 */
+[data-testid="stBaseButton-primary"], [data-testid="stBaseButton-primary"] p { color: var(--on-accent) !important; }
+[data-testid="stBaseButton-primary"]:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+[data-testid="stBaseButton-secondary"] { background: var(--surface); border-color: var(--line-strong); }
+[data-testid="stBaseButton-secondary"]:hover { border-color: var(--accent); color: var(--accent); }
+/* Sichtbarer Tastaturfokus an allen Knöpfen und Links */
+[data-testid^="stBaseButton"]:focus-visible,
+[data-testid="stPageLink-NavLink"]:focus-visible,
+[data-testid="stTab"]:focus-visible {
+  outline: 2px solid var(--accent) !important; outline-offset: 2px; box-shadow: none !important;
+}
+
+/* ---------- Eingabefelder: Rand mit mindestens 3 : 1 Kontrast (WCAG), Fokus in Kupfer ---------- */
+[data-testid="stSelectbox"] [role="group"],
+[data-testid="stDateInputField"],
+[data-testid="stTextInput"] [data-testid="stTextInputRootElement"],
+[data-testid="stTextArea"] [data-testid="stTextAreaRootElement"],
+[data-testid="stChatInput"] > div {
+  border-color: var(--line-input) !important;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+[data-testid="stSelectbox"] [role="group"]:focus-within,
+[data-testid="stDateInputField"]:focus-within,
+[data-testid="stTextInput"] [data-testid="stTextInputRootElement"]:focus-within,
+[data-testid="stTextArea"] [data-testid="stTextAreaRootElement"]:focus-within,
+[data-testid="stChatInput"] > div:focus-within {
+  border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Schalter: Fläche im Zustand „aus“ mit mindestens 3 : 1 Kontrast (WCAG) – „an“ zeigt Streamlit in Kupfer.
+   Aufbau: label > span (unsichtbares Eingabefeld) + div (Fläche) > div (Knopf) */
+[data-testid="stCheckbox"] label:not([data-selected="true"]) > div:first-of-type { background: var(--line-input) !important; }
+
+/* ---------- Reiter: Text ruhig, gewählter Reiter in Tinte mit Kupferlinie; Inhalt blendet sanft ein ---------- */
+[data-testid="stTab"] p { color: var(--muted); transition: color var(--fast) var(--ease); }
+[data-testid="stTab"]:hover p, [data-testid="stTab"][aria-selected="true"] p { color: var(--ink); }
+[data-testid="stTab"][aria-selected="true"] p { font-weight: 600; }
+[data-testid="stTab"] .react-aria-SelectionIndicator { background: var(--accent); }
+
+/* ---------- Ausklappbereiche, Hinweise, Tooltips, Meldungen ---------- */
+[data-testid="stExpander"] details {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l);
+  transition: border-color var(--fast) var(--ease);
+}
+[data-testid="stExpander"] details:hover { border-color: var(--line-strong); }
+[data-testid="stExpander"] summary:hover p, [data-testid="stExpander"] summary:hover [data-testid="stIconMaterial"] { color: var(--accent); }
+[data-testid="stAlertContainer"] { border-radius: var(--radius-m); }
+[data-testid="stTooltipContent"] {
+  background: var(--ink); color: var(--paper); border-radius: var(--radius-s);
+  box-shadow: var(--shadow-2); font-size: 0.86rem; line-height: 1.45;
+}
+[data-testid="stTooltipContent"] * { color: inherit; }
+[data-testid="stToast"] {
+  background: var(--surface-raised); border: 1px solid var(--line); border-radius: var(--radius-l);
+  box-shadow: var(--shadow-2);
+}
+
+/* ---------- Launchpad-Kacheln: feste Größe, Titel oben, Kennzahl unten ---------- */
 .st-key-launchpad { gap: 1rem !important; }
 /* Streamlit legt um jede Kachel eine Hülle, die sich sonst auf die ganze Breite dehnt – sie bestimmt die Größe,
    die Kachel füllt sie aus (Streamlit gibt ihr flex: 1) */
-.st-key-launchpad > [data-testid="stLayoutWrapper"] { flex: 0 0 11rem !important; width: 11rem !important; height: 11rem; }
+.st-key-launchpad > [data-testid="stLayoutWrapper"] { flex: 0 0 11.5rem !important; width: 11.5rem !important; height: 11.5rem; }
 [class*="st-key-tile-"] {
   position: relative;
   justify-content: space-between;   /* Titel oben, Kennzahl immer unten */
   gap: 0 !important;
-  padding: 1rem 1rem 0.9rem;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  padding: 1.1rem 1rem 0.95rem;
+  transition: box-shadow var(--slow) var(--ease), transform var(--slow) var(--ease), border-color var(--slow) var(--ease);
 }
-[class*="st-key-tile-"]:hover { box-shadow: var(--fiori-shadow-hover); transform: translateY(-2px); }
+/* Kupferstrich oben, der beim Darüberfahren über die ganze Breite wächst */
+[class*="st-key-tile-"]::before {
+  content: ""; position: absolute; left: 1rem; right: 1rem; top: -1px; height: 2px;
+  background: var(--accent); transform: scaleX(0.18); transform-origin: left;
+  transition: transform var(--slow) var(--ease);
+}
+[class*="st-key-tile-"]:hover { box-shadow: var(--shadow-2); transform: translateY(-3px); border-color: var(--line-strong) !important; }
+[class*="st-key-tile-"]:hover::before, [class*="st-key-tile-"]:focus-within::before { transform: scaleX(1); }
 /* Der Titel ist ein Seitenlink – hier ohne Symbol und ohne Link-Optik */
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] {
   padding: 0 !important; min-height: 0 !important; background: none !important; gap: 0 !important;
 }
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] > span:has([data-testid="stIconMaterial"]) { display: none; }
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] p {
-  font-size: 1rem; font-weight: 700; line-height: 1.3; color: var(--fiori-text); white-space: normal;
+  font-size: 1rem; font-weight: 600; line-height: 1.3; color: var(--ink); white-space: normal;
 }
 /* Ganze Kachel klickbar: Der Link spannt eine unsichtbare Fläche über die Kachel („stretched link“) */
 [class*="st-key-tile-"] [data-testid="stElementContainer"],
 [class*="st-key-tile-"] [data-testid="stPageLink"],
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"] { position: static; }
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]::after {
-  content: ""; position: absolute; inset: 0; border-radius: 0.75rem;
+  content: ""; position: absolute; inset: 0; border-radius: var(--radius-l);
 }
-[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]:focus-visible { outline: none; }
+[class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]:focus-visible { outline: none !important; }
 [class*="st-key-tile-"] [data-testid="stPageLink-NavLink"]:focus-visible::after {
-  outline: 2px solid var(--fiori-accent); outline-offset: 2px;
+  outline: 2px solid var(--accent); outline-offset: 2px;
 }
 /* Streamlit gibt Markdown-Blöcken einen negativen Rand unten – in der Kachel ragte die Kennzahl sonst aus dem Innenabstand */
 [class*="st-key-tile-"] [data-testid="stMarkdownContainer"] { margin-bottom: 0 !important; }
 .tile-content { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.5rem; }
 .tile-content img { width: 2.5rem; height: 2.5rem; display: block; flex-shrink: 0; }
 .tile-kpi { text-align: right; min-width: 0; }
-.tile-value { display: block; font-size: 2rem; line-height: 1; color: var(--fiori-accent); white-space: nowrap; }
-.tile-unit { display: block; font-size: 0.75rem; line-height: 1.25; color: var(--fiori-label); margin-top: 0.3rem; }
-/* Handy: zwei Kacheln pro Reihe, wie das Launchpad auf dem Telefon */
+.tile-value {
+  display: block; font-size: 2rem; font-weight: 600; line-height: 1; letter-spacing: -0.02em;
+  color: var(--ink); white-space: nowrap;
+}
+.tile-unit { display: block; font-size: 0.75rem; line-height: 1.25; color: var(--muted); margin-top: 0.35rem; }
+/* Handy: zwei Kacheln pro Reihe, wie ein Launchpad auf dem Telefon */
 @media (max-width: 640px) {
   .st-key-launchpad { gap: 0.75rem !important; }
   .st-key-launchpad > [data-testid="stLayoutWrapper"] {
-    flex-basis: calc(50% - 0.375rem) !important; width: calc(50% - 0.375rem) !important; height: 10rem;
+    flex-basis: calc(50% - 0.375rem) !important; width: calc(50% - 0.375rem) !important; height: 10.5rem;
   }
   .tile-value { font-size: 1.7rem; }
 }
 
-/* ---------- Nachricht als Sprechblase ---------- */
+/* ---------- Nachricht als Sprechblase (Posteingang) ---------- */
 .st-key-message-bubble {
-  background: var(--fiori-accent-soft);
-  border-radius: 0.9rem 0.9rem 0.9rem 0.25rem;
+  background: var(--surface-sunken);
+  border-radius: 1rem 1rem 1rem 0.3rem;
   padding: 0.9rem 1.1rem;
 }
 
-/* ---------- „Illustrated Message“ (Leerzustand) ---------- */
-.fiori-illustrated-message { text-align: center; padding: 1.5rem 1rem 1rem; }
-.fiori-illustrated-message img { width: 15rem; max-width: 100%; height: auto; }
-.fiori-illustrated-message .title { font-size: 1.2rem; font-weight: 700; color: var(--fiori-text); margin-top: 0.75rem; }
-.fiori-illustrated-message .text { color: var(--fiori-label); margin-top: 0.3rem; }
+/* ---------- Leerzustand: Illustration, Überschrift, kurzer Hinweis ---------- */
+.empty-state { text-align: center; padding: 1.5rem 1rem 1rem; }
+.empty-state img { width: 15rem; max-width: 100%; height: auto; }
+.empty-state .title { font-family: var(--font-heading); font-size: 1.35rem; font-weight: 500; color: var(--ink); margin-top: 0.75rem; }
+.empty-state .text { color: var(--muted); margin-top: 0.3rem; }
 
-/* ---------- Live-Chat: Handy im Messenger-Stil (Farben --chat-* aus ui.py) ---------- */
+/* ---------- Live-Chat: Handy im Messenger-Stil (Farben --chat-* aus tokens.css) ---------- */
 .st-key-phone {
   max-width: 26rem;
   margin: 0.25rem auto 0;
@@ -198,15 +303,16 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
   background: var(--chat-bg);
   gap: 0 !important;
   padding-bottom: 0.6rem;
+  box-shadow: var(--shadow-2);
 }
 .chat-header {
   display: flex; align-items: center; gap: 0.7rem;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1rem;
   background: var(--chat-header-bg); color: var(--chat-header-text);
 }
-.chat-header img { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: #ffffff; padding: 0.2rem; }
+.chat-header img { width: 2.3rem; height: 2.3rem; border-radius: 50%; background: #fffefb; padding: 0.2rem; }
 .chat-header strong { display: block; font-size: 1rem; line-height: 1.2; }
-.chat-header span { display: block; font-size: 0.78rem; opacity: 0.9; }
+.chat-header span { display: block; font-size: 0.78rem; opacity: 0.85; }
 /* column-reverse: Der Verlauf beginnt unten – die neueste Nachricht ist ohne JavaScript immer sichtbar */
 .chat-scroll {
   display: flex; flex-direction: column-reverse;
@@ -214,29 +320,31 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
   padding: 0.75rem 0.7rem;
   background: var(--chat-bg);
 }
-.chat-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.chat-list { display: flex; flex-direction: column; gap: 0.4rem; }
 .chat-row { display: flex; }
 .chat-row.out { justify-content: flex-end; }
 .chat-bubble {
   max-width: 82%;
-  padding: 0.45rem 0.65rem 0.3rem;
-  border-radius: 0.6rem;
-  font-size: 0.93rem; line-height: 1.35;
+  padding: 0.5rem 0.7rem 0.3rem;
+  border-radius: 0.85rem;
+  font-size: 0.93rem; line-height: 1.4;
   color: var(--chat-text);
-  box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+  box-shadow: 0 1px 1px light-dark(rgb(28 26 23 / 0.08), rgb(0 0 0 / 0.3));
   overflow-wrap: anywhere;
+  animation: bubble-in 0.3s var(--ease) both;
 }
-.chat-bubble.in { background: var(--chat-in); border-top-left-radius: 0.15rem; }
-.chat-bubble.out { background: var(--chat-out); border-top-right-radius: 0.15rem; }
+.chat-bubble.in { background: var(--chat-in); border-bottom-left-radius: 0.25rem; }
+.chat-bubble.out { background: var(--chat-out); border-bottom-right-radius: 0.25rem; }
 .chat-meta { display: block; text-align: right; font-size: 0.7rem; color: var(--chat-meta); margin-top: 0.15rem; }
 .chat-ticks { color: var(--chat-ticks); margin-left: 0.25rem; letter-spacing: -0.15em; }
 .chat-notice {
   align-self: center; text-align: center;
   max-width: 90%; margin: 0.2rem auto;
-  padding: 0.35rem 0.7rem; border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem; border-radius: var(--radius-m);
   background: var(--chat-notice-bg); color: var(--chat-notice-text);
   font-size: 0.78rem;
 }
+@keyframes bubble-in { from { opacity: 0; transform: translateY(0.4rem) scale(0.98); } }
 /* „schreibt …“: drei hüpfende Punkte */
 .chat-typing { display: flex; gap: 0.25rem; padding: 0.7rem 0.8rem; }
 .chat-typing span {
@@ -252,69 +360,67 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 }
 /* Streamlit-Elemente im Handy: Schnellantworten und Eingabefeld */
 .st-key-quick-replies { padding: 0.45rem 0.7rem 0; justify-content: flex-end; }
-.st-key-quick-replies button,
-.st-key-chat-examples button { border-radius: 999px; }
-.st-key-quick-replies button { background: var(--chat-in); color: var(--fiori-accent); border-color: var(--fiori-accent); }
+.st-key-quick-replies button { background: var(--chat-in); color: var(--accent); border-color: var(--accent); }
+.st-key-quick-replies button:hover { background: var(--accent); color: var(--on-accent); }
 .st-key-phone [data-testid="stChatInput"] { margin: 0.5rem 0.6rem 0; }
 /* Auf dem Handy: kein zweiter Handy-Rahmen, dafür etwas niedrigerer Verlauf */
 @media (max-width: 640px) {
-  .st-key-phone { border-width: 0.25rem; border-radius: 1.1rem; }
+  .st-key-phone { border-width: 0.25rem; border-radius: 1.1rem; box-shadow: none; }
   .chat-scroll { height: 22rem; }
 }
 
-/* ---------- Geführte Tour: hervorgehobenes Band oben auf der Seite ---------- */
+/* ---------- Geführte Tour: Band in zartem Kupfer, Fortschritt als kurze Striche ---------- */
 .st-key-tour-panel {
-  background: var(--fiori-accent-soft);
-  border: 1px solid var(--fiori-accent);
-  border-left: 0.35rem solid var(--fiori-accent);
-  border-radius: 0.75rem;
-  padding: 0.8rem 1.1rem;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-l);
+  padding: 0.85rem 1.15rem;
   margin-bottom: 0.25rem;
+  animation: panel-in 0.4s var(--ease) both;
 }
 .tour-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.tour-count { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fiori-accent); }
-.tour-dots { display: inline-flex; gap: 0.35rem; }
-.tour-dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--fiori-border); }
-.tour-dot.active { background: var(--fiori-accent); }
+.tour-count { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+.tour-dots { display: inline-flex; gap: 0.3rem; }
+.tour-dot { width: 1.1rem; height: 3px; border-radius: 2px; background: var(--line-strong); transition: background-color var(--slow) var(--ease); }
+.tour-dot.active { background: var(--accent); }
+@keyframes panel-in { from { opacity: 0; transform: translateY(-0.35rem); } }
 
 /* ---------- Diagramm-Legende als HTML (bricht auf dem Handy um) ---------- */
 .chart-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1.1rem; margin: 0.25rem 0 0.1rem; }
-.chart-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; color: var(--fiori-label); }
+.chart-legend-item { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; color: var(--muted); }
 .chart-legend-swatch { width: 0.8rem; height: 0.8rem; border-radius: 0.2rem; flex-shrink: 0; }
 
-/* ---------- „Auftrag entsteht“: fünf Schritte, angelehnt an den Fiori-„Process Flow“ ---------- */
+/* ---------- „Auftrag entsteht“: fünf Schritte, Zustand als Farbe UND Symbol ---------- */
 .order-steps {
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem; margin: 0.25rem 0 0.9rem;
 }
 .order-step {
-  --step-color: var(--fiori-border);
+  --step-color: var(--line-strong);
   display: flex; gap: 0.5rem; align-items: flex-start;
-  padding: 0.55rem 0.6rem; border-radius: 0.6rem;
-  background: var(--fiori-accent-soft);
+  padding: 0.6rem 0.65rem; border-radius: var(--radius-m);
+  background: var(--surface-sunken);
   border-top: 3px solid var(--step-color);
-  animation: step-in 0.25s ease-out;
+  animation: step-in 0.3s var(--ease) both;
 }
-.order-step.ok { --step-color: var(--step-ok); }
-.order-step.warn { --step-color: var(--step-warn); }
-.order-step.error { --step-color: var(--step-error); }
-.order-step.pending { opacity: 0.55; animation: none; }
+.order-step.ok { --step-color: var(--ok); }
+.order-step.warn { --step-color: var(--warn); }
+.order-step.error { --step-color: var(--error); }
+.order-step.pending { opacity: 0.6; animation: none; }
 .order-step-icon {
   flex-shrink: 0; width: 1.35rem; height: 1.35rem; border-radius: 50%;
   display: grid; place-items: center;
   font-size: 0.8rem; font-weight: 700;
-  color: var(--fiori-card); background: var(--step-color);
+  color: var(--surface); background: var(--step-color);
 }
-.order-step.pending .order-step-icon { background: transparent; color: var(--fiori-label); border: 1px dashed var(--fiori-label); }
+.order-step.pending .order-step-icon { background: transparent; color: var(--muted); border: 1px dashed var(--muted); }
 .order-step-text { display: flex; flex-direction: column; min-width: 0; }
-.order-step-label { font-size: 0.75rem; color: var(--fiori-label); }
-.order-step-value { font-size: 0.88rem; font-weight: 600; color: var(--fiori-text); overflow-wrap: anywhere; }
-@keyframes step-in { from { opacity: 0; transform: translateY(0.3rem); } to { opacity: 1; transform: none; } }
+.order-step-label { font-size: 0.75rem; color: var(--muted); }
+.order-step-value { font-size: 0.88rem; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+@keyframes step-in { from { opacity: 0; transform: translateY(0.3rem); } }
 @media (max-width: 1100px) {
   .order-steps { grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .chat-typing span, .order-step { animation: none; }
 }
 
 /* ---------- Kennzahlen der Prozessseite: bis 1100 px zwei mal zwei – nichts abgeschnitten, auf dem Handy
@@ -332,27 +438,29 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 /* ---------- Making-of: Demo-Video neben „Meine Rolle“ (16 : 9, Platz schon vor dem Laden reserviert) ---------- */
 .making-of-video {
   display: block; width: 100%; height: auto; aspect-ratio: 16 / 9;
-  border-radius: 0.75rem; border: 1px solid var(--fiori-border); background: #1b1f1d;
+  border-radius: var(--radius-m); border: 1px solid var(--line); background: #1b1a18;
 }
 
 /* ---------- Making-of: Zeitleiste – senkrechte Linie mit Punkten, je Entscheidung eine Zeile (Phase · Titel) ---------- */
 .making-of-timeline { list-style: none; margin: 0.25rem 0 0; padding: 0; }
 .making-of-timeline li {
-  position: relative; margin: 0 0 0 0.45rem; padding: 0 0 0.8rem 1.4rem;
-  border-left: 2px solid var(--fiori-border);
+  position: relative; margin: 0 0 0 0.45rem; padding: 0 0 0.85rem 1.4rem;
+  border-left: 1px solid var(--line-strong);
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.75rem;
 }
 .making-of-timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
 .making-of-timeline li::before {
-  content: ""; position: absolute; left: -0.45rem; top: 0.2rem;
-  width: 0.8rem; height: 0.8rem; border-radius: 50%;
-  background: var(--fiori-card); border: 2px solid var(--fiori-accent);
+  content: ""; position: absolute; left: -0.4rem; top: 0.3rem;
+  width: 0.75rem; height: 0.75rem; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--accent);
+  transition: background-color var(--fast) var(--ease);
 }
+.making-of-timeline li:hover::before { background: var(--accent); }
 .making-of-phase {
-  flex: 0 0 6rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--fiori-accent);
+  flex: 0 0 6rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); font-variant-numeric: tabular-nums;
 }
-.making-of-timeline strong { flex: 1 1 14rem; font-weight: 600; line-height: 1.35; color: var(--fiori-text); }
+.making-of-timeline strong { flex: 1 1 14rem; font-weight: 600; line-height: 1.35; color: var(--ink); }
 
 /* ---------- Prozess als Schwimmbahnen: Rollen als Zeilen, Schritte von links nach rechts ---------- */
 .swimlane {
@@ -360,47 +468,51 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
   grid-template-columns: 7rem repeat(var(--steps), minmax(6.5rem, 1fr));   /* passt ab 1100 px ohne Scrollen */
   padding-bottom: 0.25rem;   /* ohne overflow: Tooltips der Schwachstellen dürfen über den Rand ragen */
 }
-.lane-band { grid-column: 1 / -1; background: var(--fiori-accent-soft); border-radius: 0.6rem; }
-.lane-label { grid-column: 1; align-self: center; padding: 0.5rem 0.7rem; font-size: 0.85rem; font-weight: 700; color: var(--fiori-text); }
+.lane-band { grid-column: 1 / -1; background: var(--surface-sunken); border-radius: var(--radius-m); }
+.lane-label { grid-column: 1; align-self: center; padding: 0.5rem 0.7rem; font-size: 0.85rem; font-weight: 600; color: var(--ink); }
 .step {
-  --kind-color: var(--fiori-border);
-  position: relative; margin: 0.4rem 0; padding: 0.5rem 0.6rem;
+  --kind-color: var(--line-strong);
+  position: relative; margin: 0.4rem 0; padding: 0.55rem 0.65rem;
   display: flex; flex-direction: column; gap: 0.2rem;
-  background: var(--fiori-card); color: var(--fiori-text);
-  border: 1px solid var(--fiori-border); border-top: 3px solid var(--kind-color); border-radius: 0.6rem;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-top: 3px solid var(--kind-color); border-radius: var(--radius-m);
   hyphens: auto;   /* lange deutsche Wörter mit Trennstrich statt mitten im Wort umbrechen */
+  transition: box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
-.step-manual { --kind-color: var(--step-warn); }
-.step-auto { --kind-color: var(--step-ok); }
-.step-customer { --kind-color: var(--fiori-accent); }
+.step:hover { box-shadow: var(--shadow-2); transform: translateY(-1px); }
+/* Art des Schritts: manuell (gelb), automatisch (grün), Kunde (blau) – Kupfer bleibt Bedienung und Auswahl vorbehalten */
+.step-manual { --kind-color: var(--warn); }
+.step-auto { --kind-color: var(--ok); }
+.step-customer { --kind-color: var(--info); }
 .step-top { display: flex; align-items: center; gap: 0.4rem; }
 .step-no {
   flex-shrink: 0; width: 1.35rem; height: 1.35rem; border-radius: 50%;
   display: grid; place-items: center; font-size: 0.75rem; font-weight: 700;
-  color: var(--fiori-card); background: var(--kind-color);
+  color: var(--surface); background: var(--kind-color);
 }
 .step strong { font-size: 0.88rem; line-height: 1.3; }
-.step-meta { font-size: 0.75rem; font-weight: 700; color: var(--kind-color); }
+.step-meta { font-size: 0.75rem; font-weight: 600; color: var(--kind-color); }
 /* Schwachstelle (Ist): kleines Warndreieck oben rechts, der Text als Tooltip bei Maus, Tastatur und Antippen */
 .step-issue { position: relative; margin-left: auto; display: inline-flex; border-radius: 0.3rem; cursor: help; }
-.step-issue:focus-visible { outline: 2px solid var(--fiori-accent); outline-offset: 2px; }
+.step-issue:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .step-issue-icon {
   width: 1.15rem; height: 1rem; display: grid; place-items: end center; padding-bottom: 0.05rem;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  background: var(--step-warn); color: var(--fiori-card);
+  background: var(--warn); color: var(--surface);
   font-size: 0.68rem; font-weight: 800; line-height: 1;
 }
 .step-issue-tip {
   position: absolute; top: calc(100% + 0.4rem); right: -0.3rem; z-index: 20;
   width: max-content; max-width: 13rem;
-  padding: 0.45rem 0.6rem; border-radius: 0.5rem;
-  background: var(--fiori-text); color: var(--fiori-card); box-shadow: var(--fiori-shadow-hover);
-  font-size: 0.78rem; font-weight: 400; line-height: 1.35;
-  opacity: 0; pointer-events: none; transition: opacity 0.12s ease;
+  padding: 0.5rem 0.65rem; border-radius: var(--radius-s);
+  background: var(--ink); color: var(--paper); box-shadow: var(--shadow-2);
+  font-size: 0.78rem; font-weight: 400; line-height: 1.4;
+  opacity: 0; pointer-events: none; transform: translateY(-0.2rem);
+  transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
 /* Unsichtbare Brücke über die Lücke zum Symbol: Die Maus darf auf den Tooltip wandern, ohne dass er verschwindet */
 .step-issue-tip::before { content: ""; position: absolute; left: 0; right: 0; top: -0.45rem; height: 0.45rem; }
-.step-issue:hover .step-issue-tip, .step-issue:focus .step-issue-tip { opacity: 1; pointer-events: auto; }
+.step-issue:hover .step-issue-tip, .step-issue:focus .step-issue-tip { opacity: 1; pointer-events: auto; transform: none; }
 /* Die Rolle steht am Desktop in der Bahn – für Screenreader trotzdem an jedem Schritt */
 .step-lane { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* Schmale Fenster und Handy: nummerierte Liste, die Rolle als Etikett am Schritt */
@@ -410,13 +522,74 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
   .step { margin: 0; }
   .step-lane {
     position: static; width: auto; height: auto; overflow: visible; clip: auto;
-    font-size: 0.75rem; font-weight: 700; color: var(--fiori-label);
+    font-size: 0.75rem; font-weight: 600; color: var(--muted);
   }
 }
 
-/* ---------- SAP-Übergabe als Fiori-„Object Page“: Kopf, Reiter, Fußleiste mit Message Strip ---------- */
+/* ---------- Business Case: drei Kennzahlen als Ergebnis (Kupferstrich oben), Nutzen ohne Euro-Wert als Stichpunkte ---------- */
+.st-key-bc-kpis [data-testid="stMetric"] { position: relative; }
+.st-key-bc-kpis [data-testid="stMetric"]::before {
+  content: ""; position: absolute; left: 1rem; width: 2.5rem; top: -1px; height: 2px; background: var(--accent);
+}
+.st-key-bc-kpis [data-testid="stMetricValue"],
+.st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 2.6rem !important; line-height: 1.15; color: var(--ink); }
+.st-key-bc-benefits { gap: 0.5rem !important; }
+.st-key-bc-benefits [data-testid="stCaptionContainer"] { margin-right: 0.25rem; }
+@media (max-width: 1100px) {   /* drei nebeneinander: kleiner, sonst schneidet Streamlit mit „…“ ab */
+  .st-key-bc-kpis [data-testid="stMetricValue"],
+  .st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 1.9rem !important; }
+}
+@media (max-width: 640px) {   /* untereinander: wieder mehr Platz */
+  .st-key-bc-kpis [data-testid="stMetricValue"],
+  .st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 2.1rem !important; }
+}
+
+/* =====================================================================
+   SAP-Übergabe: bewusst im Stil von SAP Fiori (Horizon) – als Kontrast zur übrigen App.
+   Eigene Variablen --fiori-* (tokens.css), Systemschrift, Fiori-Blau, Fiori-Karte mit Schatten.
+   ===================================================================== */
 .st-key-sap-toolbar { gap: 0.5rem 1.25rem !important; }
 .st-key-sap-toolbar [data-testid="stPageLink"] { padding-bottom: 0.2rem; }
+/* Kennzeichnung über der Object Page */
+.fiori-hint {
+  display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.35rem 0 -0.4rem;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.fiori-hint::before { content: ""; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--fiori-accent); }
+
+.st-key-card-sap {
+  font-family: var(--fiori-font);
+  background: var(--fiori-card);
+  border: 1px solid var(--fiori-card-border) !important;
+  border-radius: 0.75rem;
+  box-shadow: var(--fiori-shadow);
+  color: var(--fiori-text);
+}
+.st-key-card-sap :is(p, li, td, th, dt, dd, summary, button, label) { font-family: var(--fiori-font); }
+.st-key-card-sap [data-testid="stMarkdownContainer"] :is(p, li) { color: var(--fiori-text); }
+/* Reiter wie Fiori: Blau für den gewählten Reiter */
+.st-key-card-sap [data-testid="stTab"] p { color: var(--fiori-label); }
+.st-key-card-sap [data-testid="stTab"]:hover p { color: var(--fiori-text); }
+.st-key-card-sap [data-testid="stTab"][aria-selected="true"] p { color: var(--fiori-accent); font-weight: 700; }
+.st-key-card-sap [data-testid="stTab"] .react-aria-SelectionIndicator { background: var(--fiori-accent); }
+.st-key-card-sap [data-testid="stTab"]:focus-visible { outline-color: var(--fiori-accent) !important; }
+/* Knöpfe wie Fiori: Hauptaktion blau gefüllt, sonst weiß mit grauem Rand; eckiger als in der App */
+.st-key-card-sap [data-testid^="stBaseButton"] { border-radius: 0.5rem; font-weight: 600; }
+.st-key-card-sap [data-testid="stBaseButton-primary"] { background: var(--fiori-accent); border-color: var(--fiori-accent); }
+.st-key-card-sap [data-testid="stBaseButton-primary"],
+.st-key-card-sap [data-testid="stBaseButton-primary"] p { color: var(--fiori-on-accent) !important; }
+.st-key-card-sap [data-testid="stBaseButton-primary"]:hover { background: var(--fiori-accent-strong); border-color: var(--fiori-accent-strong); }
+.st-key-card-sap [data-testid="stBaseButton-secondary"] { background: var(--fiori-card); border-color: var(--fiori-button-border); color: var(--fiori-link); }
+.st-key-card-sap [data-testid="stBaseButton-secondary"] p { color: var(--fiori-link); }
+.st-key-card-sap [data-testid="stBaseButton-secondary"]:hover { background: var(--fiori-accent-soft); border-color: var(--fiori-button-border); }
+.st-key-card-sap [data-testid^="stBaseButton"]:focus-visible { outline-color: var(--fiori-accent) !important; }
+/* Ausklappbereiche und Tabellen: neutral grau statt Papier */
+.st-key-card-sap [data-testid="stExpander"] details { background: var(--fiori-card); border-color: var(--fiori-border); border-radius: 0.5rem; }
+.st-key-card-sap [data-testid="stExpander"] summary:hover p,
+.st-key-card-sap [data-testid="stExpander"] summary:hover [data-testid="stIconMaterial"] { color: var(--fiori-accent); }
+.st-key-card-sap [data-testid="stTable"] th { color: var(--fiori-label); font-weight: 400; }
+.st-key-card-sap [data-testid="stTable"] :is(th, td) { border-color: var(--fiori-border) !important; color: var(--fiori-text); }
+
 .sap-op-overline { font-size: 0.8rem; color: var(--fiori-label); }
 .sap-op-titlebar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.5rem 1rem; margin-top: 0.15rem; }
 .sap-op-title { font-size: 1.5rem; font-weight: 700; line-height: 1.25; color: var(--fiori-text); }
@@ -425,8 +598,8 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 .sap-status { display: inline-block; padding: 0.2rem 0.7rem; border-radius: 1rem; font-size: 0.88rem; font-weight: 700; white-space: nowrap; }
 /* Info-Blau etwas zum Text hin gemischt: mindestens 4,5 : 1 Kontrast auf dem hellblauen Grund (hell und dunkel) */
 .sap-status.info { color: color-mix(in srgb, var(--fiori-accent) 75%, var(--fiori-text)); background: var(--fiori-accent-soft); }
-.sap-status.success { color: var(--step-ok); background: color-mix(in srgb, var(--step-ok) 14%, transparent); }
-.sap-status.error { color: var(--step-error); background: color-mix(in srgb, var(--step-error) 14%, transparent); }
+.sap-status.success { color: var(--fiori-positive); background: color-mix(in srgb, var(--fiori-positive) 14%, transparent); }
+.sap-status.error { color: var(--fiori-negative); background: color-mix(in srgb, var(--fiori-negative) 14%, transparent); }
 /* Schlüsselwerte im Kopf und Felder im Formular: Bezeichnung klein und grau, Wert darunter */
 .sap-op-attributes, .sap-form-fields { margin: 0; }
 .sap-op-attributes { display: flex; flex-wrap: wrap; gap: 0.75rem 2.5rem; margin: 1rem 0 0.25rem; }
@@ -446,23 +619,31 @@ body:has(.st-key-card-filters, .st-key-card-chat) { --content-max: 1400px; }
 }
 /* Der Message Strip nimmt den Restplatz und bricht in sich um – die Knöpfe bleiben rechts daneben */
 .st-key-sap-footer > [data-testid="stElementContainer"]:first-child { flex: 1 1 0 !important; min-width: 16rem; }
-.st-key-sap-footer [data-testid="stAlertContainer"] { padding: 0.5rem 0.75rem; }
+.st-key-sap-footer [data-testid="stAlertContainer"] { padding: 0.5rem 0.75rem; border-radius: 0.5rem; }
 @media (max-width: 640px) {
   [data-testid="stLayoutWrapper"]:has(> .st-key-sap-footer) { position: static; }
   .sap-op-attributes { gap: 0.6rem 1.5rem; }
   .sap-op-title { font-size: 1.25rem; }
 }
 
-/* ---------- Business Case: drei große Kennzahlen oben, Nutzen ohne Euro-Wert als Stichpunkte ---------- */
-.st-key-bc-kpis [data-testid="stMetricValue"],
-.st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 2.6rem !important; line-height: 1.15; color: var(--fiori-accent); }
-.st-key-bc-benefits { gap: 0.5rem !important; }
-.st-key-bc-benefits [data-testid="stCaptionContainer"] { margin-right: 0.25rem; }
-@media (max-width: 1100px) {   /* drei nebeneinander: kleiner, sonst schneidet Streamlit mit „…“ ab */
-  .st-key-bc-kpis [data-testid="stMetricValue"],
-  .st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 1.9rem !important; }
+/* =====================================================================
+   Bewegung: dezent und kurz. Inhalte blenden beim Seitenwechsel und beim Reiterwechsel sanft ein –
+   nur Deckkraft und eine kleine Verschiebung, nichts verändert das Layout.
+   ===================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > * { animation: rise 0.5s var(--ease) both; }
+  [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > :nth-child(3) { animation-delay: 0.04s; }
+  [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > :nth-child(4) { animation-delay: 0.08s; }
+  [data-testid="stMainBlockContainer"] > [data-testid="stVerticalBlock"] > :nth-child(n+5) { animation-delay: 0.12s; }
+  [data-testid="stTabPanel"] { animation: fade 0.35s var(--ease) both; }
+  [data-testid="stExpanderDetails"] { animation: fade 0.3s var(--ease) both; }
 }
-@media (max-width: 640px) {   /* untereinander: wieder mehr Platz */
-  .st-key-bc-kpis [data-testid="stMetricValue"],
-  .st-key-bc-kpis [data-testid="stMetricValue"] * { font-size: 2.1rem !important; }
+@keyframes rise { from { opacity: 0; transform: translateY(0.5rem); } }
+@keyframes fade { from { opacity: 0; } }
+/* „Weniger Bewegung“: alle Animationen und Übergänge praktisch aus (auch die von Streamlit) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; scroll-behavior: auto !important;
+  }
 }

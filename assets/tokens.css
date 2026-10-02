@@ -1,0 +1,96 @@
+/* =====================================================================
+   Design-Variablen der App – eine Stelle für Farben, Schriften, Radien, Schatten und Bewegung.
+   Designsprache „Papier, Tinte, Kupfer“, gemeinsam mit der Portfolio-Seite (gleiche Akzentfarbe,
+   gleiche Überschriftenschrift).
+
+   Jede Farbe steht mit hellem und dunklem Wert nebeneinander: light-dark(hell, dunkel).
+   Welcher Wert gilt, entscheidet „color-scheme“: Streamlit setzt es auf der App-Fläche passend zum
+   gewählten Modus, ui.py zusätzlich auf der ganzen Seite (für Menüs und Tooltips) und in jedem SVG.
+   Grundfarben für Streamlit selbst stehen in .streamlit/config.toml – die Werte dort müssen gleich sein
+   (tests/test_design_tokens.py prüft das).
+   ===================================================================== */
+:root {
+  /* Flächen */
+  --paper: light-dark(#f5f2ec, #121110);           /* Seitengrund: warmes Papier */
+  --surface: light-dark(#fffefb, #1b1a18);         /* Karten und Kacheln */
+  --surface-sunken: light-dark(#efeae2, #171614);  /* vertiefte Flächen: Bahnen, Kopfzeilen */
+  --surface-raised: light-dark(#ffffff, #24221f);  /* schwebend: Tooltips, Fußleisten */
+
+  /* Text */
+  --ink: light-dark(#1c1a17, #ece8e1);             /* Tinte */
+  --muted: light-dark(#6b645c, #a39c92);           /* Nebentext, mindestens 4,5 : 1 */
+
+  /* Linien */
+  --line: light-dark(#e4ded4, #2e2b27);            /* Haarlinien, rein gestaltend */
+  --line-strong: light-dark(#cfc7bb, #45403a);
+  --line-input: light-dark(#8b847a, #6f685f);      /* Rand von Eingabefeldern, mindestens 3 : 1 */
+
+  /* Akzent Kupfer – sparsam: Hauptaktion, Auswahl, Fokus, wichtigste Datenreihe */
+  --accent: light-dark(#a34a1f, #cf7743);
+  --accent-strong: light-dark(#8a3d18, #e08a5a);   /* beim Darüberfahren */
+  --accent-soft: light-dark(#f4e6dc, #2a1e17);     /* zarte Fläche */
+  --on-accent: light-dark(#fffefb, #121110);       /* Schrift auf Kupfer: hell weiß, dunkel schwarz */
+
+  /* Signalfarben – immer zusammen mit Symbol und Text */
+  --ok: light-dark(#2d6a3e, #7fcf95);
+  --warn: light-dark(#8a6a00, #e8c04b);
+  --error: light-dark(#b0302a, #ff8f84);
+  --info: light-dark(#2a5f8f, #8ab8e6);
+
+  /* Schatten: hell weich und warm, dunkel nur angedeutet */
+  --shadow-1: 0 1px 2px light-dark(rgb(28 26 23 / 0.05), rgb(0 0 0 / 0.35));
+  --shadow-2: 0 1px 2px light-dark(rgb(28 26 23 / 0.05), rgb(0 0 0 / 0.35)),
+              0 10px 28px -6px light-dark(rgb(28 26 23 / 0.12), rgb(0 0 0 / 0.5));
+
+  /* Schriften */
+  --font-heading: "Newsreader", "Schibsted Grotesk", Georgia, serif;
+  --font-text: "Schibsted Grotesk", "Segoe UI", system-ui, sans-serif;
+
+  /* Radien */
+  --radius-s: 0.375rem;
+  --radius-m: 0.625rem;
+  --radius-l: 0.875rem;
+
+  /* Bewegung: weich auslaufend, kurz */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 0.18s;
+  --slow: 0.45s;
+
+  /* Messenger-Ansicht im Live-Chat */
+  --chat-bg: light-dark(#efe9df, #171513);
+  --chat-in: light-dark(#fffefb, #24221f);
+  --chat-out: light-dark(#f3dfd0, #3d2618);
+  --chat-text: light-dark(#1c1a17, #ece8e1);
+  --chat-meta: light-dark(#6b645c, #a39c92);
+  --chat-ticks: light-dark(#a34a1f, #e08a5a);
+  --chat-notice-bg: light-dark(#f6edcf, #2a2410);
+  --chat-notice-text: light-dark(#5c4a12, #f0d27a);
+  --chat-header-bg: light-dark(#1c1a17, #24221f);
+  --chat-header-text: light-dark(#f5f2ec, #ece8e1);
+  --phone-frame: light-dark(#1c1a17, #3a3632);
+
+  /* Leerzustands-Illustration */
+  --ill-line: light-dark(#cfc7bb, #5a544c);
+  --ill-foam: light-dark(#fffefb, #ece8e1);
+
+  /* SAP-Übergabe: bewusst im Stil von SAP Fiori (Horizon) – nur in der Object Page verwendet.
+     Eigene Farbwerte, Systemschrift statt SAP-Schrift. */
+  --fiori-font: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --fiori-card: light-dark(#ffffff, #1d232a);
+  --fiori-card-border: light-dark(transparent, #2c3440);
+  --fiori-border: light-dark(#d9d9d9, #2c3440);
+  --fiori-text: light-dark(#1d2d3e, #eaecee);
+  --fiori-label: light-dark(#556b82, #a9b4be);
+  --fiori-accent: light-dark(#0070f2, #1b90ff);
+  --fiori-accent-strong: light-dark(#0064d9, #4db1ff);
+  --fiori-accent-soft: light-dark(#e5f2ff, #1c2b3b);
+  --fiori-on-accent: light-dark(#ffffff, #12171c);   /* dunkel: dunkle Schrift – weiß hätte nur 3,3 : 1 */
+  --fiori-link: light-dark(#0064d9, #4db1ff);
+  --fiori-button-border: light-dark(#bcc3ca, #3a4552);
+  --fiori-positive: light-dark(#256f3a, #6dd58c);
+  --fiori-negative: light-dark(#aa0808, #ff8888);
+  --fiori-shadow: 0 0 0.125rem light-dark(rgb(34 53 72 / 0.15), transparent),
+                  0 0.125rem 0.5rem light-dark(rgb(34 53 72 / 0.10), transparent);
+  --fiori-shadow-hover: 0 0 0 1px light-dark(transparent, #3a4552),
+                        0 0.25rem 1rem light-dark(rgb(34 53 72 / 0.22), rgb(0 0 0 / 0.4));
+}
