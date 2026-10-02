@@ -12,6 +12,10 @@ Aufruf:  python -m tools.record_demo                                  # Live-App
          python -m tools.record_demo --demo                           # Live-App im Demo-Modus, kostenlos
          python -m tools.record_demo --url http://localhost:8502 --demo  # lokaler Probelauf, kostenlos
 Nach 14 Uhr zeigt das Dialekt-Beispiel („bis morgn“) den Bestellschluss: Lieferung übermorgen, mit Hinweis.
+
+Nach einer Design-Änderung: Die Making-of-Seite spielt das veröffentlichte (alte) Video ab. Deshalb zuerst kostenlos
+mit --demo --out data/demo-zwischen aufnehmen, dann die echte Aufnahme mit --embed-from data/demo-zwischen –
+die Making-of-Szene zeigt dann schon das neue Design.
 """
 
 import argparse
@@ -384,6 +388,8 @@ def main() -> None:
     parser.add_argument("--url", default=LIVE_URL, help="Adresse der App (Standard: Live-App)")
     parser.add_argument("--demo", action="store_true", help="Demo-Modus statt Live-KI (kostenlos)")
     parser.add_argument("--out", type=Path, default=Path("data/demo"), help="Zielordner")
+    parser.add_argument("--embed-from", type=Path, help="Ordner mit demo.mp4 und demo-poster.jpg, die die "
+                        "Making-of-Seite statt der Dateien der Portfolio-Seite zeigt (nach einer Design-Änderung)")
     args = parser.parse_args()
     frames_dir = args.out / "frames"
     shutil.rmtree(frames_dir, ignore_errors=True)
@@ -393,6 +399,11 @@ def main() -> None:
         browser = playwright.chromium.launch(channel="msedge")
         context = browser.new_context(viewport=VIEWPORT, device_scale_factor=ZOOM, color_scheme="light",
                                       locale="de-DE", timezone_id="Europe/Berlin")
+        if args.embed_from:  # Anfragen der Making-of-Seite nach Video und Vorschaubild aus dem lokalen Ordner beantworten
+            def local_file(route, request):
+                route.fulfill(path=args.embed_from / request.url.rsplit("/", 1)[-1])  # …/assets/demo.mp4 → demo.mp4
+            for name in ("demo.mp4", "demo-poster.jpg"):
+                context.route(f"**/assets/{name}", local_file)
         page = context.new_page()
         page.goto(args.url, wait_until="domcontentloaded")
         app = app_frame(page)
